@@ -218,8 +218,8 @@ a list of commands. If the step is a list of commands, each command in that
 sub-list is executed concurrently (this effect is not recursive; there may
 only be one level of nested lists).
 
-The script is always started when the service is called and ends by
-responding to the calling service.
+The script is always _started when the service is called_ and _ends by
+responding to the calling service_.
 
 ##### Commands
 
