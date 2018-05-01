@@ -9,16 +9,18 @@ architecture.
 
 ```yaml
 apiVersion: v1alpha1
+default:
+  payloadSize: 1 KB
+  computeUsage: 10%
+  memoryUsage: 10%
 services:
   A:
-    computeUsage: 1%
+    computeUsage: 50%
     memoryUsage: 20%
     errorRate: 0.01%
     script:
     - sleep: 100ms
   B:
-    computeUsage: 10%
-    memoryUsage: 10%
   C:
     script:
     - get:
@@ -199,14 +201,51 @@ spec:
 
 ```yaml
 apiVersion: {{ Version }} # Required. K8s-like API version.
+default: # Optional. Default to empty map.
+  computeUsage: {{ Percentage }} # Optional. Default 0%.
+  memoryUsage: {{ Percentage }} # Optional. Default 0%.
+  errorRate: {{ Percentage }} # Optional. Default 0%.
+  payloadSize: {{ DataSize }} # Optional. Default 0.
 services: # Required. List of services in the graph.
-  default: # Optional. Sets the inherited defaults of other services. Default to empty map.
-    computeUsage: {{ Percentage }} # Optional. Default 0%.
-    memoryUsage: {{ Percentage }} # Optional. Default 0%.
-    errorRate: {{ Percentage }} # Optional. Default 0%.
-    script: {{ Script }} # Optional. Default echo server. See below for spec.
   {{ ServiceName }}: # Required. Name of the service.
-    {{ overrided }}
+    computeUsage: {{ Percentage }} # Optional. Overrides default.
+    memoryUsage: {{ Percentage }} # Optional. Overrides default.
+    errorRate: {{ Percentage }} # Optional. Overrides default.
+    script: {{ Script }} # Optional. See below for spec.
+```
+
+#### Default
+
+At the global scope a `default` map may be placed to indicate settings which
+should hold for omitted settings for its current and nested scopes.
+
+Default-able settings include `computeUsage`, `memoryUsage`, `script`,
+`requestSize`, and `errorRate`.
+
+##### Example
+
+```yaml
+apiVersion: v1alpha1
+default:
+  computeUsage: 10%
+  errorRate: 0.1%
+  payloadSize: 100KB
+  # memoryUsage: 0% # Inherited from default.
+services:
+  A:
+    memoryUsage: 80%
+    script:
+    - get: B # payloadSize: 100KB # Inherited from default.
+    - get:
+        service: B
+        payloadSize: 80B
+    # computeUsage: 10% # Inherited from default.
+    # errorRate: 10% # Inherited from default.
+  B:
+    errorRate: 5%
+    # computeUsage: 10% # Inherited from default.
+    # memoryUsage: 0% # Inherited from default.
+    # script: {} # Inherited from default (acts like an echo server).
 ```
 
 #### Script
