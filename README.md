@@ -21,7 +21,9 @@ services:
     memoryUsage: 10%
   C:
     script:
-    - get: A
+    - get:
+        service: A
+        payloadSize: 1K
     - post: B
   D:
     # Call A and C concurrently, process, then call B.
@@ -234,6 +236,14 @@ sleep: {{ Duration }}
 
 ```yaml
 {{ HttpMethod }}: {{ ServiceName }}
+```
+
+OR
+
+```yaml
+{{ HttpMethod }}:
+  service: {{ ServiceName }}
+  payloadSize: {{ DataSize (e.g. 1 KB) }}
 ```
 
 ##### Examples
