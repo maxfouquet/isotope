@@ -35,13 +35,6 @@ latencies:
 endpoints:
 - C
 - D
-istioComponents:
-- gateway
-- sidecars
-- telemetry
-- policy
-- citadel
-- pilot
 ```
 
 Represents a service graph like:
@@ -221,13 +214,6 @@ endpoints: # Required. List of publicly available services. # TODO: Should this 
 latencies: # Optional. Default to "default: 0".
   default: {{ Duration }} # Optional. Default to 0.
   {{ ServiceName }}-{{ ServiceName }}: {{ Duration }} # Optional. Set the latency between two connections.
-istioComponents: # Optional. Default empty list, indicating no Istio.
-- gateway
-- sidecars # Requires gateway.
-- telemetry # Requires gateway. Enhanced by sidecars.
-- policy # Requires sidecars.
-- citadel # Requires sidecars.
-- pilot # Requires sidecars.
 ```
 
 #### Script
