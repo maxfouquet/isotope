@@ -281,11 +281,9 @@ generate Consul artifacts instead, for example.
 
 ### 2. Setup
 
-The manifest is applied to a testing cluster with automatic scaling (TODO:
-Will this be sufficient?).
-
-Istio is then injected at the configured level (TODO: Or is this covered at
-the manifest level?).
+A testing cluster is preexistent, with the desired "level" of Istio already
+installed. Therefore, the manifest only needs to be applied to the cluster via
+`kubectl apply`.
 
 Each pod in the manifest will be running the same container image (except the
 Istio images). A client will send requests to each service with their
