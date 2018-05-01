@@ -20,15 +20,15 @@ services:
     memoryUsage: 10%
   C:
     script:
-    - call: A
-    - call: B
+    - get: A
+    - post: B
   D:
     # Call A and C concurrently, process, then call B.
     script:
-    - - call: A
-      - call: C
+    - - get: A
+      - get: C
     - sleep: 10ms
-    - call: B
+    - delete: B
 latencies:
   default: 1ms
   A-C: 10ms
@@ -252,31 +252,32 @@ Each step in the script includes a command.
 sleep: {{ Duration }}
 ```
 
-`call`: Calls another service.
+`get`, `head`, `post`, `put`, `delete`, `connect`, `options`, `trace`,
+`patch`: Sends the respective HTTP request to another service.
 
 ```yaml
-call: {{ ServiceName }}
+{{ HttpMethod }}: {{ ServiceName }}
 ```
 
 ##### Examples
 
-Call B two times _sequentially_:
+Get B, then post to B _sequentially_:
 
 ```yaml
 script:
-- call: B
-- call: B
+- get: B
+- post: B
 ```
 
-Call A, B, and C _concurrently_, sleep to simulate work, and finally call D:
+GET A, B, and C _concurrently_, sleep to simulate work, and finally POST to D:
 
 ```yaml
 script:
-- - call: A
-  - call: B
-  - call: C
+- - get: A
+  - get: B
+  - get: C
 - sleep: 10ms
-- call: D
+- post: D
 ```
 
 ## Architecture and pipeline
