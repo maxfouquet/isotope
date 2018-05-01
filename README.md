@@ -13,6 +13,7 @@ services:
   A:
     computeUsage: 1%
     memoryUsage: 20%
+    errorRate: 0.01%
     script:
     - sleep: 100ms
   B:
@@ -200,6 +201,7 @@ services: # Required. List of services in the graph.
   default: # Optional. Sets the inherited defaults of other services. Default to empty map.
     computeUsage: {{ Percentage }} # Optional. Default 0%.
     memoryUsage: {{ Percentage }} # Optional. Default 0%.
+    errorRate: {{ Percentage }} # Optional. Default 0%.
     script: {{ Script }} # Optional. Default echo server. See below for spec.
   {{ ServiceName }}: # Required. Name of the service.
     {{ overrided }}
