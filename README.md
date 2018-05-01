@@ -29,9 +29,6 @@ services:
       - get: C
     - sleep: 10ms
     - delete: B
-latencies:
-  default: 1ms
-  A-C: 10ms
 endpoints:
 - C
 - D
@@ -211,9 +208,6 @@ services: # Required. List of services in the graph.
     {{ overrided }}
 endpoints: # Required. List of publicly available services. # TODO: Should this be implicit?
 {{ List[String] }}
-latencies: # Optional. Default to "default: 0".
-  default: {{ Duration }} # Optional. Default to 0.
-  {{ ServiceName }}-{{ ServiceName }}: {{ Duration }} # Optional. Set the latency between two connections.
 ```
 
 #### Script
