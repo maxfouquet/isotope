@@ -29,9 +29,6 @@ services:
       - get: C
     - sleep: 10ms
     - delete: B
-endpoints:
-- C
-- D
 ```
 
 Represents a service graph like:
@@ -206,8 +203,6 @@ services: # Required. List of services in the graph.
     script: {{ Script }} # Optional. Default echo server. See below for spec.
   {{ ServiceName }}: # Required. Name of the service.
     {{ overrided }}
-endpoints: # Required. List of publicly available services. # TODO: Should this be implicit?
-{{ List[String] }}
 ```
 
 #### Script
