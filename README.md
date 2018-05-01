@@ -14,26 +14,26 @@ default:
   computeUsage: 10%
   memoryUsage: 10%
 services:
-  A:
-    computeUsage: 50%
-    memoryUsage: 20%
-    errorRate: 0.01%
-    script:
-    - sleep: 100ms
-  B:
-  C:
-    script:
-    - get:
-        service: A
-        payloadSize: 1K
-    - post: B
-  D:
-    # Call A and C concurrently, process, then call B.
-    script:
-    - - get: A
-      - get: C
-    - sleep: 10ms
-    - delete: B
+- name: A
+  computeUsage: 50%
+  memoryUsage: 20%
+  errorRate: 0.01%
+  script:
+  - sleep: 100ms
+- name: B
+- name: C
+  script:
+  - get:
+      service: A
+      payloadSize: 1K
+  - post: B
+- name: D
+  # Call A and C concurrently, process, then call B.
+  script:
+  - - get: A
+    - get: C
+  - sleep: 10ms
+  - delete: B
 ```
 
 Represents a service graph like:
@@ -207,11 +207,11 @@ default: # Optional. Default to empty map.
   errorRate: {{ Percentage }} # Optional. Default 0%.
   payloadSize: {{ DataSize }} # Optional. Default 0.
 services: # Required. List of services in the graph.
-  {{ ServiceName }}: # Required. Name of the service.
-    computeUsage: {{ Percentage }} # Optional. Overrides default.
-    memoryUsage: {{ Percentage }} # Optional. Overrides default.
-    errorRate: {{ Percentage }} # Optional. Overrides default.
-    script: {{ Script }} # Optional. See below for spec.
+- name: {{ String }} # Required. Name of the service.
+  computeUsage: {{ Percentage }} # Optional. Overrides default.
+  memoryUsage: {{ Percentage }} # Optional. Overrides default.
+  errorRate: {{ Percentage }} # Optional. Overrides default.
+  script: {{ Script }} # Optional. See below for spec.
 ```
 
 #### Default
@@ -232,20 +232,20 @@ default:
   payloadSize: 100KB
   # memoryUsage: 0% # Inherited from default.
 services:
-  A:
-    memoryUsage: 80%
-    script:
-    - get: B # payloadSize: 100KB # Inherited from default.
-    - get:
-        service: B
-        payloadSize: 80B
-    # computeUsage: 10% # Inherited from default.
-    # errorRate: 10% # Inherited from default.
-  B:
-    errorRate: 5%
-    # computeUsage: 10% # Inherited from default.
-    # memoryUsage: 0% # Inherited from default.
-    # script: {} # Inherited from default (acts like an echo server).
+- name: A
+  memoryUsage: 80%
+  script:
+  - get: B # payloadSize: 100KB # Inherited from default.
+  - get:
+      service: B
+      payloadSize: 80B
+  # computeUsage: 10% # Inherited from default.
+  # errorRate: 10% # Inherited from default.
+- name: B
+  errorRate: 5%
+  # computeUsage: 10% # Inherited from default.
+  # memoryUsage: 0% # Inherited from default.
+  # script: {} # Inherited from default (acts like an echo server).
 ```
 
 #### Script
