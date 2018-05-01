@@ -225,11 +225,15 @@ responding to the calling service.
 
 Each step in the script includes a command.
 
+###### Sleep
+
 `sleep`: Pauses for a duration. Useful for simulating processing time.
 
 ```yaml
 sleep: {{ Duration }}
 ```
+
+###### Send Request
 
 `get`, `head`, `post`, `put`, `delete`, `connect`, `options`, `trace`,
 `patch`: Sends the respective HTTP request to another service.
