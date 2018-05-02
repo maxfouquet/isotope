@@ -142,7 +142,7 @@ func parseCommand(step interface{}, defaultPayloadSize int64) (
 	switch val := step.(type) {
 	case map[interface{}]interface{}:
 		command, err = parseSingleCommand(val, defaultPayloadSize)
-	case []map[interface{}]interface{}:
+	case []interface{}:
 		command, err = parseConcurrentCommand(val, defaultPayloadSize)
 	default:
 		err = fmt.Errorf("invalid step type %T", val)
@@ -218,6 +218,7 @@ func parseString(i interface{}) (s string, err error) {
 func parseRequestCommandMap(
 	m map[interface{}]interface{}, httpMethod HTTPMethod,
 	defaultPayloadSize int64) (command RequestCommand, err error) {
+	command.HTTPMethod = httpMethod
 	if n := len(m); n == 0 || n > 2 {
 		err = fmt.Errorf("expected at most two keys in %s step", httpMethod)
 		return
@@ -246,8 +247,21 @@ func parseRequestCommandMap(
 	return
 }
 
-func parseConcurrentCommand(impl interface{}, defaultPayloadSize int64) (
-	command ConcurrentCommand, err error) {
+func parseConcurrentCommand(list []interface{}, defaultPayloadSize int64) (
+	cCommand ConcurrentCommand, err error) {
+	for _, item := range list {
+		if m, ok := item.(map[interface{}]interface{}); ok {
+			command, err := parseSingleCommand(m, defaultPayloadSize)
+			if err != nil {
+				return cCommand, err
+			}
+			cCommand.Commands = append(cCommand.Commands, command)
+		} else {
+			err = fmt.Errorf(
+				"unexpected type %T in concurrent command; expected a map",
+				item)
+		}
+	}
 	return
 }
 
