@@ -17,11 +17,12 @@ default:
   payloadSize: 1KB
 services:
   A:
-  B:
-    computeUsage: 5%
-    memoryUsage: 1%
-    errorRate: 5%
-  C:
+    script:
+    - get: B
+    - sleep: 100ms
+    - post:
+        service: B
+        payloadSize: 512KB
 `
 
 func main() {
