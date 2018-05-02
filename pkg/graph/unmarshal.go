@@ -62,31 +62,22 @@ type defaultSettings struct {
 	RequestSettings
 }
 
-func parsePercentageWithDefault(s *string, d float64) (f float64, err error) {
-	if s == nil {
-		f = d
-	} else {
-		f, err = parsePercentage(*s)
-	}
-	return
-}
-
 func parseDefaultSettings(
 	yaml yamlDefaultSettings) (settings defaultSettings, err error) {
 	if yaml.ComputeUsage != nil {
-		settings.ComputeUsage, err = parsePercentage(*yaml.ComputeUsage)
+		settings.ComputeUsage, err = parseFloat(*yaml.ComputeUsage)
 		if err != nil {
 			return
 		}
 	}
 	if yaml.MemoryUsage != nil {
-		settings.MemoryUsage, err = parsePercentage(*yaml.MemoryUsage)
+		settings.MemoryUsage, err = parseFloat(*yaml.MemoryUsage)
 		if err != nil {
 			return
 		}
 	}
 	if yaml.ErrorRate != nil {
-		settings.ErrorRate, err = parsePercentage(*yaml.ErrorRate)
+		settings.ErrorRate, err = parseFloat(*yaml.ErrorRate)
 		if err != nil {
 			return
 		}
@@ -103,18 +94,38 @@ func parseDefaultSettings(
 func parseServiceSettings(
 	yaml yamlServiceSettings,
 	defaults ServiceSettings) (settings ServiceSettings, err error) {
-	settings.ComputeUsage, err = parsePercentageWithDefault(
+	settings.ComputeUsage, err = parseFloatWithDefault(
 		yaml.ComputeUsage, defaults.ComputeUsage)
 	if err != nil {
 		return
 	}
-	settings.MemoryUsage, err = parsePercentageWithDefault(
+	settings.MemoryUsage, err = parseFloatWithDefault(
 		yaml.MemoryUsage, defaults.MemoryUsage)
 	if err != nil {
 		return
 	}
-	settings.ErrorRate, err = parsePercentageWithDefault(
+	settings.ErrorRate, err = parseFloatWithDefault(
 		yaml.ErrorRate, defaults.ErrorRate)
+	return
+}
+
+// parseFloatWithDefault tries to parse s, which is either a percentage of the
+// form "X.X%" or a float. If s is nil, return d.
+func parseFloatWithDefault(s *string, d float64) (f float64, err error) {
+	if s == nil {
+		f = d
+	} else {
+		f, err = parseFloat(*s)
+	}
+	return
+}
+
+func parseFloat(s string) (f float64, err error) {
+	if strings.Contains(s, "%") {
+		f, err = parsePercentage(s)
+	} else {
+		f, err = strconv.ParseFloat(s, 64)
+	}
 	return
 }
 
