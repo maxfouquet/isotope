@@ -11,8 +11,10 @@ import (
 var data = `
 apiVersion: v1alpha1
 default:
+  computeUsage: 1%
   memoryUsage: 10%
-  payloadSize: 1024
+  errorRate: 5%
+  payloadSize: 1KB
 services:
   A:
     computeUsage: 10%
@@ -20,6 +22,7 @@ services:
     computeUsage: 5%
     memoryUsage: 1%
     errorRate: 5%
+  C:
 `
 
 func main() {
