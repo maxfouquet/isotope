@@ -7,7 +7,6 @@ import (
 	"time"
 
 	units "github.com/docker/go-units"
-	yaml "gopkg.in/yaml.v2"
 )
 
 // UnmarshalYAML implements the Unmarshaler interface and fills the ServiceGraph
@@ -195,27 +194,54 @@ func parseRequestCommand(
 	impl interface{}, httpMethod HTTPMethod, defaultPayloadSize int64) (
 	command RequestCommand, err error) {
 	command.Method = httpMethod
-	if s, ok := impl.(string); ok {
-		command.ServiceName = s
+	switch val := impl.(type) {
+	case string:
+		command.ServiceName = val
 		command.PayloadSize = defaultPayloadSize
-	} else if _, ok := impl.(map[interface{}]interface{}); ok {
-		// TODO: Should just use map directly.
-		var request struct {
-			ServiceName string `yaml:"service"`
-			PayloadSize string `yaml:"payloadSize"`
-		}
-		yamlString, err := yaml.Marshal(impl)
-		if err != nil {
-			return command, err
-		}
-		err = yaml.Unmarshal(yamlString, &request)
-		if err != nil {
-			return command, err
-		}
-		command.ServiceName = request.ServiceName
-		command.PayloadSize, err = units.FromHumanSize(request.PayloadSize)
-	} else {
+	case map[interface{}]interface{}:
+		command, err = parseRequestCommandMap(
+			val, httpMethod, defaultPayloadSize)
+	default:
 		err = fmt.Errorf("unknown type of request command: %s", impl)
+	}
+	return
+}
+
+func parseString(i interface{}) (s string, err error) {
+	s, ok := i.(string)
+	if !ok {
+		err = fmt.Errorf("could not convert %v to a string", i)
+	}
+	return
+}
+
+func parseRequestCommandMap(
+	m map[interface{}]interface{}, httpMethod HTTPMethod,
+	defaultPayloadSize int64) (command RequestCommand, err error) {
+	if n := len(m); n == 0 || n > 2 {
+		err = fmt.Errorf("expected at most two keys in %s step", httpMethod)
+		return
+	}
+
+	if key, ok := m["service"]; ok {
+		name, err := parseString(key)
+		if err != nil {
+			return command, err
+		}
+		command.ServiceName = name
+	} else {
+		err = fmt.Errorf("expected service in %s step", httpMethod)
+		return
+	}
+
+	if key, ok := m["payloadSize"]; ok {
+		humanSize, err := parseString(key)
+		if err != nil {
+			return command, err
+		}
+		command.PayloadSize, err = units.FromHumanSize(humanSize)
+	} else {
+		command.PayloadSize = defaultPayloadSize
 	}
 	return
 }
