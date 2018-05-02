@@ -14,37 +14,37 @@ type Executable interface {
 type HTTPMethod string
 
 const (
-	MethodGet     HTTPMethod = "GET"
-	MethodHead    HTTPMethod = "HEAD"
-	MethodPost    HTTPMethod = "POST"
-	MethodPut     HTTPMethod = "PUT"
-	MethodPatch   HTTPMethod = "PATCH"
-	MethodDelete  HTTPMethod = "DELETE"
-	MethodConnect HTTPMethod = "CONNECT"
-	MethodOptions HTTPMethod = "OPTIONS"
-	MethodTrace   HTTPMethod = "TRACE"
+	HTTPGet     HTTPMethod = "GET"
+	HTTPHead    HTTPMethod = "HEAD"
+	HTTPPost    HTTPMethod = "POST"
+	HTTPPut     HTTPMethod = "PUT"
+	HTTPPatch   HTTPMethod = "PATCH"
+	HTTPDelete  HTTPMethod = "DELETE"
+	HTTPConnect HTTPMethod = "CONNECT"
+	HTTPOptions HTTPMethod = "OPTIONS"
+	HTTPTrace   HTTPMethod = "TRACE"
 )
 
 func HTTPMethodFromString(s string) (m HTTPMethod, err error) {
 	switch upper := strings.ToUpper(s); upper {
-	case string(MethodGet):
-		m = MethodGet
-	case string(MethodHead):
-		m = MethodHead
-	case string(MethodPost):
-		m = MethodPost
-	case string(MethodPut):
-		m = MethodPut
-	case string(MethodPatch):
-		m = MethodPatch
-	case string(MethodDelete):
-		m = MethodDelete
-	case string(MethodConnect):
-		m = MethodConnect
-	case string(MethodOptions):
-		m = MethodOptions
-	case string(MethodTrace):
-		m = MethodTrace
+	case string(HTTPGet):
+		m = HTTPGet
+	case string(HTTPHead):
+		m = HTTPHead
+	case string(HTTPPost):
+		m = HTTPPost
+	case string(HTTPPut):
+		m = HTTPPut
+	case string(HTTPPatch):
+		m = HTTPPatch
+	case string(HTTPDelete):
+		m = HTTPDelete
+	case string(HTTPConnect):
+		m = HTTPConnect
+	case string(HTTPOptions):
+		m = HTTPOptions
+	case string(HTTPTrace):
+		m = HTTPTrace
 	default:
 		err = fmt.Errorf("%s is not a valid HTTP method", s)
 	}
@@ -72,11 +72,11 @@ func (c ConcurrentCommand) Execute() error {
 type RequestCommand struct {
 	RequestSettings
 	ServiceName string
-	Method      HTTPMethod
+	HTTPMethod  HTTPMethod
 }
 
 func (c RequestCommand) Execute() error {
-	// TODO: Send c.Method request to c.ServiceName with c.Settings.
+	// TODO: Send c.HTTPMethod request to c.ServiceName with c.Settings.
 	return nil
 }
 
