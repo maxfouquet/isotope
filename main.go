@@ -13,11 +13,10 @@ apiVersion: v1alpha1
 default:
   computeUsage: 1%
   memoryUsage: 10%
-  errorRate: 5%
+  errorRate: 0.05
   payloadSize: 1KB
 services:
   A:
-    computeUsage: 10%
   B:
     computeUsage: 5%
     memoryUsage: 1%
