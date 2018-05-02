@@ -18,7 +18,8 @@ default:
 services:
   A:
     script:
-    - get: B
+    - - get: B
+      - get: C
     - sleep: 100ms
     - post:
         service: B
