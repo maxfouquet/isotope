@@ -1,0 +1,40 @@
+digraph {
+    node [
+        fontsize = "16"
+        fontname = "courier"
+        shape = plaintext
+    ];
+
+    A [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+  <TR><TD><B>A</B><BR />CPU: 50%<BR />RAM: 20%<BR />Err: 0.01%</TD></TR>
+  <TR><TD PORT="0">SLEEP 100ms</TD></TR>
+</TABLE>>];
+
+    B [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+  <TR><TD><B>B</B><BR />CPU: 10%<BR />RAM: 10%<BR />Err: 0%</TD></TR>
+</TABLE>>];
+
+    C [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+  <TR><TD><B>C</B><BR />CPU: 10%<BR />RAM: 10%<BR />Err: 0%</TD></TR>
+  <TR><TD PORT="0">GET "A" 10K</TD></TR>
+  <TR><TD PORT="1">POST "B" 1K</TD></TR>
+</TABLE>>];
+
+    D [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+  <TR><TD><B>D</B><BR />CPU: 10%<BR />RAM: 10%<BR />Err: 0%</TD></TR>
+  <TR><TD PORT="0">GET "A" 1K<BR />GET "C" 1K</TD></TR>
+  <TR><TD PORT="1">SLEEP 10ms</TD></TR>
+  <TR><TD PORT="2">DELETE "B" 1K</TD></TR>
+</TABLE>>];
+
+    C:0 -> A
+    C:1 -> B
+
+    D:0 -> A
+    D:0 -> C
+    D:2 -> B
+}

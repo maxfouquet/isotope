@@ -25,7 +25,7 @@ services:
     script:
     - get:
         service: A
-        payloadSize: 1K
+        payloadSize: 10K
     - post: B
   D:
     # Call A and C concurrently, process, then call B.
