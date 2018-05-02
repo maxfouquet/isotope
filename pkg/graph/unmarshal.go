@@ -193,7 +193,7 @@ func parseSleepCommand(yaml interface{}) (command SleepCommand, err error) {
 func parseRequestCommand(
 	impl interface{}, httpMethod HTTPMethod, defaultPayloadSize int64) (
 	command RequestCommand, err error) {
-	command.Method = httpMethod
+	command.HTTPMethod = httpMethod
 	switch val := impl.(type) {
 	case string:
 		command.ServiceName = val
