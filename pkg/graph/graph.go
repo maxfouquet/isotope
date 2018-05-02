@@ -1,9 +1,12 @@
 package graph
 
+// ServiceGraph describes a set of services which mock a service-oriented
+// architecture.
 type ServiceGraph struct {
 	Services map[string]Service
 }
 
+// Service describes a service in the service graph.
 type Service struct {
 	ServiceSettings
 	Name string
@@ -13,6 +16,8 @@ type Service struct {
 
 // ServiceSettings describes the configurable settings for a service.
 type ServiceSettings struct {
+	// ComputeUsage is the percentage of CPU power that should be used during
+	// script execution.
 	ComputeUsage float64
 	// MemoryUsage is the percentage of memory that should be used during script
 	// execution.

@@ -7,12 +7,16 @@ import (
 	"time"
 )
 
+// Executable is the top-level interface for commands.
 type Executable interface {
 	Execute() error
 }
 
+// HTTPMethod is an enum-like string type describing any of the HTTP request
+// method: https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods.
 type HTTPMethod string
 
+// Each constant below is a possible HTTP request method.
 const (
 	HTTPGet     HTTPMethod = "GET"
 	HTTPHead    HTTPMethod = "HEAD"
@@ -25,6 +29,7 @@ const (
 	HTTPTrace   HTTPMethod = "TRACE"
 )
 
+// HTTPMethodFromString case-insensitively converts a string to a HTTPMethod.
 func HTTPMethodFromString(s string) (m HTTPMethod, err error) {
 	switch upper := strings.ToUpper(s); upper {
 	case string(HTTPGet):
@@ -51,10 +56,14 @@ func HTTPMethodFromString(s string) (m HTTPMethod, err error) {
 	return
 }
 
+// ConcurrentCommand describes a set of commands that should be executed
+// simultaneously.
 type ConcurrentCommand struct {
 	Commands []Executable
 }
 
+// Execute calls each command in c.Commands asynchronously and waits for each to
+// complete.
 func (c ConcurrentCommand) Execute() error {
 	wg := sync.WaitGroup{}
 	wg.Add(len(c.Commands))
@@ -69,21 +78,26 @@ func (c ConcurrentCommand) Execute() error {
 	return nil
 }
 
+// RequestCommand describes a command to send an HTTP request to another
+// service.
 type RequestCommand struct {
 	RequestSettings
 	ServiceName string
 	HTTPMethod  HTTPMethod
 }
 
+// Execute sends an HTTP request to another service.
 func (c RequestCommand) Execute() error {
 	// TODO: Send c.HTTPMethod request to c.ServiceName with c.Settings.
 	return nil
 }
 
+// SleepCommand describes a command to pause for a duration.
 type SleepCommand struct {
 	Duration time.Duration
 }
 
+// Execute sleeps for c.Duration.
 func (c SleepCommand) Execute() error {
 	time.Sleep(c.Duration)
 	return nil
