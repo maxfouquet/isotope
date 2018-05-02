@@ -90,7 +90,7 @@ func parseDefaultSettings(
 		}
 	}
 	if yaml.PayloadSize != nil {
-		settings.PayloadSize, err = units.FromHumanSize(*yaml.PayloadSize)
+		settings.PayloadSize, err = units.RAMInBytes(*yaml.PayloadSize)
 		if err != nil {
 			return
 		}
@@ -240,7 +240,7 @@ func parseRequestCommandMap(
 		if err != nil {
 			return command, err
 		}
-		command.PayloadSize, err = units.FromHumanSize(humanSize)
+		command.PayloadSize, err = units.RAMInBytes(humanSize)
 	} else {
 		command.PayloadSize = defaultPayloadSize
 	}
