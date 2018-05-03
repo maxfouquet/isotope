@@ -5,106 +5,222 @@ import (
 	"bytes"
 	"fmt"
 	"text/template"
+	"time"
+
+	"github.com/docker/go-units"
+
+	"github.com/Tahler/service-grapher/pkg/graph"
 )
 
 func main() {
 	// TODO: args
 	// TODO: convert yaml to svcgraph
-	// TODO: convert svcgraph to values
-	values := graphvizValues{
-		Services: []Service{
-			Service{
-				Name:         "A",
-				ComputeUsage: "50%",
-				MemoryUsage:  "20%",
-				ErrorRate:    "0.01%",
-				Steps: [][]string{
-					[]string{
-						"SLEEP 100ms",
+	serviceGraph := graph.ServiceGraph{
+		Services: map[string]graph.Service{
+			"A": graph.Service{
+				Name: "A",
+				ServiceSettings: graph.ServiceSettings{
+					ComputeUsage: 0.5,
+					MemoryUsage:  0.2,
+					ErrorRate:    0.0001,
+				},
+				Script: []graph.Executable{
+					graph.SleepCommand{
+						Duration: 100 * time.Millisecond,
 					},
 				},
 			},
-			Service{
-				Name:         "B",
-				ComputeUsage: "10%",
-				MemoryUsage:  "10%",
-				ErrorRate:    "0%",
+			"B": graph.Service{
+				Name: "B",
+				ServiceSettings: graph.ServiceSettings{
+					ComputeUsage: 0.1,
+					MemoryUsage:  0.1,
+					ErrorRate:    0,
+				},
 			},
-			Service{
-				Name:         "C",
-				ComputeUsage: "10%",
-				MemoryUsage:  "10%",
-				ErrorRate:    "0%",
-				Steps: [][]string{
-					[]string{
-						"GET \"A\" 10K",
+			"C": graph.Service{
+				Name: "C",
+				ServiceSettings: graph.ServiceSettings{
+					ComputeUsage: 0.1,
+					MemoryUsage:  0.1,
+					ErrorRate:    0,
+				},
+				Script: []graph.Executable{
+					graph.RequestCommand{
+						HTTPMethod:  "GET",
+						ServiceName: "A",
+						RequestSettings: graph.RequestSettings{
+							PayloadSize: 10240,
+						},
 					},
-					[]string{
-						"POST \"B\" 1K",
+					graph.RequestCommand{
+						HTTPMethod:  "POST",
+						ServiceName: "B",
+						RequestSettings: graph.RequestSettings{
+							PayloadSize: 1024,
+						},
 					},
 				},
 			},
-			Service{
-				Name:         "D",
-				ComputeUsage: "10%",
-				MemoryUsage:  "10%",
-				ErrorRate:    "0%",
-				Steps: [][]string{
-					[]string{
-						"GET \"A\" 1K",
-						"GET \"C\" 1K",
+			"D": graph.Service{
+				Name: "D",
+				ServiceSettings: graph.ServiceSettings{
+					ComputeUsage: 0.1,
+					MemoryUsage:  0.1,
+					ErrorRate:    0,
+				},
+				Script: []graph.Executable{
+					graph.ConcurrentCommand{
+						Commands: []graph.Executable{
+							graph.RequestCommand{
+								HTTPMethod:  "GET",
+								ServiceName: "A",
+								RequestSettings: graph.RequestSettings{
+									PayloadSize: 1024,
+								},
+							},
+							graph.RequestCommand{
+								HTTPMethod:  "GET",
+								ServiceName: "C",
+								RequestSettings: graph.RequestSettings{
+									PayloadSize: 1024,
+								},
+							},
+						},
 					},
-					[]string{
-						"SLEEP 10ms",
+					graph.SleepCommand{
+						Duration: 10 * time.Millisecond,
 					},
-					[]string{
-						"DELETE \"B\" 1K",
+					graph.RequestCommand{
+						HTTPMethod:  "DELETE",
+						ServiceName: "B",
+						RequestSettings: graph.RequestSettings{
+							PayloadSize: 1024,
+						},
 					},
 				},
-			},
-		},
-		Connections: []Connection{
-			Connection{
-				From:      "D",
-				To:        "A",
-				StepIndex: 0,
-			},
-			Connection{
-				From:      "D",
-				To:        "C",
-				StepIndex: 0,
-			},
-			Connection{
-				From:      "D",
-				To:        "B",
-				StepIndex: 2,
-			},
-			Connection{
-				From:      "C",
-				To:        "A",
-				StepIndex: 0,
-			},
-			Connection{
-				From:      "C",
-				To:        "B",
-				StepIndex: 1,
 			},
 		},
 	}
-	s, err := fromTemplate(values)
+	g := toGraphvizGraph(serviceGraph)
+	s, err := toString(g)
 	panicIfErr(err)
 	fmt.Println(s)
+
 	// f, _ := os.Create("output.gv")
 	// defer f.Close()
 	// f.WriteString(s)
 }
 
-type graphvizValues struct {
-	Services    []Service
-	Connections []Connection
+func toGraphvizGraph(sg graph.ServiceGraph) graphvizGraph {
+	nodes := make([]node, 0, len(sg.Services))
+	edges := make([]edge, 0, len(sg.Services))
+	for _, service := range sg.Services {
+		node, connections := toGraphvizNode(service)
+		nodes = append(nodes, node)
+		for _, connection := range connections {
+			edges = append(edges, connection)
+		}
+	}
+	return graphvizGraph{
+		Nodes: nodes,
+		Edges: edges,
+	}
 }
 
-type Service struct {
+func getEdgesFromExe(
+	exe graph.Executable, idx int, fromServiceName string) (edges []edge) {
+	switch cmd := exe.(type) {
+	case graph.ConcurrentCommand:
+		for _, subCmd := range cmd.Commands {
+			subEdges := getEdgesFromExe(subCmd, idx, fromServiceName)
+			for _, e := range subEdges {
+				edges = append(edges, e)
+			}
+		}
+	case graph.RequestCommand:
+		e := edge{
+			From:      fromServiceName,
+			To:        cmd.ServiceName,
+			StepIndex: idx,
+		}
+		edges = append(edges, e)
+	case graph.SleepCommand:
+	default:
+	}
+	return
+}
+
+func toGraphvizNode(service graph.Service) (node, []edge) {
+	steps := make([][]string, 0, len(service.Script))
+	edges := make([]edge, 0, len(service.Script))
+	for idx, exe := range service.Script {
+		step, err := executableToStringSlice(exe)
+		panicIfErr(err)
+		steps = append(steps, step)
+
+		stepEdges := getEdgesFromExe(exe, idx, service.Name)
+		for _, e := range stepEdges {
+			edges = append(edges, e)
+		}
+	}
+	n := node{
+		Name:         service.Name,
+		ComputeUsage: toPercentage(service.ComputeUsage),
+		MemoryUsage:  toPercentage(service.MemoryUsage),
+		ErrorRate:    toPercentage(service.ErrorRate),
+		Steps:        steps,
+	}
+	return n, edges
+}
+
+func nonConcurrentCommandToString(exe graph.Executable) (s string, err error) {
+	switch cmd := exe.(type) {
+	case graph.SleepCommand:
+		s = fmt.Sprintf("SLEEP %s", cmd.Duration)
+	case graph.RequestCommand:
+		readablePayloadSize := units.BytesSize(float64(cmd.PayloadSize))
+		s = fmt.Sprintf(
+			"%s \"%s\" %s",
+			cmd.HTTPMethod, cmd.ServiceName, readablePayloadSize)
+	default:
+		err = fmt.Errorf("unexpected type of executable %T", exe)
+	}
+	return
+}
+
+func executableToStringSlice(exe graph.Executable) (ss []string, err error) {
+	appendNonConcurrentExe := func(exe graph.Executable) {
+		s, err := nonConcurrentCommandToString(exe)
+		panicIfErr(err)
+		ss = append(ss, s)
+	}
+	switch cmd := exe.(type) {
+	case graph.SleepCommand:
+		appendNonConcurrentExe(exe)
+	case graph.RequestCommand:
+		appendNonConcurrentExe(exe)
+	case graph.ConcurrentCommand:
+		for _, exe := range cmd.Commands {
+			appendNonConcurrentExe(exe)
+		}
+	default:
+		err = fmt.Errorf("unexpected type of executable %T", exe)
+	}
+	return
+}
+
+func toPercentage(f float64) string {
+	p := f * 100
+	return fmt.Sprintf("%.1f%%", p)
+}
+
+type graphvizGraph struct {
+	Nodes []node
+	Edges []edge
+}
+
+type node struct {
 	Name         string
 	ComputeUsage string
 	MemoryUsage  string
@@ -112,7 +228,7 @@ type Service struct {
 	Steps        [][]string
 }
 
-type Connection struct {
+type edge struct {
 	From      string
 	To        string
 	StepIndex int
@@ -124,7 +240,7 @@ const graphvizTemplate = `digraph {
         shape = plaintext
     ];
 
-    {{ range .Services -}}
+    {{ range .Nodes -}}
     {{ .Name }} [label=<
 <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
   <TR><TD><B>{{ .Name }}</B><BR />CPU: {{ .ComputeUsage }}<BR />RAM: {{ .MemoryUsage }}<BR />Err: {{ .ErrorRate }}</TD></TR>
@@ -140,7 +256,7 @@ const graphvizTemplate = `digraph {
 
 	{{ end }}
 
-    {{- range .Connections }}
+    {{- range .Edges }}
     {{ .From -}}:{{- .StepIndex }} -> {{ .To }}
     {{- end }}
 }
@@ -152,13 +268,13 @@ func panicIfErr(err error) {
 	}
 }
 
-func fromTemplate(values graphvizValues) (s string, err error) {
+func toString(g graphvizGraph) (s string, err error) {
 	tmpl, err := template.New("digraph").Parse(graphvizTemplate)
 	if err != nil {
 		return
 	}
 	var b bytes.Buffer
-	if err = tmpl.Execute(&b, values); err == nil {
+	if err = tmpl.Execute(&b, g); err == nil {
 		s = b.String()
 	}
 	return
