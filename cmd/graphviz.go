@@ -23,7 +23,7 @@ var graphvizCmd = &cobra.Command{
 		err = yaml.Unmarshal(yamlContents, &serviceGraph)
 		exitIfError(err)
 
-		dotLang, err := graphviz.FromServiceGraph(serviceGraph)
+		dotLang, err := graphviz.ServiceGraphToDotLanguage(serviceGraph)
 		exitIfError(err)
 
 		outFileName := args[1]
