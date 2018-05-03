@@ -4,6 +4,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"text/template"
 
@@ -13,42 +14,14 @@ import (
 	"github.com/Tahler/service-grapher/pkg/graph"
 )
 
-var data = `
-apiVersion: v1alpha1
-default:
-  payloadSize: 1 KB
-  computeUsage: 10%
-  memoryUsage: 10%
-services:
-  A:
-    computeUsage: 50%
-    memoryUsage: 20%
-    errorRate: 0.01%
-    script:
-    - sleep: 100ms
-  B:
-  C:
-    script:
-    - get:
-        service: A
-        payloadSize: 10K
-    - post: B
-  D:
-    # Call A and C concurrently, process, then call B.
-    script:
-    - - get: A
-      - get: C
-    - sleep: 10ms
-    - delete: B
-`
-
 func main() {
 	// TODO: args
-	// yamlContents := readStringFromFile("input.yaml")
-	yamlContents := []byte(data)
+
+	yamlContents, err := ioutil.ReadFile("input.yaml")
+	panicIfErr(err)
 
 	var serviceGraph graph.ServiceGraph
-	err := yaml.Unmarshal(yamlContents, &serviceGraph)
+	err = yaml.Unmarshal(yamlContents, &serviceGraph)
 	panicIfErr(err)
 
 	g := toGraphvizGraph(serviceGraph)
