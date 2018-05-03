@@ -8,6 +8,18 @@
   version = "v0.3.3"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/errwrap"
+  packages = ["."]
+  revision = "7554cd9344cec97297fa6649b055a8c98c2a1e55"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/go-multierror"
+  packages = ["."]
+  revision = "b7773ae218740a7be65057fc60b366a49b538a44"
+
+[[projects]]
   name = "github.com/inconshreveable/mousetrap"
   packages = ["."]
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
@@ -34,6 +46,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3e319b860a65115245e2e52a5df8aaa92365bf6a4180e43c0de7e7953970e3d0"
+  inputs-digest = "4a43dee3032c789e0b1c81a6536e137e3725a944d1410989ebb96159acb23596"
   solver-name = "gps-cdcl"
   solver-version = 1

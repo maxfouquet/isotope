@@ -5,6 +5,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	multierror "github.com/hashicorp/go-multierror"
 )
 
 // Executable is the top-level interface for commands.
@@ -67,10 +69,11 @@ type ConcurrentCommand struct {
 func (c ConcurrentCommand) Execute() error {
 	wg := sync.WaitGroup{}
 	wg.Add(len(c.Commands))
+	var err error
 	for _, cmd := range c.Commands {
 		go func(exe Executable) {
-			// TODO: Handle error.
-			exe.Execute()
+			exeErr := exe.Execute()
+			err = multierror.Append(err, exeErr)
 			wg.Done()
 		}(cmd)
 	}
