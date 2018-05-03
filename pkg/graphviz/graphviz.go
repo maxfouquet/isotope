@@ -1,5 +1,5 @@
-// Converts a YAML document into a PNG via graphviz.
-package main
+// Package graphviz converts service graphs into Graphviz DOT language.
+package graphviz
 
 import (
 	"bytes"
@@ -7,9 +7,24 @@ import (
 	"text/template"
 
 	"github.com/docker/go-units"
+	yaml "gopkg.in/yaml.v2"
 
 	"github.com/Tahler/service-grapher/pkg/graph"
 )
+
+// FromYAML converts a YAML string to a Graphviz DOT language string.
+func FromYAML(yamlContents []byte) (dotLang string, err error) {
+	var serviceGraph graph.ServiceGraph
+	err = yaml.Unmarshal(yamlContents, &serviceGraph)
+	if err != nil {
+		return
+	}
+
+	g := toGraphvizGraph(serviceGraph)
+
+	dotLang, err = toGraphvizDotLanguage(g)
+	return
+}
 
 func toGraphvizGraph(sg graph.ServiceGraph) graphvizGraph {
 	nodes := make([]node, 0, len(sg.Services))
