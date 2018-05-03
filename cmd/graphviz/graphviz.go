@@ -6,104 +6,53 @@ import (
 	"fmt"
 	"os"
 	"text/template"
-	"time"
 
 	"github.com/docker/go-units"
+	yaml "gopkg.in/yaml.v2"
 
 	"github.com/Tahler/service-grapher/pkg/graph"
 )
 
+var data = `
+apiVersion: v1alpha1
+default:
+  payloadSize: 1 KB
+  computeUsage: 10%
+  memoryUsage: 10%
+services:
+  A:
+    computeUsage: 50%
+    memoryUsage: 20%
+    errorRate: 0.01%
+    script:
+    - sleep: 100ms
+  B:
+  C:
+    script:
+    - get:
+        service: A
+        payloadSize: 10K
+    - post: B
+  D:
+    # Call A and C concurrently, process, then call B.
+    script:
+    - - get: A
+      - get: C
+    - sleep: 10ms
+    - delete: B
+`
+
 func main() {
 	// TODO: args
-	// TODO: convert yaml to svcgraph
-	serviceGraph := graph.ServiceGraph{
-		Services: map[string]graph.Service{
-			"A": graph.Service{
-				Name: "A",
-				ServiceSettings: graph.ServiceSettings{
-					ComputeUsage: 0.5,
-					MemoryUsage:  0.2,
-					ErrorRate:    0.0001,
-				},
-				Script: []graph.Executable{
-					graph.SleepCommand{
-						Duration: 100 * time.Millisecond,
-					},
-				},
-			},
-			"B": graph.Service{
-				Name: "B",
-				ServiceSettings: graph.ServiceSettings{
-					ComputeUsage: 0.1,
-					MemoryUsage:  0.1,
-					ErrorRate:    0,
-				},
-			},
-			"C": graph.Service{
-				Name: "C",
-				ServiceSettings: graph.ServiceSettings{
-					ComputeUsage: 0.1,
-					MemoryUsage:  0.1,
-					ErrorRate:    0,
-				},
-				Script: []graph.Executable{
-					graph.RequestCommand{
-						HTTPMethod:  "GET",
-						ServiceName: "A",
-						RequestSettings: graph.RequestSettings{
-							PayloadSize: 10240,
-						},
-					},
-					graph.RequestCommand{
-						HTTPMethod:  "POST",
-						ServiceName: "B",
-						RequestSettings: graph.RequestSettings{
-							PayloadSize: 1024,
-						},
-					},
-				},
-			},
-			"D": graph.Service{
-				Name: "D",
-				ServiceSettings: graph.ServiceSettings{
-					ComputeUsage: 0.1,
-					MemoryUsage:  0.1,
-					ErrorRate:    0,
-				},
-				Script: []graph.Executable{
-					graph.ConcurrentCommand{
-						Commands: []graph.Executable{
-							graph.RequestCommand{
-								HTTPMethod:  "GET",
-								ServiceName: "A",
-								RequestSettings: graph.RequestSettings{
-									PayloadSize: 1024,
-								},
-							},
-							graph.RequestCommand{
-								HTTPMethod:  "GET",
-								ServiceName: "C",
-								RequestSettings: graph.RequestSettings{
-									PayloadSize: 1024,
-								},
-							},
-						},
-					},
-					graph.SleepCommand{
-						Duration: 10 * time.Millisecond,
-					},
-					graph.RequestCommand{
-						HTTPMethod:  "DELETE",
-						ServiceName: "B",
-						RequestSettings: graph.RequestSettings{
-							PayloadSize: 1024,
-						},
-					},
-				},
-			},
-		},
-	}
+	// yamlContents := readStringFromFile("input.yaml")
+	yamlContents := []byte(data)
+
+	var serviceGraph graph.ServiceGraph
+	err := yaml.Unmarshal(yamlContents, &serviceGraph)
+	panicIfErr(err)
+
 	g := toGraphvizGraph(serviceGraph)
+
 	s, err := toString(g)
 	panicIfErr(err)
 	err = writeStringToFile(s, "output.gv")
