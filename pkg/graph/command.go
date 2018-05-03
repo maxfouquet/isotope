@@ -69,11 +69,11 @@ type ConcurrentCommand struct {
 func (c ConcurrentCommand) Execute() error {
 	wg := sync.WaitGroup{}
 	wg.Add(len(c.Commands))
-	var err error
+	var errs *multierror.Error
 	for _, cmd := range c.Commands {
 		go func(exe Executable) {
-			exeErr := exe.Execute()
-			err = multierror.Append(err, exeErr)
+			err := exe.Execute()
+			errs = multierror.Append(errs, err)
 			wg.Done()
 		}(cmd)
 	}
