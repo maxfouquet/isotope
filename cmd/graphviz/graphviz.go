@@ -167,7 +167,7 @@ func panicIfErr(err error) {
 	}
 }
 
-func toString(g graphvizGraph) (s string, err error) {
+func toGraphvizDotLanguage(g graphvizGraph) (s string, err error) {
 	tmpl, err := template.New("digraph").Parse(graphvizTemplate)
 	if err != nil {
 		return
