@@ -19,7 +19,7 @@ func main() {
 
 	g := toGraphvizGraph(serviceGraph)
 
-	s, err := toString(g)
+	s, err := toGraphvizDotLanguage(g)
 	panicIfErr(err)
 
 	err = ioutil.WriteFile("output.gv", []byte(s), 0644)
