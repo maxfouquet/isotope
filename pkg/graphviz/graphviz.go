@@ -11,10 +11,11 @@ import (
 	"github.com/Tahler/service-grapher/pkg/graph"
 )
 
-// FromServiceGraph converts a ServiceGraph to a Graphviz DOT language string.
-func FromServiceGraph(
+// ServiceGraphToDotLanguage converts a ServiceGraph to a Graphviz DOT language
+// string.
+func ServiceGraphToDotLanguage(
 	serviceGraph graph.ServiceGraph) (dotLang string, err error) {
-	graph, err := toGraphvizGraph(serviceGraph)
+	graph, err := ServiceGraphToGraph(serviceGraph)
 	if err != nil {
 		return
 	}
@@ -22,7 +23,8 @@ func FromServiceGraph(
 	return
 }
 
-// GraphToDotLanguage converts a graphviz graph to a string via a template.
+// GraphToDotLanguage converts a graphviz graph to a Graphviz DOT language
+// string via a template.
 func GraphToDotLanguage(g Graph) (dotLang string, err error) {
 	tmpl, err := template.New("digraph").Parse(graphvizTemplate)
 	if err != nil {
@@ -33,6 +35,26 @@ func GraphToDotLanguage(g Graph) (dotLang string, err error) {
 		dotLang = b.String()
 	}
 	return
+}
+
+// ServiceGraphToGraph converts a service graph to a graphviz graph.
+func ServiceGraphToGraph(sg graph.ServiceGraph) (Graph, error) {
+	nodes := make([]Node, 0, len(sg.Services))
+	edges := make([]Edge, 0, len(sg.Services))
+	for _, service := range sg.Services {
+		node, connections, err := toGraphvizNode(service)
+		if err != nil {
+			return Graph{}, err
+		}
+		nodes = append(nodes, node)
+		for _, connection := range connections {
+			edges = append(edges, connection)
+		}
+	}
+	return Graph{
+		Nodes: nodes,
+		Edges: edges,
+	}, nil
 }
 
 // Graph represents a Graphviz graph.
@@ -57,24 +79,33 @@ type Edge struct {
 	StepIndex int
 }
 
-func toGraphvizGraph(sg graph.ServiceGraph) (Graph, error) {
-	nodes := make([]Node, 0, len(sg.Services))
-	edges := make([]Edge, 0, len(sg.Services))
-	for _, service := range sg.Services {
-		node, connections, err := toGraphvizNode(service)
-		if err != nil {
-			return Graph{}, err
-		}
-		nodes = append(nodes, node)
-		for _, connection := range connections {
-			edges = append(edges, connection)
-		}
-	}
-	return Graph{
-		Nodes: nodes,
-		Edges: edges,
-	}, nil
+const graphvizTemplate = `digraph {
+  node [
+    fontsize = "16"
+    shape = plaintext
+  ];
+
+  {{ range .Nodes -}}
+  {{ .Name }} [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+  <TR><TD><B>{{ .Name }}</B><BR />CPU: {{ .ComputeUsage }}<BR />RAM: {{ .MemoryUsage }}<BR />Err: {{ .ErrorRate }}</TD></TR>
+  {{- range $i, $cmds := .Steps }}
+  <TR><TD PORT="{{ $i }}">
+  {{- range $j, $cmd := $cmds -}}
+    {{- if $j -}}<BR />{{- end -}}
+    {{- $cmd -}}
+  {{- end -}}
+  </TD></TR>
+  {{- end }}
+</TABLE>>];
+
+  {{ end }}
+
+  {{- range .Edges }}
+  {{ .From -}}:{{- .StepIndex }} -> {{ .To }}
+  {{- end }}
 }
+`
 
 func getEdgesFromExe(
 	exe graph.Executable, idx int, fromServiceName string) (edges []Edge) {
@@ -168,33 +199,5 @@ func executableToStringSlice(exe graph.Executable) (ss []string, err error) {
 
 func toPercentage(f float64) string {
 	p := f * 100
-	return fmt.Sprintf("%.1f%%", p)
+	return fmt.Sprintf("%.2f%%", p)
 }
-
-const graphvizTemplate = `digraph {
-  node [
-    fontsize = "16"
-    shape = plaintext
-  ];
-
-  {{ range .Nodes -}}
-  {{ .Name }} [label=<
-<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
-  <TR><TD><B>{{ .Name }}</B><BR />CPU: {{ .ComputeUsage }}<BR />RAM: {{ .MemoryUsage }}<BR />Err: {{ .ErrorRate }}</TD></TR>
-  {{- range $i, $cmds := .Steps }}
-  <TR><TD PORT="{{ $i }}">
-  {{- range $j, $cmd := $cmds -}}
-    {{- if $j -}}<BR />{{- end -}}
-    {{- $cmd -}}
-  {{- end -}}
-  </TD></TR>
-  {{- end }}
-</TABLE>>];
-
-  {{ end }}
-
-  {{- range .Edges }}
-  {{ .From -}}:{{- .StepIndex }} -> {{ .To }}
-  {{- end }}
-}
-`
