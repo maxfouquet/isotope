@@ -3,8 +3,10 @@ package cmd
 import (
 	"io/ioutil"
 
-	"github.com/spf13/cobra"
+	"github.com/Tahler/service-grapher/pkg/graph"
 	"github.com/Tahler/service-grapher/pkg/graphviz"
+	"github.com/spf13/cobra"
+	yaml "gopkg.in/yaml.v2"
 )
 
 // graphvizCmd represents the graphviz command
@@ -17,7 +19,11 @@ var graphvizCmd = &cobra.Command{
 		yamlContents, err := ioutil.ReadFile(inFileName)
 		exitIfError(err)
 
-		dotLang, err := graphviz.FromYAML(yamlContents)
+		var serviceGraph graph.ServiceGraph
+		err = yaml.Unmarshal(yamlContents, &serviceGraph)
+		exitIfError(err)
+
+		dotLang, err := graphviz.FromServiceGraph(serviceGraph)
 		exitIfError(err)
 
 		outFileName := args[1]

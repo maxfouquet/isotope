@@ -7,43 +7,77 @@ import (
 	"text/template"
 
 	"github.com/docker/go-units"
-	yaml "gopkg.in/yaml.v2"
 
 	"github.com/Tahler/service-grapher/pkg/graph"
 )
 
-// FromYAML converts a YAML string to a Graphviz DOT language string.
-func FromYAML(yamlContents []byte) (dotLang string, err error) {
-	var serviceGraph graph.ServiceGraph
-	err = yaml.Unmarshal(yamlContents, &serviceGraph)
+// FromServiceGraph converts a ServiceGraph to a Graphviz DOT language string.
+func FromServiceGraph(
+	serviceGraph graph.ServiceGraph) (dotLang string, err error) {
+	graph, err := toGraphvizGraph(serviceGraph)
 	if err != nil {
 		return
 	}
-
-	g := toGraphvizGraph(serviceGraph)
-
-	dotLang, err = toGraphvizDotLanguage(g)
+	dotLang, err = GraphToDotLanguage(graph)
 	return
 }
 
-func toGraphvizGraph(sg graph.ServiceGraph) graphvizGraph {
-	nodes := make([]node, 0, len(sg.Services))
-	edges := make([]edge, 0, len(sg.Services))
+// GraphToDotLanguage converts a graphviz graph to a string via a template.
+func GraphToDotLanguage(g Graph) (dotLang string, err error) {
+	tmpl, err := template.New("digraph").Parse(graphvizTemplate)
+	if err != nil {
+		return
+	}
+	var b bytes.Buffer
+	if err = tmpl.Execute(&b, g); err == nil {
+		dotLang = b.String()
+	}
+	return
+}
+
+// Graph represents a Graphviz graph.
+type Graph struct {
+	Nodes []Node
+	Edges []Edge
+}
+
+// Node represents a node in the Graphviz graph.
+type Node struct {
+	Name         string
+	ComputeUsage string
+	MemoryUsage  string
+	ErrorRate    string
+	Steps        [][]string
+}
+
+// Edge represents a directed edge in the Graphviz graph.
+type Edge struct {
+	From      string
+	To        string
+	StepIndex int
+}
+
+func toGraphvizGraph(sg graph.ServiceGraph) (Graph, error) {
+	nodes := make([]Node, 0, len(sg.Services))
+	edges := make([]Edge, 0, len(sg.Services))
 	for _, service := range sg.Services {
-		node, connections := toGraphvizNode(service)
+		node, connections, err := toGraphvizNode(service)
+		if err != nil {
+			return Graph{}, err
+		}
 		nodes = append(nodes, node)
 		for _, connection := range connections {
 			edges = append(edges, connection)
 		}
 	}
-	return graphvizGraph{
+	return Graph{
 		Nodes: nodes,
 		Edges: edges,
-	}
+	}, nil
 }
 
 func getEdgesFromExe(
-	exe graph.Executable, idx int, fromServiceName string) (edges []edge) {
+	exe graph.Executable, idx int, fromServiceName string) (edges []Edge) {
 	switch cmd := exe.(type) {
 	case graph.ConcurrentCommand:
 		for _, subCmd := range cmd.Commands {
@@ -53,7 +87,7 @@ func getEdgesFromExe(
 			}
 		}
 	case graph.RequestCommand:
-		e := edge{
+		e := Edge{
 			From:      fromServiceName,
 			To:        cmd.ServiceName,
 			StepIndex: idx,
@@ -65,12 +99,14 @@ func getEdgesFromExe(
 	return
 }
 
-func toGraphvizNode(service graph.Service) (node, []edge) {
+func toGraphvizNode(service graph.Service) (Node, []Edge, error) {
 	steps := make([][]string, 0, len(service.Script))
-	edges := make([]edge, 0, len(service.Script))
+	edges := make([]Edge, 0, len(service.Script))
 	for idx, exe := range service.Script {
 		step, err := executableToStringSlice(exe)
-		panicIfErr(err)
+		if err != nil {
+			return Node{}, nil, err
+		}
 		steps = append(steps, step)
 
 		stepEdges := getEdgesFromExe(exe, idx, service.Name)
@@ -78,14 +114,14 @@ func toGraphvizNode(service graph.Service) (node, []edge) {
 			edges = append(edges, e)
 		}
 	}
-	n := node{
+	n := Node{
 		Name:         service.Name,
 		ComputeUsage: toPercentage(service.ComputeUsage),
 		MemoryUsage:  toPercentage(service.MemoryUsage),
 		ErrorRate:    toPercentage(service.ErrorRate),
 		Steps:        steps,
 	}
-	return n, edges
+	return n, edges, nil
 }
 
 func nonConcurrentCommandToString(exe graph.Executable) (s string, err error) {
@@ -104,19 +140,25 @@ func nonConcurrentCommandToString(exe graph.Executable) (s string, err error) {
 }
 
 func executableToStringSlice(exe graph.Executable) (ss []string, err error) {
-	appendNonConcurrentExe := func(exe graph.Executable) {
+	appendNonConcurrentExe := func(exe graph.Executable) error {
 		s, err := nonConcurrentCommandToString(exe)
-		panicIfErr(err)
+		if err != nil {
+			return err
+		}
 		ss = append(ss, s)
+		return nil
 	}
 	switch cmd := exe.(type) {
 	case graph.SleepCommand:
-		appendNonConcurrentExe(exe)
+		err = appendNonConcurrentExe(exe)
 	case graph.RequestCommand:
-		appendNonConcurrentExe(exe)
+		err = appendNonConcurrentExe(exe)
 	case graph.ConcurrentCommand:
 		for _, exe := range cmd.Commands {
-			appendNonConcurrentExe(exe)
+			err = appendNonConcurrentExe(exe)
+			if err != nil {
+				return
+			}
 		}
 	default:
 		err = fmt.Errorf("unexpected type of executable %T", exe)
@@ -129,67 +171,30 @@ func toPercentage(f float64) string {
 	return fmt.Sprintf("%.1f%%", p)
 }
 
-type graphvizGraph struct {
-	Nodes []node
-	Edges []edge
-}
-
-type node struct {
-	Name         string
-	ComputeUsage string
-	MemoryUsage  string
-	ErrorRate    string
-	Steps        [][]string
-}
-
-type edge struct {
-	From      string
-	To        string
-	StepIndex int
-}
-
 const graphvizTemplate = `digraph {
-    node [
-        fontsize = "16"
-        shape = plaintext
-    ];
+  node [
+    fontsize = "16"
+    shape = plaintext
+  ];
 
-    {{ range .Nodes -}}
-    {{ .Name }} [label=<
+  {{ range .Nodes -}}
+  {{ .Name }} [label=<
 <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
   <TR><TD><B>{{ .Name }}</B><BR />CPU: {{ .ComputeUsage }}<BR />RAM: {{ .MemoryUsage }}<BR />Err: {{ .ErrorRate }}</TD></TR>
   {{- range $i, $cmds := .Steps }}
   <TR><TD PORT="{{ $i }}">
-    {{- range $j, $cmd := $cmds -}}
-        {{- if $j -}}<BR />{{- end -}}
-        {{- $cmd -}}
-    {{- end -}}
+  {{- range $j, $cmd := $cmds -}}
+    {{- if $j -}}<BR />{{- end -}}
+    {{- $cmd -}}
+  {{- end -}}
   </TD></TR>
   {{- end }}
 </TABLE>>];
 
-	{{ end }}
+  {{ end }}
 
-    {{- range .Edges }}
-    {{ .From -}}:{{- .StepIndex }} -> {{ .To }}
-    {{- end }}
+  {{- range .Edges }}
+  {{ .From -}}:{{- .StepIndex }} -> {{ .To }}
+  {{- end }}
 }
 `
-
-func panicIfErr(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
-func toGraphvizDotLanguage(g graphvizGraph) (s string, err error) {
-	tmpl, err := template.New("digraph").Parse(graphvizTemplate)
-	if err != nil {
-		return
-	}
-	var b bytes.Buffer
-	if err = tmpl.Execute(&b, g); err == nil {
-		s = b.String()
-	}
-	return
-}
