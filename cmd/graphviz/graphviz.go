@@ -4,33 +4,12 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"text/template"
 
 	"github.com/docker/go-units"
-	yaml "gopkg.in/yaml.v2"
 
 	"github.com/Tahler/service-grapher/pkg/graph"
 )
-
-func main() {
-	// TODO: args
-
-	yamlContents, err := ioutil.ReadFile("input.yaml")
-	panicIfErr(err)
-
-	var serviceGraph graph.ServiceGraph
-	err = yaml.Unmarshal(yamlContents, &serviceGraph)
-	panicIfErr(err)
-
-	g := toGraphvizGraph(serviceGraph)
-
-	s, err := toString(g)
-	panicIfErr(err)
-
-	err = ioutil.WriteFile("output.gv", []byte(s), 0644)
-	panicIfErr(err)
-}
 
 func toGraphvizGraph(sg graph.ServiceGraph) graphvizGraph {
 	nodes := make([]node, 0, len(sg.Services))
