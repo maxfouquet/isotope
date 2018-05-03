@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"text/template"
 
 	"github.com/docker/go-units"
@@ -28,18 +27,9 @@ func main() {
 
 	s, err := toString(g)
 	panicIfErr(err)
-	err = writeStringToFile(s, "output.gv")
-	panicIfErr(err)
-}
 
-func writeStringToFile(s string, fileName string) (err error) {
-	f, err := os.Create("output.gv")
-	if err != nil {
-		return
-	}
-	defer f.Close()
-	_, err = f.WriteString(s)
-	return
+	err = ioutil.WriteFile("output.gv", []byte(s), 0644)
+	panicIfErr(err)
 }
 
 func toGraphvizGraph(sg graph.ServiceGraph) graphvizGraph {
