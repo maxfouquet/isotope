@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/Tahler/service-grapher/pkg/graph"
@@ -30,7 +31,8 @@ func main() {
 	var g graph.ServiceGraph
 	err := yaml.Unmarshal([]byte(data), &g)
 	if err == nil {
-		fmt.Printf("%+v\n", g)
+		pp, _ := json.MarshalIndent(g, "", "  ")
+		fmt.Printf("%s\n", pp)
 	} else {
 		fmt.Printf("%v\n", err)
 	}
