@@ -4,6 +4,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"text/template"
 	"time"
 
@@ -105,11 +106,18 @@ func main() {
 	g := toGraphvizGraph(serviceGraph)
 	s, err := toString(g)
 	panicIfErr(err)
-	fmt.Println(s)
+	err = writeStringToFile(s, "output.gv")
+	panicIfErr(err)
+}
 
-	// f, _ := os.Create("output.gv")
-	// defer f.Close()
-	// f.WriteString(s)
+func writeStringToFile(s string, fileName string) (err error) {
+	f, err := os.Create("output.gv")
+	if err != nil {
+		return
+	}
+	defer f.Close()
+	_, err = f.WriteString(s)
+	return
 }
 
 func toGraphvizGraph(sg graph.ServiceGraph) graphvizGraph {
