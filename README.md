@@ -40,160 +40,114 @@ Represents a service graph like:
 
 ![service-graph](graph.png)
 
-Generates a Kubernetes manifest like: (TODO: Pretty sure I'm using ConfigMaps
-incorrectly).
+Generates a Kubernetes manifest like:
 
 ```yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: a-script
+  name: scripts
 data:
-  script:
-  - sleep: 100ms
+  A:
+    computeUsage: 50%
+    memoryUsage: 20%
+    errorRate: 0.01%
+    script:
+    - sleep: 100ms
+  B:
+    computeUsage: 10%
+    memoryUsage: 10%
+    errorRate: 0%
+  C:
+    computeUsage: 10%
+    memoryUsage: 10%
+    errorRate: 0%
+    script:
+    - get:
+        service: A
+        payloadSize: 10K
+    - post:
+        service: B
+        payloadSize: 1 KB
+  D:
+    computeUsage: 10%
+    memoryUsage: 10%
+    errorRate: 0%
+    script:
+    - - get:
+          service: A
+          payloadSize: 1 KB
+      - get:
+          service: C
+          payloadSize: 1 KB
+    - sleep: 10ms
+    - delete:
+        service: B
+        payloadSize: 1 KB
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: A
-spec:
-  ports:
-  - port: 80
-    targetPort: 80
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: A
 spec:
-  replicas: 1
   template:
     spec:
       containers:
       - name: performance-test
         image: istio.gcr.io/performance-test
-        ports:
-        - containerPort: 80
-        env:
-        - name: SCRIPT
-          valueFrom:
-            configMapKeyRef:
-              name: a-script
-              key: A-SCRIPT
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: b-script
-data:
-  script:
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: B
-spec:
-  ports:
-  - port: 80
-    targetPort: 80
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: B
 spec:
-  replicas: 1
   template:
     spec:
       containers:
       - name: performance-test
         image: istio.gcr.io/performance-test
-        ports:
-        - containerPort: 80
-        env:
-        - name: SCRIPT
-          valueFrom:
-            configMapKeyRef:
-              name: b-script
-              key: B-SCRIPT
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: c-script
-data:
-  script:
-  - call: A
-  - call: B
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: C
-spec:
-  ports:
-  - port: 80
-    targetPort: 80
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: C
 spec:
-  replicas: 1
   template:
     spec:
       containers:
       - name: performance-test
         image: istio.gcr.io/performance-test
-        ports:
-        - containerPort: 80
-        env:
-        - name: SCRIPT
-          valueFrom:
-            configMapKeyRef:
-              name: c-script
-              key: C-SCRIPT
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: d-script
-data:
-  script:
-  - - call: A
-    - call: C
-  - sleep: 10ms
-  - call: B
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: D
-spec:
-  ports:
-  - port: 80
-    targetPort: 80
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: D
 spec:
-  replicas: 1
   template:
     spec:
       containers:
       - name: performance-test
         image: istio.gcr.io/performance-test
-        ports:
-        - containerPort: 80
-        env:
-        - name: SCRIPT
-          valueFrom:
-            configMapKeyRef:
-              name: d-script
-              key: D-SCRIPT
 ---
 ```
 
