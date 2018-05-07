@@ -1,0 +1,154 @@
+data:
+  A: |
+    computeUsage: 0.5
+    errorRate: 0.0001
+    memoryUsage: 0.2
+    name: A
+    script:
+    - Duration: 100000000
+  B: |
+    computeUsage: 0.1
+    errorRate: 0
+    memoryUsage: 0.1
+    name: B
+    script: null
+  C: |
+    computeUsage: 0.1
+    errorRate: 0
+    memoryUsage: 0.1
+    name: C
+    script:
+    - HTTPMethod: GET
+      ServiceName: A
+      payloadSize: 10240
+    - HTTPMethod: POST
+      ServiceName: B
+      payloadSize: 1024
+  D: |
+    computeUsage: 0.1
+    errorRate: 0
+    memoryUsage: 0.1
+    name: D
+    script:
+    - Commands:
+      - HTTPMethod: GET
+        ServiceName: A
+        payloadSize: 1024
+      - HTTPMethod: GET
+        ServiceName: C
+        payloadSize: 1024
+    - Duration: 10000000
+    - HTTPMethod: DELETE
+      ServiceName: B
+      payloadSize: 1024
+metadata:
+  creationTimestamp: "2018-05-07T23:52:47Z"
+  name: scripts
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2018-05-07T23:52:47Z"
+  name: C
+spec:
+  selector: null
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+    spec:
+      containers:
+      - image: istio.gcr.io/performance-test
+        name: performance-test
+        resources: {}
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: "2018-05-07T23:52:47Z"
+  name: C
+spec: {}
+status:
+  loadBalancer: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2018-05-07T23:52:47Z"
+  name: D
+spec:
+  selector: null
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+    spec:
+      containers:
+      - image: istio.gcr.io/performance-test
+        name: performance-test
+        resources: {}
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: "2018-05-07T23:52:47Z"
+  name: D
+spec: {}
+status:
+  loadBalancer: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2018-05-07T23:52:47Z"
+  name: A
+spec:
+  selector: null
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+    spec:
+      containers:
+      - image: istio.gcr.io/performance-test
+        name: performance-test
+        resources: {}
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: "2018-05-07T23:52:47Z"
+  name: A
+spec: {}
+status:
+  loadBalancer: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2018-05-07T23:52:47Z"
+  name: B
+spec:
+  selector: null
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+    spec:
+      containers:
+      - image: istio.gcr.io/performance-test
+        name: performance-test
+        resources: {}
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: "2018-05-07T23:52:47Z"
+  name: B
+spec: {}
+status:
+  loadBalancer: {}
