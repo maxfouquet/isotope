@@ -41,6 +41,22 @@ func (g *ServiceGraph) UnmarshalYAML(
 	return nil
 }
 
+// UnmarshalYAML implements the Unmarshaler interface and fills the Service with
+// the contents of a proper YAML document.
+func (s *Service) UnmarshalYAML(unmarshal func(interface{}) error) (err error) {
+	var yamlSettings yamlServiceSettings
+	err = unmarshal(&yamlSettings)
+	if err != nil {
+		return
+	}
+	s.ServiceSettings, err = parseServiceSettings(yamlSettings, ServiceSettings{})
+	if err != nil {
+		return
+	}
+	s.Script, err = parseScript(yamlSettings.Script, 0)
+	return
+}
+
 // document is an intermediate, easily unmarshaled struct.
 type document struct {
 	APIVersion      string                         `yaml:"apiVersion"`

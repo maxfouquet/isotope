@@ -4,15 +4,19 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
+	"os"
 
 	"github.com/Tahler/service-grapher/pkg/graph"
+	yaml "gopkg.in/yaml.v2"
 )
 
 const port = 8080
 
 func main() {
-	service := readService()
+	service, err := getServiceFromEnv()
+	if err != nil {
+		log.Fatal(err)
+	}
 	handler := serviceHandler{Service: service}
 	log.Printf("Listening on port %v\n", port)
 	addr := fmt.Sprintf(":%v", port)
@@ -31,16 +35,9 @@ func (h serviceHandler) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 	request.Write(writer)
 }
 
-func readService() graph.Service {
-	return graph.Service{
-		ServiceSettings: graph.ServiceSettings{
-			ComputeUsage: 0.1,
-			MemoryUsage:  0.2,
-			ErrorRate:    0.5,
-		},
-		Name: "A",
-		Script: []graph.Executable{
-			graph.SleepCommand{Duration: 5 * time.Second},
-		},
-	}
+func getServiceFromEnv() (service graph.Service, err error) {
+	serviceYAML := os.Getenv("SERVICE_YAML")
+	log.Printf("Unmarshalling\n%s", serviceYAML)
+	err = yaml.Unmarshal([]byte(serviceYAML), &service)
+	return
 }
