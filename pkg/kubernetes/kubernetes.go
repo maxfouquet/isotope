@@ -59,7 +59,7 @@ func makeConfigMap(
 	graph graph.ServiceGraph) (configMap apiv1.ConfigMap, err error) {
 	configMap.APIVersion = "v1"
 	configMap.Kind = "ConfigMap"
-	configMap.ObjectMeta.Name = "scripts"
+	configMap.ObjectMeta.Name = "service-configs"
 	timestamp(&configMap.ObjectMeta)
 
 	data := make(map[string]string)
@@ -102,6 +102,19 @@ func makeDeployment(
 					{
 						Name:  containerName,
 						Image: containerImage,
+						Env: []apiv1.EnvVar{
+							{
+								Name: "SERVICE_YAML",
+								ValueFrom: &apiv1.EnvVarSource{
+									ConfigMapKeyRef: &apiv1.ConfigMapKeySelector{
+										LocalObjectReference: apiv1.LocalObjectReference{
+											Name: "service-configs",
+										},
+										Key: service.Name,
+									},
+								},
+							},
+						},
 					},
 				},
 			},
