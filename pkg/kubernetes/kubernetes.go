@@ -83,6 +83,7 @@ func makeService(service graph.Service) (k8sService apiv1.Service, err error) {
 	k8sService.Kind = "Service"
 	k8sService.ObjectMeta.Name = service.Name
 	timestamp(&k8sService.ObjectMeta)
+	k8sService.Spec.Ports = []apiv1.ServicePort{{Port: 8080}}
 	return
 }
 
