@@ -97,7 +97,17 @@ func makeDeployment(
 	k8sDeployment.ObjectMeta.Name = service.Name
 	timestamp(&k8sDeployment.ObjectMeta)
 	k8sDeployment.Spec = appsv1.DeploymentSpec{
+		Selector: &metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"app": service.Name,
+			},
+		},
 		Template: apiv1.PodTemplateSpec{
+			ObjectMeta: metav1.ObjectMeta{
+				Labels: map[string]string{
+					"app": service.Name,
+				},
+			},
 			Spec: apiv1.PodSpec{
 				Containers: []apiv1.Container{
 					{
