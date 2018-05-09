@@ -87,8 +87,8 @@ func makeService(service graph.Service) (k8sService apiv1.Service, err error) {
 	return
 }
 
-const containerName = "performance-test"
-const containerImage = "istio.gcr.io/performance-test"
+const containerName = "perf-test-service"
+const containerImage = "tahler/perf-test-service"
 
 func makeDeployment(
 	service graph.Service) (k8sDeployment appsv1.Deployment, err error) {
