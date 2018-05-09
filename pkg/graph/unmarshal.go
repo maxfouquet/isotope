@@ -251,12 +251,19 @@ func parseRequestCommandMap(
 		return
 	}
 
-	if key, ok := m["payloadSize"]; ok {
-		humanSize, err := parseString(key)
-		if err != nil {
-			return command, err
+	if payloadSizeYAML, ok := m["payloadSize"]; ok {
+		switch payloadSize := payloadSizeYAML.(type) {
+		case int:
+			command.PayloadSize = int64(payloadSize)
+		case string:
+			humanSize, err := parseString(payloadSize)
+			if err != nil {
+				return command, err
+			}
+			command.PayloadSize, err = units.RAMInBytes(humanSize)
+		default:
+			err = fmt.Errorf("unknown type %T of payloadSize", payloadSize)
 		}
-		command.PayloadSize, err = units.RAMInBytes(humanSize)
 	} else {
 		command.PayloadSize = defaultPayloadSize
 	}
