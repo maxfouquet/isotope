@@ -18,7 +18,7 @@ func TestUnmarshalYAML(t *testing.T) {
 					MemoryUsage:  0.2,
 					ErrorRate:    0.0001,
 				},
-				Script: []Executable{
+				Script: []Command{
 					SleepCommand{
 						Duration: 100 * time.Millisecond,
 					},
@@ -39,7 +39,7 @@ func TestUnmarshalYAML(t *testing.T) {
 					MemoryUsage:  0.1,
 					ErrorRate:    0,
 				},
-				Script: []Executable{
+				Script: []Command{
 					RequestCommand{
 						HTTPMethod:  "GET",
 						ServiceName: "A",
@@ -63,9 +63,9 @@ func TestUnmarshalYAML(t *testing.T) {
 					MemoryUsage:  0.1,
 					ErrorRate:    0,
 				},
-				Script: []Executable{
+				Script: []Command{
 					ConcurrentCommand{
-						Commands: []Executable{
+						Commands: []Command{
 							RequestCommand{
 								HTTPMethod:  "GET",
 								ServiceName: "A",

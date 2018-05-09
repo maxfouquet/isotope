@@ -31,7 +31,7 @@ func serviceToMarshallable(
 	return
 }
 
-func scriptToMarshallable(script []graph.Executable) ([]interface{}, error) {
+func scriptToMarshallable(script []graph.Command) ([]interface{}, error) {
 	marshallableSlice := make([]interface{}, 0, len(script))
 	for _, exe := range script {
 		marshallable, err := executableToMarshallable(exe)
@@ -44,7 +44,7 @@ func scriptToMarshallable(script []graph.Executable) ([]interface{}, error) {
 }
 
 func executableToMarshallable(
-	exe graph.Executable) (marshallable interface{}, err error) {
+	exe graph.Command) (marshallable interface{}, err error) {
 	switch cmd := exe.(type) {
 	case graph.SleepCommand:
 		marshallable = sleepCommandToMarshallable(cmd)

@@ -108,7 +108,7 @@ const graphvizTemplate = `digraph {
 `
 
 func getEdgesFromExe(
-	exe graph.Executable, idx int, fromServiceName string) (edges []Edge) {
+	exe graph.Command, idx int, fromServiceName string) (edges []Edge) {
 	switch cmd := exe.(type) {
 	case graph.ConcurrentCommand:
 		for _, subCmd := range cmd.Commands {
@@ -155,7 +155,7 @@ func toGraphvizNode(service graph.Service) (Node, []Edge, error) {
 	return n, edges, nil
 }
 
-func nonConcurrentCommandToString(exe graph.Executable) (s string, err error) {
+func nonConcurrentCommandToString(exe graph.Command) (s string, err error) {
 	switch cmd := exe.(type) {
 	case graph.SleepCommand:
 		s = fmt.Sprintf("SLEEP %s", cmd.Duration)
@@ -170,8 +170,8 @@ func nonConcurrentCommandToString(exe graph.Executable) (s string, err error) {
 	return
 }
 
-func executableToStringSlice(exe graph.Executable) (ss []string, err error) {
-	appendNonConcurrentExe := func(exe graph.Executable) error {
+func executableToStringSlice(exe graph.Command) (ss []string, err error) {
+	appendNonConcurrentExe := func(exe graph.Command) error {
 		s, err := nonConcurrentCommandToString(exe)
 		if err != nil {
 			return err
