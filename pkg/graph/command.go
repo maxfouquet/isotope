@@ -3,16 +3,11 @@ package graph
 import (
 	"fmt"
 	"strings"
-	"sync"
 	"time"
-
-	multierror "github.com/hashicorp/go-multierror"
 )
 
-// Executable is the top-level interface for commands.
-type Executable interface {
-	Execute() error
-}
+// Command is the top level interface for commands.
+type Command interface{}
 
 // HTTPMethod is an enum-like string type describing any of the HTTP request
 // method: https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods.
@@ -61,24 +56,7 @@ func HTTPMethodFromString(s string) (m HTTPMethod, err error) {
 // ConcurrentCommand describes a set of commands that should be executed
 // simultaneously.
 type ConcurrentCommand struct {
-	Commands []Executable
-}
-
-// Execute calls each command in c.Commands asynchronously and waits for each to
-// complete.
-func (c ConcurrentCommand) Execute() error {
-	wg := sync.WaitGroup{}
-	wg.Add(len(c.Commands))
-	var errs *multierror.Error
-	for _, cmd := range c.Commands {
-		go func(exe Executable) {
-			err := exe.Execute()
-			errs = multierror.Append(errs, err)
-			wg.Done()
-		}(cmd)
-	}
-	wg.Wait()
-	return nil
+	Commands []Command
 }
 
 // RequestCommand describes a command to send an HTTP request to another
@@ -89,19 +67,7 @@ type RequestCommand struct {
 	HTTPMethod  HTTPMethod
 }
 
-// Execute sends an HTTP request to another service.
-func (c RequestCommand) Execute() error {
-	// TODO: Send c.HTTPMethod request to c.ServiceName with c.Settings.
-	return nil
-}
-
 // SleepCommand describes a command to pause for a duration.
 type SleepCommand struct {
 	Duration time.Duration
-}
-
-// Execute sleeps for c.Duration.
-func (c SleepCommand) Execute() error {
-	time.Sleep(c.Duration)
-	return nil
 }

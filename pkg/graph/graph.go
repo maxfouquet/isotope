@@ -11,7 +11,7 @@ type Service struct {
 	ServiceSettings
 	Name string
 	// Script is sequentially called each time the service is called.
-	Script []Executable
+	Script []Command
 }
 
 // ServiceSettings describes the configurable settings for a service.

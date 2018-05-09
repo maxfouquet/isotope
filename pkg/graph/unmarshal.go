@@ -133,7 +133,7 @@ func parseServiceSettings(
 }
 
 func parseScript(script []interface{}, defaultPayloadSize int64) (
-	commands []Executable, err error) {
+	commands []Command, err error) {
 	for _, step := range script {
 		command, err := parseCommand(step, defaultPayloadSize)
 		if err != nil {
@@ -154,7 +154,7 @@ func parseScript(script []interface{}, defaultPayloadSize int64) (
 // - get|http...: string
 // - get|http...: {service:string payloadSize:units.ByteSize}
 func parseCommand(step interface{}, defaultPayloadSize int64) (
-	command Executable, err error) {
+	command Command, err error) {
 	switch val := step.(type) {
 	case map[interface{}]interface{}:
 		command, err = parseSingleCommand(val, defaultPayloadSize)
@@ -168,7 +168,7 @@ func parseCommand(step interface{}, defaultPayloadSize int64) (
 
 func parseSingleCommand(
 	yamlCmd map[interface{}]interface{}, defaultPayloadSize int64) (
-	command Executable, err error) {
+	command Command, err error) {
 	if len(yamlCmd) != 1 {
 		return nil, fmt.Errorf(
 			"command must contain a single key: %v", yamlCmd)
