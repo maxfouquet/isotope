@@ -27,9 +27,22 @@ type serviceHandler struct {
 	graph.Service
 }
 
-func (h serviceHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	for _, cmd := range h.Script {
-		cmd.Execute()
+func (h serviceHandler) ServeHTTP(
+	writer http.ResponseWriter, request *http.Request) {
+	var err error
+	for _, step := range h.Script {
+		exe, err := toExecutable(step)
+		if err == nil {
+			err = exe.Execute()
+			if err != nil {
+				log.Println(err)
+			}
+		} else {
+			log.Println(err)
+		}
+	}
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
 	}
 	log.Printf("Echoing %s to client %s", request.URL.Path, request.RemoteAddr)
 	request.Write(writer)
