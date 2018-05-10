@@ -47,6 +47,10 @@ func (exe RequestExecutable) Execute() (err error) {
 		return
 	}
 	log.Printf("%s responded with %s", exe.ServiceName, response.Status)
+	if response.StatusCode == http.StatusInternalServerError {
+		err = fmt.Errorf(
+			"service %s responded with %s", exe.ServiceName, response.Status)
+	}
 	return
 }
 

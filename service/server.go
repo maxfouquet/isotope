@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 
 	"github.com/Tahler/service-grapher/pkg/graph"
@@ -27,21 +28,41 @@ type serviceHandler struct {
 
 func (h serviceHandler) ServeHTTP(
 	writer http.ResponseWriter, request *http.Request) {
-	var err error
+
+	respond := func(status int) {
+		log.Printf("Echoing (%v) to client %s", status, request.RemoteAddr)
+		writer.WriteHeader(status)
+		request.Write(writer)
+	}
+
+	if err := h.errorChance(); err != nil {
+		respond(http.StatusInternalServerError)
+		return
+	}
+
 	for _, step := range h.Script {
 		exe, err := toExecutable(step)
-		if err == nil {
-			err = exe.Execute()
-			if err != nil {
-				log.Println(err)
-			}
-		} else {
+		if err != nil {
+			log.Fatalf("error in script: %s", err)
+			return
+		}
+
+		err = exe.Execute()
+		if err != nil {
 			log.Println(err)
+			respond(http.StatusInternalServerError)
+			return
 		}
 	}
-	if err != nil {
-		writer.WriteHeader(http.StatusInternalServerError)
+
+	respond(http.StatusOK)
+}
+
+// errorChance randomly returns an error h.ErrorRate percent of the time.
+func (h serviceHandler) errorChance() (err error) {
+	random := rand.Float64()
+	if random < h.ErrorRate {
+		err = fmt.Errorf("server randomly failed with a chance of %v", h.ErrorRate)
 	}
-	log.Printf("Echoing %s to client %s", request.URL.Path, request.RemoteAddr)
-	request.Write(writer)
+	return
 }
