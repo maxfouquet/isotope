@@ -11,6 +11,7 @@ type configMapService struct {
 	ComputeUsage float64       `json:"computeUsage"`
 	MemoryUsage  float64       `json:"memoryUsage"`
 	ErrorRate    float64       `json:"errorRate"`
+	ResponseSize int64         `json:"responseSize"`
 	Script       []interface{} `json:"script,omitempty"`
 }
 
@@ -26,6 +27,7 @@ func serviceToMarshallable(
 		ComputeUsage: service.ComputeUsage,
 		MemoryUsage:  service.MemoryUsage,
 		ErrorRate:    service.ErrorRate,
+		ResponseSize: service.ResponseSize,
 		Script:       script,
 	}
 	return

@@ -69,6 +69,7 @@ type Node struct {
 	ComputeUsage string
 	MemoryUsage  string
 	ErrorRate    string
+	ResponseSize string
 	Steps        [][]string
 }
 
@@ -150,6 +151,7 @@ func toGraphvizNode(service graph.Service) (Node, []Edge, error) {
 		ComputeUsage: toPercentage(service.ComputeUsage),
 		MemoryUsage:  toPercentage(service.MemoryUsage),
 		ErrorRate:    toPercentage(service.ErrorRate),
+		ResponseSize: units.BytesSize(float64(service.ResponseSize)),
 		Steps:        steps,
 	}
 	return n, edges, nil
