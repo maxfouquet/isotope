@@ -112,6 +112,16 @@ func makeDeployment(
 					{
 						Name:  containerName,
 						Image: containerImage,
+						Env: []apiv1.EnvVar{
+							{
+								Name: "INSTANCE_NAME",
+								ValueFrom: &apiv1.EnvVarSource{
+									FieldRef: &apiv1.ObjectFieldSelector{
+										FieldPath: "metadata.name",
+									},
+								},
+							},
+						},
 						VolumeMounts: []apiv1.VolumeMount{
 							{
 								Name:      "config-volume",

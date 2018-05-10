@@ -13,6 +13,7 @@ import (
 // pathTracesHeaderKey must be in Train-Case.
 const pathTracesHeaderKey = "Path-Traces"
 
+// TODO: put in main()? use INSTANCE_NAME?
 var serviceID = os.Getenv("HOSTNAME")
 
 type serviceHandler struct {
