@@ -2,7 +2,6 @@
 package kubernetes
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -51,7 +50,6 @@ func ServiceGraphToKubernetesManifests(
 	}
 
 	yamlDocString := strings.Join(manifests, "---\n")
-	fmt.Printf("%+v\n", yamlDocString)
 	return []byte(yamlDocString), nil
 }
 
