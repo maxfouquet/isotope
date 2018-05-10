@@ -29,6 +29,6 @@ type ServiceSettings struct {
 
 // RequestSettings describes the configurable settings for service requests.
 type RequestSettings struct {
-	// PayloadSize is the number of bytes in request payloads.
-	PayloadSize int64
+	// Size is the number of bytes in the request body.
+	Size int64
 }

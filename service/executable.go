@@ -34,7 +34,7 @@ type RequestExecutable graph.RequestCommand
 // which maps exe.ServiceName to the relevant URL to reach the service.
 func (exe RequestExecutable) Execute() (err error) {
 	url := fmt.Sprintf("http://%s:%v", exe.ServiceName, port)
-	payload := make([]byte, exe.PayloadSize, exe.PayloadSize)
+	payload := make([]byte, exe.RequestSettings.Size, exe.RequestSettings.Size)
 	request, err := http.NewRequest(
 		string(exe.HTTPMethod), url, bytes.NewBuffer(payload))
 	if err != nil {
