@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"net/http"
@@ -37,8 +38,9 @@ func (exe RequestExecutable) Execute() (err error) {
 	if err != nil {
 		return
 	}
-	request, err := http.NewRequest(string(exe.HTTPMethod), url, nil)
-	// TODO: set payload size
+	payload := make([]byte, exe.PayloadSize, exe.PayloadSize)
+	request, err := http.NewRequest(
+		string(exe.HTTPMethod), url, bytes.NewBuffer(payload))
 	if err != nil {
 		return
 	}
