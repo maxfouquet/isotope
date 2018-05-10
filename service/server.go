@@ -42,13 +42,7 @@ func (h serviceHandler) ServeHTTP(
 
 	for _, step := range h.Script {
 		forwardableHeader := extractForwardableHeader(request.Header)
-		exe, err := toExecutable(step, forwardableHeader)
-		if err != nil {
-			log.Fatalf("error in script: %s", err)
-			return
-		}
-
-		err = exe.Execute()
+		err := execute(step, forwardableHeader)
 		if err != nil {
 			log.Println(err)
 			respond(http.StatusInternalServerError)
