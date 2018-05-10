@@ -25,6 +25,8 @@ type ServiceSettings struct {
 	// ErrorRate is the percentage chance between 0 and 1 that this service
 	// should respond with a 500 server error rather than200 OK.
 	ErrorRate float64
+	// ResponseSize is the number of bytes in the response body.
+	ResponseSize int64
 }
 
 // RequestSettings describes the configurable settings for service requests.

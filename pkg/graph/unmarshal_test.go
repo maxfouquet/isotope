@@ -17,6 +17,7 @@ func TestUnmarshalYAML(t *testing.T) {
 					ComputeUsage: 0.5,
 					MemoryUsage:  0.2,
 					ErrorRate:    0.0001,
+					ResponseSize: 10240,
 				},
 				Script: []Command{
 					SleepCommand{
@@ -30,6 +31,7 @@ func TestUnmarshalYAML(t *testing.T) {
 					ComputeUsage: 0.1,
 					MemoryUsage:  0.1,
 					ErrorRate:    0,
+					ResponseSize: 10240,
 				},
 			},
 			"C": Service{
@@ -38,6 +40,7 @@ func TestUnmarshalYAML(t *testing.T) {
 					ComputeUsage: 0.1,
 					MemoryUsage:  0.1,
 					ErrorRate:    0,
+					ResponseSize: 10240,
 				},
 				Script: []Command{
 					RequestCommand{
@@ -62,6 +65,7 @@ func TestUnmarshalYAML(t *testing.T) {
 					ComputeUsage: 0.1,
 					MemoryUsage:  0.1,
 					ErrorRate:    0,
+					ResponseSize: 10240,
 				},
 				Script: []Command{
 					ConcurrentCommand{
@@ -102,6 +106,7 @@ default:
   computeUsage: 10%
   memoryUsage: 10%
   requestSize: 1 KB
+  responseSize: 10 KB
 services:
   A:
     computeUsage: 50%

@@ -74,6 +74,7 @@ type yamlServiceSettings struct {
 	ComputeUsage *string       `yaml:"computeUsage"`
 	MemoryUsage  *string       `yaml:"memoryUsage"`
 	ErrorRate    *string       `yaml:"errorRate"`
+	ResponseSize *string       `yaml:"responseSize"`
 	Script       []interface{} `yaml:"script"`
 }
 
@@ -108,6 +109,9 @@ func parseDefaultSettings(
 			return
 		}
 	}
+	if yaml.ResponseSize != nil {
+		settings.ResponseSize, err = units.RAMInBytes(*yaml.ResponseSize)
+	}
 	return
 }
 
@@ -126,6 +130,14 @@ func parseServiceSettings(
 	}
 	settings.ErrorRate, err = parseFloatWithDefault(
 		yaml.ErrorRate, defaults.ErrorRate)
+	if err != nil {
+		return
+	}
+	if yaml.ResponseSize == nil {
+		settings.ResponseSize = defaults.ResponseSize
+	} else {
+		settings.ResponseSize, err = units.RAMInBytes(*yaml.ResponseSize)
+	}
 	return
 }
 

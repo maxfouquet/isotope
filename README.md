@@ -11,6 +11,7 @@ architecture.
 apiVersion: v1alpha1
 default:
   requestSize: 1 KB
+  responseSize: 16 KB
   computeUsage: 10%
   memoryUsage: 10%
 services:

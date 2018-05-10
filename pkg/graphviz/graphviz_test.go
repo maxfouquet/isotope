@@ -17,6 +17,7 @@ func TestServiceGraphToGraph(t *testing.T) {
 				ComputeUsage: "50.00%",
 				MemoryUsage:  "20.00%",
 				ErrorRate:    "0.01%",
+				ResponseSize: "10KiB",
 				Steps: [][]string{
 					[]string{
 						"SLEEP 100ms",
@@ -28,6 +29,7 @@ func TestServiceGraphToGraph(t *testing.T) {
 				ComputeUsage: "10.00%",
 				MemoryUsage:  "10.00%",
 				ErrorRate:    "0.00%",
+				ResponseSize: "10KiB",
 				Steps:        [][]string{},
 			},
 			Node{
@@ -35,6 +37,7 @@ func TestServiceGraphToGraph(t *testing.T) {
 				ComputeUsage: "10.00%",
 				MemoryUsage:  "10.00%",
 				ErrorRate:    "0.00%",
+				ResponseSize: "10KiB",
 				Steps: [][]string{
 					[]string{
 						"GET \"A\" 10KiB",
@@ -49,6 +52,7 @@ func TestServiceGraphToGraph(t *testing.T) {
 				ComputeUsage: "10.00%",
 				MemoryUsage:  "10.00%",
 				ErrorRate:    "0.00%",
+				ResponseSize: "10KiB",
 				Steps: [][]string{
 					[]string{
 						"GET \"A\" 1KiB",
@@ -100,6 +104,7 @@ func TestServiceGraphToGraph(t *testing.T) {
 					ComputeUsage: 0.5,
 					MemoryUsage:  0.2,
 					ErrorRate:    0.0001,
+					ResponseSize: 10240,
 				},
 				Script: []graph.Command{
 					graph.SleepCommand{
@@ -113,6 +118,7 @@ func TestServiceGraphToGraph(t *testing.T) {
 					ComputeUsage: 0.1,
 					MemoryUsage:  0.1,
 					ErrorRate:    0,
+					ResponseSize: 10240,
 				},
 			},
 			"C": graph.Service{
@@ -121,6 +127,7 @@ func TestServiceGraphToGraph(t *testing.T) {
 					ComputeUsage: 0.1,
 					MemoryUsage:  0.1,
 					ErrorRate:    0,
+					ResponseSize: 10240,
 				},
 				Script: []graph.Command{
 					graph.RequestCommand{
@@ -145,6 +152,7 @@ func TestServiceGraphToGraph(t *testing.T) {
 					ComputeUsage: 0.1,
 					MemoryUsage:  0.1,
 					ErrorRate:    0,
+					ResponseSize: 10240,
 				},
 				Script: []graph.Command{
 					graph.ConcurrentCommand{
