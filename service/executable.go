@@ -13,45 +13,44 @@ import (
 	multierror "github.com/hashicorp/go-multierror"
 )
 
-// Executable is the top-level interface for commands.
-type Executable interface {
-	Execute() error
+func execute(step interface{}, forwardableHeader http.Header) (err error) {
+	switch cmd := step.(type) {
+	case graph.SleepCommand:
+		executeSleepCommand(cmd)
+	case graph.RequestCommand:
+		err = executeRequestCommand(cmd, forwardableHeader)
+	case graph.ConcurrentCommand:
+		err = executeConcurrentCommand(cmd, forwardableHeader)
+	default:
+		log.Fatalf("unknown command type in script: %T", cmd)
+	}
+	return
 }
 
-// SleepExecutable makes graph.SleepCommand a receiver for Execute.
-type SleepExecutable graph.SleepCommand
-
-// Execute sleeps for exe.Duration.
-func (exe SleepExecutable) Execute() error {
-	time.Sleep(exe.Duration)
-	return nil
-}
-
-// RequestExecutable makes graph.RequestCommand a receiver for Execute.
-type RequestExecutable struct {
-	graph.RequestCommand
-	http.Header
+func executeSleepCommand(cmd graph.SleepCommand) {
+	time.Sleep(cmd.Duration)
 }
 
 // Execute sends an HTTP request to another service. Assumes DNS is available
 // which maps exe.ServiceName to the relevant URL to reach the service.
-func (exe RequestExecutable) Execute() (err error) {
-	url := fmt.Sprintf("http://%s:%v", exe.ServiceName, port)
+func executeRequestCommand(
+	cmd graph.RequestCommand, forwardableHeader http.Header) (err error) {
+	url := fmt.Sprintf("http://%s:%v", cmd.ServiceName, port)
 	request, err := buildRequest(
-		exe.HTTPMethod, url, exe.RequestSettings.Size, exe.Header)
+		cmd.HTTPMethod, url, cmd.RequestSettings.Size, forwardableHeader)
 	if err != nil {
 		return
 	}
 	log.Printf(
-		"Sending %s request to %s (%s)", exe.HTTPMethod, exe.ServiceName, url)
+		"Sending %s request to %s (%s)", cmd.HTTPMethod, cmd.ServiceName, url)
 	response, err := http.DefaultClient.Do(request)
 	if err != nil {
 		return
 	}
-	log.Printf("%s responded with %s", exe.ServiceName, response.Status)
+	log.Printf("%s responded with %s", cmd.ServiceName, response.Status)
 	if response.StatusCode == http.StatusInternalServerError {
 		err = fmt.Errorf(
-			"service %s responded with %s", exe.ServiceName, response.Status)
+			"service %s responded with %s", cmd.ServiceName, response.Status)
 	}
 	return
 }
@@ -74,58 +73,20 @@ func copyHeader(request *http.Request, header http.Header) {
 	}
 }
 
-// ConcurrentExecutable makes graph.ConcurrentCommand a receiver for Execute.
-type ConcurrentExecutable struct {
-	Executables []Executable
-}
-
-// Execute calls each command in exe.Commands asynchronously and waits for each
-// to complete.
-func (exe ConcurrentExecutable) Execute() error {
+// executeConcurrentCommand calls each command in exe.Commands asynchronously
+// and waits for each to complete.
+func executeConcurrentCommand(
+	cmd graph.ConcurrentCommand, forwardableHeader http.Header) error {
 	wg := sync.WaitGroup{}
-	wg.Add(len(exe.Executables))
+	wg.Add(len(cmd.Commands))
 	var errs *multierror.Error
-	for _, subExe := range exe.Executables {
-		go func(subExe Executable) {
-			err := subExe.Execute()
+	for _, subCmd := range cmd.Commands {
+		go func(step interface{}) {
+			err := execute(step, forwardableHeader)
 			errs = multierror.Append(errs, err)
 			wg.Done()
-		}(subExe)
+		}(subCmd)
 	}
 	wg.Wait()
 	return errs
-}
-
-func toConcurrentExecutable(
-	cmd graph.ConcurrentCommand, requestHeader http.Header) (
-	ConcurrentExecutable, error) {
-	exe := ConcurrentExecutable{
-		Executables: make([]Executable, 0, len(cmd.Commands)),
-	}
-	for subCmd := range cmd.Commands {
-		subExe, err := toExecutable(subCmd, requestHeader)
-		if err != nil {
-			return exe, err
-		}
-		exe.Executables = append(exe.Executables, subExe)
-	}
-	return exe, nil
-}
-
-func toExecutable(
-	step interface{}, requestHeader http.Header) (exe Executable, err error) {
-	switch cmd := step.(type) {
-	case graph.SleepCommand:
-		exe = SleepExecutable(cmd)
-	case graph.RequestCommand:
-		exe = RequestExecutable{
-			RequestCommand: cmd,
-			Header:         requestHeader,
-		}
-	case graph.ConcurrentCommand:
-		exe, err = toConcurrentExecutable(cmd, requestHeader)
-	default:
-		err = fmt.Errorf("unknown type %T", cmd)
-	}
-	return
 }
