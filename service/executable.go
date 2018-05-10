@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
-	"strings"
 	"sync"
 	"time"
 
@@ -32,12 +30,10 @@ func (exe SleepExecutable) Execute() error {
 // RequestExecutable makes graph.RequestCommand a receiver for Execute.
 type RequestExecutable graph.RequestCommand
 
-// Execute sends an HTTP request to another service.
+// Execute sends an HTTP request to another service. Assumes DNS is available
+// which maps exe.ServiceName to the relevant URL to reach the service.
 func (exe RequestExecutable) Execute() (err error) {
-	url, err := getServiceURL(exe.ServiceName)
-	if err != nil {
-		return
-	}
+	url := fmt.Sprintf("http://%s:%v", exe.ServiceName, port)
 	payload := make([]byte, exe.PayloadSize, exe.PayloadSize)
 	request, err := http.NewRequest(
 		string(exe.HTTPMethod), url, bytes.NewBuffer(payload))
@@ -51,33 +47,6 @@ func (exe RequestExecutable) Execute() (err error) {
 		return
 	}
 	log.Printf("%s responded with %s", exe.ServiceName, response.Status)
-	return
-}
-
-// getServiceURL builds a URL using environment variables to reach the service.
-// https://kubernetes.io/docs/concepts/services-networking/service/#environment-variables
-func getServiceURL(serviceName string) (url string, err error) {
-	serviceEnvName := strings.ToUpper(strings.Replace(serviceName, "-", "_", -1))
-
-	hostKey := fmt.Sprintf("%s_SERVICE_HOST", serviceEnvName)
-	host, ok := os.LookupEnv(hostKey)
-	if !ok {
-		err = fmt.Errorf(
-			"no environment variable for host of service %s exists: %s=%s",
-			serviceName, hostKey, host)
-		return
-	}
-
-	portKey := fmt.Sprintf("%s_SERVICE_PORT", serviceEnvName)
-	port, ok := os.LookupEnv(portKey)
-	if !ok {
-		err = fmt.Errorf(
-			"no environment variable for port of service %s exists: %s=%s",
-			serviceName, portKey, port)
-		return
-	}
-
-	url = fmt.Sprintf("http://%s:%s", host, port)
 	return
 }
 
