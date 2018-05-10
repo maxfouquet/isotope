@@ -114,15 +114,26 @@ func makeDeployment(
 					{
 						Name:  containerName,
 						Image: containerImage,
-						Env: []apiv1.EnvVar{
+						VolumeMounts: []apiv1.VolumeMount{
 							{
-								Name: "SERVICE_YAML",
-								ValueFrom: &apiv1.EnvVarSource{
-									ConfigMapKeyRef: &apiv1.ConfigMapKeySelector{
-										LocalObjectReference: apiv1.LocalObjectReference{
-											Name: "service-configs",
-										},
-										Key: service.Name,
+								Name:      "config-volume",
+								MountPath: "/etc/config",
+							},
+						},
+					},
+				},
+				Volumes: []apiv1.Volume{
+					{
+						Name: "config-volume",
+						VolumeSource: apiv1.VolumeSource{
+							ConfigMap: &apiv1.ConfigMapVolumeSource{
+								LocalObjectReference: apiv1.LocalObjectReference{
+									Name: "service-configs",
+								},
+								Items: []apiv1.KeyToPath{
+									{
+										Key:  service.Name,
+										Path: "service.yaml",
 									},
 								},
 							},
