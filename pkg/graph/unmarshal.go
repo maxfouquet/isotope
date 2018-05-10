@@ -28,7 +28,8 @@ func (g *ServiceGraph) UnmarshalYAML(
 		if err != nil {
 			return err
 		}
-		script, err := parseScript(yamlSettings.Script, defaults.PayloadSize)
+		script, err := parseScript(
+			yamlSettings.Script, defaults.RequestSettings.Size)
 		if err != nil {
 			return err
 		}
@@ -66,7 +67,7 @@ type document struct {
 
 type yamlDefaultSettings struct {
 	yamlServiceSettings `yaml:",inline"`
-	yamlRequestSettings `yaml:",inline"`
+	RequestSize         *string `yaml:"requestSize"`
 }
 
 type yamlServiceSettings struct {
@@ -74,10 +75,6 @@ type yamlServiceSettings struct {
 	MemoryUsage  *string       `yaml:"memoryUsage"`
 	ErrorRate    *string       `yaml:"errorRate"`
 	Script       []interface{} `yaml:"script"`
-}
-
-type yamlRequestSettings struct {
-	PayloadSize *string `yaml:"payloadSize"`
 }
 
 type defaultSettings struct {
@@ -105,8 +102,8 @@ func parseDefaultSettings(
 			return
 		}
 	}
-	if yaml.PayloadSize != nil {
-		settings.PayloadSize, err = units.RAMInBytes(*yaml.PayloadSize)
+	if yaml.RequestSize != nil {
+		settings.RequestSettings.Size, err = units.RAMInBytes(*yaml.RequestSize)
 		if err != nil {
 			return
 		}
@@ -152,7 +149,7 @@ func parseScript(script []interface{}, defaultPayloadSize int64) (
 // A command may be:
 // - sleep: time.Duration
 // - get|http...: string
-// - get|http...: {service:string payloadSize:units.ByteSize}
+// - get|http...: {service:string size:units.ByteSize}
 func parseCommand(step interface{}, defaultPayloadSize int64) (
 	command Command, err error) {
 	switch val := step.(type) {
@@ -205,18 +202,18 @@ func parseSleepCommand(yaml interface{}) (command SleepCommand, err error) {
 
 // A request command may be expressed as:
 // - get|http...: string
-// - get|http...: {service:string payloadSize:units.ByteSize}
+// - get|http...: {service:string size:units.ByteSize}
 func parseRequestCommand(
-	impl interface{}, httpMethod HTTPMethod, defaultPayloadSize int64) (
+	impl interface{}, httpMethod HTTPMethod, defaultRequestSize int64) (
 	command RequestCommand, err error) {
 	command.HTTPMethod = httpMethod
 	switch val := impl.(type) {
 	case string:
 		command.ServiceName = val
-		command.PayloadSize = defaultPayloadSize
+		command.Size = defaultRequestSize
 	case map[interface{}]interface{}:
 		command, err = parseRequestCommandMap(
-			val, httpMethod, defaultPayloadSize)
+			val, httpMethod, defaultRequestSize)
 	default:
 		err = fmt.Errorf("unknown type of request command: %s", impl)
 	}
@@ -233,7 +230,7 @@ func parseString(i interface{}) (s string, err error) {
 
 func parseRequestCommandMap(
 	m map[interface{}]interface{}, httpMethod HTTPMethod,
-	defaultPayloadSize int64) (command RequestCommand, err error) {
+	defaultRequestSize int64) (command RequestCommand, err error) {
 	command.HTTPMethod = httpMethod
 	if n := len(m); n == 0 || n > 2 {
 		err = fmt.Errorf("expected at most two keys in %s step", httpMethod)
@@ -251,21 +248,21 @@ func parseRequestCommandMap(
 		return
 	}
 
-	if payloadSizeYAML, ok := m["payloadSize"]; ok {
-		switch payloadSize := payloadSizeYAML.(type) {
+	if requestSizeYAML, ok := m["size"]; ok {
+		switch requestSize := requestSizeYAML.(type) {
 		case int:
-			command.PayloadSize = int64(payloadSize)
+			command.Size = int64(requestSize)
 		case string:
-			humanSize, err := parseString(payloadSize)
+			humanSize, err := parseString(requestSize)
 			if err != nil {
 				return command, err
 			}
-			command.PayloadSize, err = units.RAMInBytes(humanSize)
+			command.Size, err = units.RAMInBytes(humanSize)
 		default:
-			err = fmt.Errorf("unknown type %T of payloadSize", payloadSize)
+			err = fmt.Errorf("unknown type %T of size", requestSize)
 		}
 	} else {
-		command.PayloadSize = defaultPayloadSize
+		command.Size = defaultRequestSize
 	}
 	return
 }

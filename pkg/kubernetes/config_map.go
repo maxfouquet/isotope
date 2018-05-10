@@ -66,15 +66,15 @@ func requestCommandToMarshallable(cmd graph.RequestCommand) interface{} {
 	marshallable := make(map[string]configMapRequestCommand, 1)
 	key := strings.ToLower(string(cmd.HTTPMethod))
 	marshallable[key] = configMapRequestCommand{
-		Service:     cmd.ServiceName,
-		PayloadSize: cmd.PayloadSize,
+		Service: cmd.ServiceName,
+		Size:    cmd.Size,
 	}
 	return marshallable
 }
 
 type configMapRequestCommand struct {
-	Service     string `json:"service"`
-	PayloadSize int64  `json:"payloadSize"`
+	Service string `json:"service"`
+	Size    int64  `json:"size"`
 }
 
 func concurrentCommandToMarshallable(

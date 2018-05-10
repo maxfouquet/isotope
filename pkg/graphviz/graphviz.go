@@ -160,10 +160,10 @@ func nonConcurrentCommandToString(exe graph.Command) (s string, err error) {
 	case graph.SleepCommand:
 		s = fmt.Sprintf("SLEEP %s", cmd.Duration)
 	case graph.RequestCommand:
-		readablePayloadSize := units.BytesSize(float64(cmd.PayloadSize))
+		readableRequestSize := units.BytesSize(float64(cmd.RequestSettings.Size))
 		s = fmt.Sprintf(
 			"%s \"%s\" %s",
-			cmd.HTTPMethod, cmd.ServiceName, readablePayloadSize)
+			cmd.HTTPMethod, cmd.ServiceName, readableRequestSize)
 	default:
 		err = fmt.Errorf("unexpected type of executable %T", exe)
 	}

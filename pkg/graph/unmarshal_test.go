@@ -44,14 +44,14 @@ func TestUnmarshalYAML(t *testing.T) {
 						HTTPMethod:  "GET",
 						ServiceName: "A",
 						RequestSettings: RequestSettings{
-							PayloadSize: 10240,
+							Size: 10240,
 						},
 					},
 					RequestCommand{
 						HTTPMethod:  "POST",
 						ServiceName: "B",
 						RequestSettings: RequestSettings{
-							PayloadSize: 1024,
+							Size: 1024,
 						},
 					},
 				},
@@ -70,14 +70,14 @@ func TestUnmarshalYAML(t *testing.T) {
 								HTTPMethod:  "GET",
 								ServiceName: "A",
 								RequestSettings: RequestSettings{
-									PayloadSize: 1024,
+									Size: 1024,
 								},
 							},
 							RequestCommand{
 								HTTPMethod:  "GET",
 								ServiceName: "C",
 								RequestSettings: RequestSettings{
-									PayloadSize: 1024,
+									Size: 1024,
 								},
 							},
 						},
@@ -89,7 +89,7 @@ func TestUnmarshalYAML(t *testing.T) {
 						HTTPMethod:  "DELETE",
 						ServiceName: "B",
 						RequestSettings: RequestSettings{
-							PayloadSize: 1024,
+							Size: 1024,
 						},
 					},
 				},
@@ -99,9 +99,9 @@ func TestUnmarshalYAML(t *testing.T) {
 
 	inputYAML := `apiVersion: v1alpha1
 default:
-  payloadSize: 1 KB
   computeUsage: 10%
   memoryUsage: 10%
+  requestSize: 1 KB
 services:
   A:
     computeUsage: 50%
@@ -114,7 +114,7 @@ services:
     script:
     - get:
         service: A
-        payloadSize: 10K
+        size: 10K
     - post: B
   D:
     # Call A and C concurrently, process, then call B.

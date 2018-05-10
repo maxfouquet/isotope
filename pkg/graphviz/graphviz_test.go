@@ -127,14 +127,14 @@ func TestServiceGraphToGraph(t *testing.T) {
 						HTTPMethod:  "GET",
 						ServiceName: "A",
 						RequestSettings: graph.RequestSettings{
-							PayloadSize: 10240,
+							Size: 10240,
 						},
 					},
 					graph.RequestCommand{
 						HTTPMethod:  "POST",
 						ServiceName: "B",
 						RequestSettings: graph.RequestSettings{
-							PayloadSize: 1024,
+							Size: 1024,
 						},
 					},
 				},
@@ -153,14 +153,14 @@ func TestServiceGraphToGraph(t *testing.T) {
 								HTTPMethod:  "GET",
 								ServiceName: "A",
 								RequestSettings: graph.RequestSettings{
-									PayloadSize: 1024,
+									Size: 1024,
 								},
 							},
 							graph.RequestCommand{
 								HTTPMethod:  "GET",
 								ServiceName: "C",
 								RequestSettings: graph.RequestSettings{
-									PayloadSize: 1024,
+									Size: 1024,
 								},
 							},
 						},
@@ -172,7 +172,7 @@ func TestServiceGraphToGraph(t *testing.T) {
 						HTTPMethod:  "DELETE",
 						ServiceName: "B",
 						RequestSettings: graph.RequestSettings{
-							PayloadSize: 1024,
+							Size: 1024,
 						},
 					},
 				},

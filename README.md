@@ -10,7 +10,7 @@ architecture.
 ```yaml
 apiVersion: v1alpha1
 default:
-  payloadSize: 1 KB
+  requestSize: 1 KB
   computeUsage: 10%
   memoryUsage: 10%
 services:
@@ -25,7 +25,7 @@ services:
     script:
     - get:
         service: A
-        payloadSize: 10K
+        size: 10K
     - post: B
   D:
     # Call A and C concurrently, process, then call B.
