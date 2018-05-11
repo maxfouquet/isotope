@@ -39,7 +39,7 @@ func executeRequestCommand(
 	paths []string, err error) {
 	url := fmt.Sprintf("http://%s:%v", cmd.ServiceName, port)
 	request, err := buildRequest(
-		cmd.HTTPMethod, url, cmd.RequestSettings.Size, forwardableHeader)
+		cmd.HTTPMethod, url, cmd.Size, forwardableHeader)
 	if err != nil {
 		return
 	}

@@ -46,16 +46,12 @@ func TestUnmarshalYAML(t *testing.T) {
 					RequestCommand{
 						HTTPMethod:  "GET",
 						ServiceName: "A",
-						RequestSettings: RequestSettings{
-							Size: 10240,
-						},
+						Size: 10240,
 					},
 					RequestCommand{
 						HTTPMethod:  "POST",
 						ServiceName: "B",
-						RequestSettings: RequestSettings{
-							Size: 1024,
-						},
+						Size: 1024,
 					},
 				},
 			},
@@ -73,16 +69,12 @@ func TestUnmarshalYAML(t *testing.T) {
 							RequestCommand{
 								HTTPMethod:  "GET",
 								ServiceName: "A",
-								RequestSettings: RequestSettings{
-									Size: 1024,
-								},
+								Size: 1024,
 							},
 							RequestCommand{
 								HTTPMethod:  "GET",
 								ServiceName: "C",
-								RequestSettings: RequestSettings{
-									Size: 1024,
-								},
+								Size: 1024,
 							},
 						},
 					},
@@ -92,9 +84,7 @@ func TestUnmarshalYAML(t *testing.T) {
 					RequestCommand{
 						HTTPMethod:  "DELETE",
 						ServiceName: "B",
-						RequestSettings: RequestSettings{
-							Size: 1024,
-						},
+						Size: 1024,
 					},
 				},
 			},

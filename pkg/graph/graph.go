@@ -28,9 +28,3 @@ type ServiceSettings struct {
 	// ResponseSize is the number of bytes in the response body.
 	ResponseSize int64
 }
-
-// RequestSettings describes the configurable settings for service requests.
-type RequestSettings struct {
-	// Size is the number of bytes in the request body.
-	Size int64
-}

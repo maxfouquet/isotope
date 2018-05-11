@@ -29,7 +29,7 @@ func (g *ServiceGraph) UnmarshalYAML(
 			return err
 		}
 		script, err := parseScript(
-			yamlSettings.Script, defaults.RequestSettings.Size)
+			yamlSettings.Script, defaults.RequestSize)
 		if err != nil {
 			return err
 		}
@@ -80,7 +80,7 @@ type yamlServiceSettings struct {
 
 type defaultSettings struct {
 	ServiceSettings
-	RequestSettings
+	RequestSize int64
 }
 
 func parseDefaultSettings(
@@ -104,7 +104,7 @@ func parseDefaultSettings(
 		}
 	}
 	if yaml.RequestSize != nil {
-		settings.RequestSettings.Size, err = units.RAMInBytes(*yaml.RequestSize)
+		settings.RequestSize, err = units.RAMInBytes(*yaml.RequestSize)
 		if err != nil {
 			return
 		}
@@ -141,10 +141,10 @@ func parseServiceSettings(
 	return
 }
 
-func parseScript(script []interface{}, defaultPayloadSize int64) (
+func parseScript(script []interface{}, defaultRequestSize int64) (
 	commands []Command, err error) {
 	for _, step := range script {
-		command, err := parseCommand(step, defaultPayloadSize)
+		command, err := parseCommand(step, defaultRequestSize)
 		if err != nil {
 			return nil, err
 		}
@@ -162,13 +162,13 @@ func parseScript(script []interface{}, defaultPayloadSize int64) (
 // - sleep: time.Duration
 // - get|http...: string
 // - get|http...: {service:string size:units.ByteSize}
-func parseCommand(step interface{}, defaultPayloadSize int64) (
+func parseCommand(step interface{}, defaultRequestSize int64) (
 	command Command, err error) {
 	switch val := step.(type) {
 	case map[interface{}]interface{}:
-		command, err = parseSingleCommand(val, defaultPayloadSize)
+		command, err = parseSingleCommand(val, defaultRequestSize)
 	case []interface{}:
-		command, err = parseConcurrentCommand(val, defaultPayloadSize)
+		command, err = parseConcurrentCommand(val, defaultRequestSize)
 	default:
 		err = fmt.Errorf("invalid step type %T", val)
 	}
@@ -176,7 +176,7 @@ func parseCommand(step interface{}, defaultPayloadSize int64) (
 }
 
 func parseSingleCommand(
-	yamlCmd map[interface{}]interface{}, defaultPayloadSize int64) (
+	yamlCmd map[interface{}]interface{}, defaultRequestSize int64) (
 	command Command, err error) {
 	if len(yamlCmd) != 1 {
 		return nil, fmt.Errorf(
@@ -197,7 +197,7 @@ func parseSingleCommand(
 				return nil, fmt.Errorf("unknown command: %s", key)
 			}
 			command, err = parseRequestCommand(
-				val, httpMethod, defaultPayloadSize)
+				val, httpMethod, defaultRequestSize)
 		}
 	}
 	return
@@ -279,11 +279,11 @@ func parseRequestCommandMap(
 	return
 }
 
-func parseConcurrentCommand(list []interface{}, defaultPayloadSize int64) (
+func parseConcurrentCommand(list []interface{}, defaultRequestSize int64) (
 	cCommand ConcurrentCommand, err error) {
 	for _, item := range list {
 		if m, ok := item.(map[interface{}]interface{}); ok {
-			command, err := parseSingleCommand(m, defaultPayloadSize)
+			command, err := parseSingleCommand(m, defaultRequestSize)
 			if err != nil {
 				return cCommand, err
 			}

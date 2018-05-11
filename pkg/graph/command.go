@@ -62,9 +62,10 @@ type ConcurrentCommand struct {
 // RequestCommand describes a command to send an HTTP request to another
 // service.
 type RequestCommand struct {
-	RequestSettings
 	ServiceName string
 	HTTPMethod  HTTPMethod
+	// Size is the number of bytes in the request body.
+	Size int64
 }
 
 // SleepCommand describes a command to pause for a duration.

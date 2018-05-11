@@ -162,7 +162,7 @@ func nonConcurrentCommandToString(exe graph.Command) (s string, err error) {
 	case graph.SleepCommand:
 		s = fmt.Sprintf("SLEEP %s", cmd.Duration)
 	case graph.RequestCommand:
-		readableRequestSize := units.BytesSize(float64(cmd.RequestSettings.Size))
+		readableRequestSize := units.BytesSize(float64(cmd.Size))
 		s = fmt.Sprintf(
 			"%s \"%s\" %s",
 			cmd.HTTPMethod, cmd.ServiceName, readableRequestSize)
