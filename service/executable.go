@@ -13,14 +13,15 @@ import (
 	multierror "github.com/hashicorp/go-multierror"
 )
 
-func execute(step interface{}, forwardableHeader http.Header) (err error) {
+func execute(step interface{}, forwardableHeader http.Header) (
+	paths []string, err error) {
 	switch cmd := step.(type) {
 	case graph.SleepCommand:
 		executeSleepCommand(cmd)
 	case graph.RequestCommand:
-		err = executeRequestCommand(cmd, forwardableHeader)
+		paths, err = executeRequestCommand(cmd, forwardableHeader)
 	case graph.ConcurrentCommand:
-		err = executeConcurrentCommand(cmd, forwardableHeader)
+		paths, err = executeConcurrentCommand(cmd, forwardableHeader)
 	default:
 		log.Fatalf("unknown command type in script: %T", cmd)
 	}
@@ -34,7 +35,8 @@ func executeSleepCommand(cmd graph.SleepCommand) {
 // Execute sends an HTTP request to another service. Assumes DNS is available
 // which maps exe.ServiceName to the relevant URL to reach the service.
 func executeRequestCommand(
-	cmd graph.RequestCommand, forwardableHeader http.Header) (err error) {
+	cmd graph.RequestCommand, forwardableHeader http.Header) (
+	paths []string, err error) {
 	url := fmt.Sprintf("http://%s:%v", cmd.ServiceName, port)
 	request, err := buildRequest(
 		cmd.HTTPMethod, url, cmd.RequestSettings.Size, forwardableHeader)
@@ -47,6 +49,7 @@ func executeRequestCommand(
 	if err != nil {
 		return
 	}
+	paths = response.Header[pathTracesHeaderKey]
 	log.Printf("%s responded with %s", cmd.ServiceName, response.Status)
 	if response.StatusCode == http.StatusInternalServerError {
 		err = fmt.Errorf(
@@ -76,17 +79,29 @@ func copyHeader(request *http.Request, header http.Header) {
 // executeConcurrentCommand calls each command in exe.Commands asynchronously
 // and waits for each to complete.
 func executeConcurrentCommand(
-	cmd graph.ConcurrentCommand, forwardableHeader http.Header) error {
+	cmd graph.ConcurrentCommand, forwardableHeader http.Header) (
+	paths []string, errs error) {
 	wg := sync.WaitGroup{}
 	wg.Add(len(cmd.Commands))
-	var errs *multierror.Error
+	pathsChan := make(chan []string, len(cmd.Commands))
 	for _, subCmd := range cmd.Commands {
 		go func(step interface{}) {
-			err := execute(step, forwardableHeader)
-			errs = multierror.Append(errs, err)
-			wg.Done()
+			defer wg.Done()
+
+			// TODO: Split err into actual error and random errorRate-caused error.
+			stepPaths, err := execute(step, forwardableHeader)
+			pathsChan <- stepPaths
+			if err != nil {
+				errs = multierror.Append(errs, err)
+			}
 		}(subCmd)
 	}
 	wg.Wait()
-	return errs
+	close(pathsChan)
+	for returnedPaths := range pathsChan {
+		for _, path := range returnedPaths {
+			paths = append(paths, path)
+		}
+	}
+	return
 }
