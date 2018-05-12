@@ -14,6 +14,7 @@ func TestUnmarshalYAML(t *testing.T) {
 			"A": Service{
 				Name: "A",
 				ServiceSettings: ServiceSettings{
+					Type:         HTTPService,
 					ComputeUsage: 0.5,
 					MemoryUsage:  0.2,
 					ErrorRate:    0.0001,
@@ -28,6 +29,7 @@ func TestUnmarshalYAML(t *testing.T) {
 			"B": Service{
 				Name: "B",
 				ServiceSettings: ServiceSettings{
+					Type:         GRPCService,
 					ComputeUsage: 0.1,
 					MemoryUsage:  0.1,
 					ErrorRate:    0,
@@ -37,6 +39,7 @@ func TestUnmarshalYAML(t *testing.T) {
 			"C": Service{
 				Name: "C",
 				ServiceSettings: ServiceSettings{
+					Type:         HTTPService,
 					ComputeUsage: 0.1,
 					MemoryUsage:  0.1,
 					ErrorRate:    0,
@@ -46,18 +49,19 @@ func TestUnmarshalYAML(t *testing.T) {
 					RequestCommand{
 						HTTPMethod:  "GET",
 						ServiceName: "A",
-						Size: 10240,
+						Size:        10240,
 					},
 					RequestCommand{
 						HTTPMethod:  "POST",
 						ServiceName: "B",
-						Size: 1024,
+						Size:        1024,
 					},
 				},
 			},
 			"D": Service{
 				Name: "D",
 				ServiceSettings: ServiceSettings{
+					Type:         HTTPService,
 					ComputeUsage: 0.1,
 					MemoryUsage:  0.1,
 					ErrorRate:    0,
@@ -69,12 +73,12 @@ func TestUnmarshalYAML(t *testing.T) {
 							RequestCommand{
 								HTTPMethod:  "GET",
 								ServiceName: "A",
-								Size: 1024,
+								Size:        1024,
 							},
 							RequestCommand{
 								HTTPMethod:  "GET",
 								ServiceName: "C",
-								Size: 1024,
+								Size:        1024,
 							},
 						},
 					},
@@ -84,7 +88,7 @@ func TestUnmarshalYAML(t *testing.T) {
 					RequestCommand{
 						HTTPMethod:  "DELETE",
 						ServiceName: "B",
-						Size: 1024,
+						Size:        1024,
 					},
 				},
 			},
@@ -93,6 +97,7 @@ func TestUnmarshalYAML(t *testing.T) {
 
 	inputYAML := `apiVersion: v1alpha1
 default:
+  serviceType: http
   computeUsage: 10%
   memoryUsage: 10%
   requestSize: 1 KB
@@ -105,6 +110,7 @@ services:
     script:
     - sleep: 100ms
   B:
+    type: grpc
   C:
     script:
     - get:

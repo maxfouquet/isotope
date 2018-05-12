@@ -16,6 +16,8 @@ type Service struct {
 
 // ServiceSettings describes the configurable settings for a service.
 type ServiceSettings struct {
+	// Type describes what protocol the service supports (e.g. HTTP, gRPC).
+	Type ServiceType
 	// ComputeUsage is the percentage of CPU power that should be used during
 	// script execution.
 	ComputeUsage float64
@@ -28,3 +30,15 @@ type ServiceSettings struct {
 	// ResponseSize is the number of bytes in the response body.
 	ResponseSize int64
 }
+
+// ServiceType describes what protocol the service supports.
+type ServiceType int
+
+const (
+	// UnknownService is the default, useless value for ServiceType.
+	UnknownService ServiceType = iota
+	// HTTPService indicates the service should run an HTTP server.
+	HTTPService
+	// GRPCService indicates the service should run a GRPC server.
+	GRPCService
+)

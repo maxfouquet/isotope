@@ -9,6 +9,8 @@ import (
 	units "github.com/docker/go-units"
 )
 
+const defaultServiceType ServiceType = HTTPService
+
 // UnmarshalYAML implements the Unmarshaler interface and fills the ServiceGraph
 // with the contents of a proper YAML document.
 func (g *ServiceGraph) UnmarshalYAML(
@@ -71,6 +73,7 @@ type yamlDefaultSettings struct {
 }
 
 type yamlServiceSettings struct {
+	ServiceType  *string       `yaml:"type"`
 	ComputeUsage *string       `yaml:"computeUsage"`
 	MemoryUsage  *string       `yaml:"memoryUsage"`
 	ErrorRate    *string       `yaml:"errorRate"`
@@ -85,6 +88,10 @@ type defaultSettings struct {
 
 func parseDefaultSettings(
 	yaml yamlDefaultSettings) (settings defaultSettings, err error) {
+	settings.Type, err = parseServiceType(yaml.ServiceType, defaultServiceType)
+	if err != nil {
+		return
+	}
 	if yaml.ComputeUsage != nil {
 		settings.ComputeUsage, err = parseFloat(*yaml.ComputeUsage)
 		if err != nil {
@@ -118,6 +125,10 @@ func parseDefaultSettings(
 func parseServiceSettings(
 	yaml yamlServiceSettings,
 	defaults ServiceSettings) (settings ServiceSettings, err error) {
+	settings.Type, err = parseServiceType(yaml.ServiceType, defaults.Type)
+	if err != nil {
+		return
+	}
 	settings.ComputeUsage, err = parseFloatWithDefault(
 		yaml.ComputeUsage, defaults.ComputeUsage)
 	if err != nil {
@@ -292,6 +303,25 @@ func parseConcurrentCommand(list []interface{}, defaultRequestSize int64) (
 			err = fmt.Errorf(
 				"unexpected type %T in concurrent command; expected a map",
 				item)
+		}
+	}
+	return
+}
+
+func parseServiceType(
+	raw *string, defaultServiceType ServiceType) (
+	serviceType ServiceType, err error) {
+	if raw == nil {
+		serviceType = defaultServiceType
+	} else {
+		lowerType := strings.ToLower(*raw)
+		switch lowerType {
+		case "http":
+			serviceType = HTTPService
+		case "grpc":
+			serviceType = GRPCService
+		default:
+			err = fmt.Errorf("unknown type of service: %s", *raw)
 		}
 	}
 	return
