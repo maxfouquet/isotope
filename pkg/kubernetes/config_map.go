@@ -8,6 +8,7 @@ import (
 )
 
 type configMapService struct {
+	Type         string        `json:"type"`
 	ComputeUsage float64       `json:"computeUsage"`
 	MemoryUsage  float64       `json:"memoryUsage"`
 	ErrorRate    float64       `json:"errorRate"`
@@ -23,7 +24,12 @@ func serviceToMarshallable(
 	if err != nil {
 		return
 	}
+	typeStr, err := typeToMarshallable(service.Type)
+	if err != nil {
+		return
+	}
 	marshallable = configMapService{
+		Type:         typeStr,
 		ComputeUsage: service.ComputeUsage,
 		MemoryUsage:  service.MemoryUsage,
 		ErrorRate:    service.ErrorRate,
@@ -90,4 +96,17 @@ func concurrentCommandToMarshallable(
 		cmdList = append(cmdList, marshallable)
 	}
 	return cmdList, nil
+}
+
+func typeToMarshallable(serviceType graph.ServiceType) (s string, err error) {
+	switch serviceType {
+	case graph.HTTPService:
+		s = "http"
+	case graph.GRPCService:
+		s = "grpc"
+	default:
+		err = fmt.Errorf(
+			"unusable value of service type: %v (%T)", serviceType, serviceType)
+	}
+	return
 }
