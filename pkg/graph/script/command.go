@@ -24,6 +24,4 @@ type RequestCommand struct {
 
 // ConcurrentCommand describes a set of commands that should be executed
 // simultaneously.
-type ConcurrentCommand struct {
-	Commands []Command
-}
+type ConcurrentCommand []Command

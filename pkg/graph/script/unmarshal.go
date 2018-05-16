@@ -139,10 +139,11 @@ func (c *RequestCommand) UnmarshalJSON(b []byte) (err error) {
 // UnmarshalJSON converts b to a ConcurrentCommand. b must be a JSON array of
 // commands.
 func (c *ConcurrentCommand) UnmarshalJSON(b []byte) (err error) {
-	c.Commands, err = parseJSONCommands(b)
+	cmds, err := parseJSONCommands(b)
 	if err != nil {
 		return
 	}
+	*c = ConcurrentCommand(cmds)
 	return
 }
 
