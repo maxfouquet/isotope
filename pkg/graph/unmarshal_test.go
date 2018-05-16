@@ -1,137 +1,132 @@
 package graph
 
 import (
+	"encoding/json"
 	"reflect"
 	"testing"
 	"time"
 
-	yaml "gopkg.in/yaml.v2"
+	"github.com/Tahler/service-grapher/pkg/graph/script"
+	"github.com/Tahler/service-grapher/pkg/graph/svc"
+
+	"github.com/Tahler/service-grapher/pkg/graph/svctype"
 )
 
-func TestUnmarshalYAML(t *testing.T) {
-	expected := ServiceGraph{
-		Services: map[string]Service{
-			"A": Service{
-				Name: "A",
-				ServiceSettings: ServiceSettings{
-					Type:         HTTPService,
-					ComputeUsage: 0.5,
-					MemoryUsage:  0.2,
-					ErrorRate:    0.0001,
-					ResponseSize: 10240,
-				},
-				Script: []Command{
-					SleepCommand{
-						Duration: 100 * time.Millisecond,
-					},
-				},
-			},
-			"B": Service{
-				Name: "B",
-				ServiceSettings: ServiceSettings{
-					Type:         GRPCService,
-					ComputeUsage: 0.1,
-					MemoryUsage:  0.1,
-					ErrorRate:    0,
-					ResponseSize: 10240,
-				},
-			},
-			"C": Service{
-				Name: "C",
-				ServiceSettings: ServiceSettings{
-					Type:         HTTPService,
-					ComputeUsage: 0.1,
-					MemoryUsage:  0.1,
-					ErrorRate:    0,
-					ResponseSize: 10240,
-				},
-				Script: []Command{
-					RequestCommand{
-						HTTPMethod:  "GET",
-						ServiceName: "A",
-						Size:        10240,
-					},
-					RequestCommand{
-						HTTPMethod:  "POST",
-						ServiceName: "B",
-						Size:        1024,
-					},
-				},
-			},
-			"D": Service{
-				Name: "D",
-				ServiceSettings: ServiceSettings{
-					Type:         HTTPService,
-					ComputeUsage: 0.1,
-					MemoryUsage:  0.1,
-					ErrorRate:    0,
-					ResponseSize: 10240,
-				},
-				Script: []Command{
-					ConcurrentCommand{
-						Commands: []Command{
-							RequestCommand{
-								HTTPMethod:  "GET",
-								ServiceName: "A",
-								Size:        1024,
-							},
-							RequestCommand{
-								HTTPMethod:  "GET",
-								ServiceName: "C",
-								Size:        1024,
-							},
-						},
-					},
-					SleepCommand{
-						Duration: 10 * time.Millisecond,
-					},
-					RequestCommand{
-						HTTPMethod:  "DELETE",
-						ServiceName: "B",
-						Size:        1024,
-					},
-				},
-			},
-		},
+func TestServiceGraph_UnmarshalJSON(t *testing.T) {
+	tests := []struct {
+		input []byte
+		graph ServiceGraph
+		err   error
+	}{
+		{jsonWithOneService, graphWithOneService, nil},
+		{jsonWithDefaultsAndManyServices, graphWithDefaultsAndManyServices, nil},
 	}
 
-	inputYAML := `apiVersion: v1alpha1
-default:
-  serviceType: http
-  computeUsage: 10%
-  memoryUsage: 10%
-  requestSize: 1 KB
-  responseSize: 10 KB
-services:
-  A:
-    computeUsage: 50%
-    memoryUsage: 20%
-    errorRate: 0.01%
-    script:
-    - sleep: 100ms
-  B:
-    type: grpc
-  C:
-    script:
-    - get:
-        service: A
-        size: 10K
-    - post: B
-  D:
-    # Call A and C concurrently, process, then call B.
-    script:
-    - - get: A
-      - get: C
-    - sleep: 10ms
-    - delete: B
-`
-	var actual ServiceGraph
-	err := yaml.Unmarshal([]byte(inputYAML), &actual)
-	if err != nil {
-		t.Fatal(err)
-	}
+	for _, test := range tests {
+		test := test
+		t.Run("", func(t *testing.T) {
+			t.Parallel()
 
-	if !reflect.DeepEqual(expected, actual) {
-		t.Fatalf("expected: %v, actual: %v", expected, actual)
+			var graph ServiceGraph
+			err := json.Unmarshal(test.input, &graph)
+			if test.err != err {
+				t.Errorf("expected %v; actual %v", test.err, err)
+			}
+			if !reflect.DeepEqual(test.graph, graph) {
+				t.Errorf("expected %v; actual %v", test.graph, graph)
+			}
+		})
 	}
 }
+
+var (
+	jsonWithOneService = []byte(`
+		{
+			"apiVersion": "v1alpha1",
+			"services": [{"name": "a"}]
+		}
+	`)
+	graphWithOneService = ServiceGraph{[]svc.Service{
+		{
+			Name: "a",
+			Type: svctype.ServiceHTTP,
+		},
+	}}
+	jsonWithDefaultsAndManyServices = []byte(`
+		{
+			"apiVersion": "v1alpha1",
+			"defaults": {
+				"errorRate": 0.1,
+				"requestSize": 516,
+				"responseSize": 128,
+				"script": [
+					{ "sleep": "100ms" }
+				]
+			},
+			"services": [
+				{
+					"name": "a"
+				},
+				{
+					"name": "b",
+					"script": [
+						{
+							"call": {
+								"service": "a",
+								"size": "1KiB"
+							}
+						},
+						{ "sleep": "10ms" }
+					]
+				},
+				{
+					"name": "c",
+					"type": "grpc",
+					"errorRate": "20%",
+					"responseSize": "1K",
+					"script": [
+						[
+							{ "call": "a" },
+							{ "call": "b" }
+						],
+						{ "sleep": "10ms" }
+					]
+				}
+			]
+		}
+	`)
+	graphWithDefaultsAndManyServices = ServiceGraph{[]svc.Service{
+		{
+			Name:         "a",
+			Type:         svctype.ServiceHTTP,
+			ErrorRate:    0.1,
+			ResponseSize: 128,
+			Script: script.Script([]script.Command{
+				script.SleepCommand(100 * time.Millisecond),
+			}),
+		},
+		{
+			Name:         "b",
+			Type:         svctype.ServiceHTTP,
+			ErrorRate:    0.1,
+			ResponseSize: 128,
+			Script: script.Script([]script.Command{
+				script.RequestCommand{ServiceName: "a", Size: 1024},
+				script.SleepCommand(10 * time.Millisecond),
+			}),
+		},
+		{
+			Name:         "c",
+			Type:         svctype.ServiceGRPC,
+			ErrorRate:    0.2,
+			ResponseSize: 1024,
+			Script: script.Script([]script.Command{
+				script.ConcurrentCommand{
+					script.RequestCommand{ServiceName: "a", Size: 516},
+					script.RequestCommand{ServiceName: "b", Size: 516},
+				},
+				script.SleepCommand(10 * time.Millisecond),
+			}),
+		},
+	}}
+)

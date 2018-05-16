@@ -1,362 +1,71 @@
 package graph
 
 import (
-	"fmt"
-	"strconv"
-	"strings"
-	"time"
+	"encoding/json"
 
-	units "github.com/docker/go-units"
+	"github.com/Tahler/service-grapher/pkg/graph/pct"
+	"github.com/Tahler/service-grapher/pkg/graph/script"
+	"github.com/Tahler/service-grapher/pkg/graph/size"
+	"github.com/Tahler/service-grapher/pkg/graph/svc"
+	"github.com/Tahler/service-grapher/pkg/graph/svctype"
 )
 
-const defaultServiceType ServiceType = HTTPService
-
-// UnmarshalYAML implements the Unmarshaler interface and fills the ServiceGraph
-// with the contents of a proper YAML document.
-func (g *ServiceGraph) UnmarshalYAML(
-	unmarshal func(interface{}) error) error {
-	var document document
-	if err := unmarshal(&document); err != nil {
-		return err
-	}
-	defaults, err := parseDefaultSettings(document.DefaultSettings)
-	if err != nil {
-		return err
-	}
-	g.Services = make(map[string]Service)
-	for name, yamlSettings := range document.Services {
-		serviceSettings, err := parseServiceSettings(
-			yamlSettings, defaults.ServiceSettings)
-		if err != nil {
-			return err
-		}
-		script, err := parseScript(
-			yamlSettings.Script, defaults.RequestSize)
-		if err != nil {
-			return err
-		}
-		g.Services[name] = Service{
-			ServiceSettings: serviceSettings,
-			Script:          script,
-			Name:            name,
-		}
-	}
-	return nil
-}
-
-// UnmarshalYAML implements the Unmarshaler interface and fills the Service with
-// the contents of a proper YAML document.
-func (s *Service) UnmarshalYAML(unmarshal func(interface{}) error) (err error) {
-	var yamlSettings yamlServiceSettings
-	err = unmarshal(&yamlSettings)
+// UnmarshalJSON converts b into a valid ServiceGraph. See validate() for the
+// details on what it means to be "valid".
+func (g *ServiceGraph) UnmarshalJSON(b []byte) (err error) {
+	metadata := serviceGraphJSONMetadata{Defaults: defaultDefaults}
+	err = json.Unmarshal(b, &metadata)
 	if err != nil {
 		return
 	}
-	s.ServiceSettings, err = parseServiceSettings(yamlSettings, ServiceSettings{})
-	if err != nil {
-		return
-	}
-	s.Script, err = parseScript(yamlSettings.Script, 0)
-	return
-}
 
-// document is an intermediate, easily unmarshaled struct.
-type document struct {
-	APIVersion      string                         `yaml:"apiVersion"`
-	DefaultSettings yamlDefaultSettings            `yaml:"default"`
-	Services        map[string]yamlServiceSettings `yaml:"services"`
-}
-
-type yamlDefaultSettings struct {
-	yamlServiceSettings `yaml:",inline"`
-	RequestSize         *string `yaml:"requestSize"`
-}
-
-type yamlServiceSettings struct {
-	ServiceType  *string       `yaml:"type"`
-	ComputeUsage *string       `yaml:"computeUsage"`
-	MemoryUsage  *string       `yaml:"memoryUsage"`
-	ErrorRate    *string       `yaml:"errorRate"`
-	ResponseSize *string       `yaml:"responseSize"`
-	Script       []interface{} `yaml:"script"`
-}
-
-type defaultSettings struct {
-	ServiceSettings
-	RequestSize int64
-}
-
-func parseDefaultSettings(
-	yaml yamlDefaultSettings) (settings defaultSettings, err error) {
-	settings.Type, err = parseServiceType(yaml.ServiceType, defaultServiceType)
-	if err != nil {
-		return
-	}
-	if yaml.ComputeUsage != nil {
-		settings.ComputeUsage, err = parseFloat(*yaml.ComputeUsage)
+	withGlobalDefaults(metadata.Defaults, func() {
+		var unmarshallable unmarshallableServiceGraph
+		err = json.Unmarshal(b, &unmarshallable)
 		if err != nil {
 			return
 		}
-	}
-	if yaml.MemoryUsage != nil {
-		settings.MemoryUsage, err = parseFloat(*yaml.MemoryUsage)
-		if err != nil {
-			return
-		}
-	}
-	if yaml.ErrorRate != nil {
-		settings.ErrorRate, err = parseFloat(*yaml.ErrorRate)
-		if err != nil {
-			return
-		}
-	}
-	if yaml.RequestSize != nil {
-		settings.RequestSize, err = units.RAMInBytes(*yaml.RequestSize)
-		if err != nil {
-			return
-		}
-	}
-	if yaml.ResponseSize != nil {
-		settings.ResponseSize, err = units.RAMInBytes(*yaml.ResponseSize)
-	}
+		*g = ServiceGraph(unmarshallable)
+	})
+
 	return
 }
 
-func parseServiceSettings(
-	yaml yamlServiceSettings,
-	defaults ServiceSettings) (settings ServiceSettings, err error) {
-	settings.Type, err = parseServiceType(yaml.ServiceType, defaults.Type)
-	if err != nil {
-		return
-	}
-	settings.ComputeUsage, err = parseFloatWithDefault(
-		yaml.ComputeUsage, defaults.ComputeUsage)
-	if err != nil {
-		return
-	}
-	settings.MemoryUsage, err = parseFloatWithDefault(
-		yaml.MemoryUsage, defaults.MemoryUsage)
-	if err != nil {
-		return
-	}
-	settings.ErrorRate, err = parseFloatWithDefault(
-		yaml.ErrorRate, defaults.ErrorRate)
-	if err != nil {
-		return
-	}
-	if yaml.ResponseSize == nil {
-		settings.ResponseSize = defaults.ResponseSize
-	} else {
-		settings.ResponseSize, err = units.RAMInBytes(*yaml.ResponseSize)
-	}
-	return
+// defaultDefaults is a stuttery but validly semantic name for the default
+// values when parsing JSON defaults.
+var defaultDefaults = defaults{Type: svctype.ServiceHTTP}
+
+type serviceGraphJSONMetadata struct {
+	APIVersion string   `json:"apiVersion"`
+	Defaults   defaults `json:"defaults"`
 }
 
-func parseScript(script []interface{}, defaultRequestSize int64) (
-	commands []Command, err error) {
-	for _, step := range script {
-		command, err := parseCommand(step, defaultRequestSize)
-		if err != nil {
-			return nil, err
-		}
-		commands = append(commands, command)
-	}
-	return
+type defaults struct {
+	Type         svctype.ServiceType `json:"type"`
+	ErrorRate    pct.Percentage      `json:"errorRate"`
+	ResponseSize size.ByteSize       `json:"responseSize"`
+	Script       script.Script       `json:"script"`
+	RequestSize  size.ByteSize       `json:"requestSize"`
 }
 
-// parseStep should be run on each step in the script the step may either be a
-// command or list of commands.
-// Step may be:
-// - A command
-// - A list of commands
-// A command may be:
-// - sleep: time.Duration
-// - get|http...: string
-// - get|http...: {service:string size:units.ByteSize}
-func parseCommand(step interface{}, defaultRequestSize int64) (
-	command Command, err error) {
-	switch val := step.(type) {
-	case map[interface{}]interface{}:
-		command, err = parseSingleCommand(val, defaultRequestSize)
-	case []interface{}:
-		command, err = parseConcurrentCommand(val, defaultRequestSize)
-	default:
-		err = fmt.Errorf("invalid step type %T", val)
+func withGlobalDefaults(defaults defaults, f func()) {
+	origDefaultService := svc.DefaultService
+	svc.DefaultService = svc.Service{
+		Type:         defaults.Type,
+		ErrorRate:    defaults.ErrorRate,
+		ResponseSize: defaults.ResponseSize,
+		Script:       defaults.Script,
 	}
-	return
+
+	origDefaultRequestCommand := script.DefaultRequestCommand
+	script.DefaultRequestCommand = script.RequestCommand{
+		Size: defaults.RequestSize,
+	}
+
+	f()
+
+	svc.DefaultService = origDefaultService
+	script.DefaultRequestCommand = origDefaultRequestCommand
 }
 
-func parseSingleCommand(
-	yamlCmd map[interface{}]interface{}, defaultRequestSize int64) (
-	command Command, err error) {
-	if len(yamlCmd) != 1 {
-		return nil, fmt.Errorf(
-			"command must contain a single key: %v", yamlCmd)
-	}
-	// This for loop will only iterate once.
-	for interfaceKey, val := range yamlCmd {
-		key, ok := interfaceKey.(string)
-		if !ok {
-			return nil, fmt.Errorf("key is not a string")
-		}
-		if key == "sleep" {
-			command, err = parseSleepCommand(val)
-		} else {
-			var httpMethod HTTPMethod
-			httpMethod, err = HTTPMethodFromString(key)
-			if err != nil {
-				return nil, fmt.Errorf("unknown command: %s", key)
-			}
-			command, err = parseRequestCommand(
-				val, httpMethod, defaultRequestSize)
-		}
-	}
-	return
-}
-
-func parseSleepCommand(yaml interface{}) (command SleepCommand, err error) {
-	if s, ok := yaml.(string); ok {
-		command.Duration, err = time.ParseDuration(s)
-	} else {
-		err = fmt.Errorf("expected a duration expressed as a string")
-	}
-	return
-}
-
-// A request command may be expressed as:
-// - get|http...: string
-// - get|http...: {service:string size:units.ByteSize}
-func parseRequestCommand(
-	impl interface{}, httpMethod HTTPMethod, defaultRequestSize int64) (
-	command RequestCommand, err error) {
-	command.HTTPMethod = httpMethod
-	switch val := impl.(type) {
-	case string:
-		command.ServiceName = val
-		command.Size = defaultRequestSize
-	case map[interface{}]interface{}:
-		command, err = parseRequestCommandMap(
-			val, httpMethod, defaultRequestSize)
-	default:
-		err = fmt.Errorf("unknown type of request command: %s", impl)
-	}
-	return
-}
-
-func parseString(i interface{}) (s string, err error) {
-	s, ok := i.(string)
-	if !ok {
-		err = fmt.Errorf("could not convert %v to a string", i)
-	}
-	return
-}
-
-func parseRequestCommandMap(
-	m map[interface{}]interface{}, httpMethod HTTPMethod,
-	defaultRequestSize int64) (command RequestCommand, err error) {
-	command.HTTPMethod = httpMethod
-	if n := len(m); n == 0 || n > 2 {
-		err = fmt.Errorf("expected at most two keys in %s step", httpMethod)
-		return
-	}
-
-	if key, ok := m["service"]; ok {
-		name, err := parseString(key)
-		if err != nil {
-			return command, err
-		}
-		command.ServiceName = name
-	} else {
-		err = fmt.Errorf("expected service in %s step", httpMethod)
-		return
-	}
-
-	if requestSizeYAML, ok := m["size"]; ok {
-		switch requestSize := requestSizeYAML.(type) {
-		case int:
-			command.Size = int64(requestSize)
-		case string:
-			humanSize, err := parseString(requestSize)
-			if err != nil {
-				return command, err
-			}
-			command.Size, err = units.RAMInBytes(humanSize)
-		default:
-			err = fmt.Errorf("unknown type %T of size", requestSize)
-		}
-	} else {
-		command.Size = defaultRequestSize
-	}
-	return
-}
-
-func parseConcurrentCommand(list []interface{}, defaultRequestSize int64) (
-	cCommand ConcurrentCommand, err error) {
-	for _, item := range list {
-		if m, ok := item.(map[interface{}]interface{}); ok {
-			command, err := parseSingleCommand(m, defaultRequestSize)
-			if err != nil {
-				return cCommand, err
-			}
-			cCommand.Commands = append(cCommand.Commands, command)
-		} else {
-			err = fmt.Errorf(
-				"unexpected type %T in concurrent command; expected a map",
-				item)
-		}
-	}
-	return
-}
-
-func parseServiceType(
-	raw *string, defaultServiceType ServiceType) (
-	serviceType ServiceType, err error) {
-	if raw == nil {
-		serviceType = defaultServiceType
-	} else {
-		lowerType := strings.ToLower(*raw)
-		switch lowerType {
-		case "http":
-			serviceType = HTTPService
-		case "grpc":
-			serviceType = GRPCService
-		default:
-			err = fmt.Errorf("unknown type of service: %s", *raw)
-		}
-	}
-	return
-}
-
-// parseFloatWithDefault tries to parse s, which is either a percentage of the
-// form "X.X%" or a float. If s is nil, return d.
-func parseFloatWithDefault(s *string, d float64) (f float64, err error) {
-	if s == nil {
-		f = d
-	} else {
-		f, err = parseFloat(*s)
-	}
-	return
-}
-
-func parseFloat(s string) (f float64, err error) {
-	if strings.Contains(s, "%") {
-		f, err = parsePercentage(s)
-	} else {
-		f, err = strconv.ParseFloat(s, 64)
-	}
-	return
-}
-
-func parsePercentage(s string) (f float64, err error) {
-	percentIndex := strings.Index(s, "%")
-	if percentIndex < 0 {
-		err = fmt.Errorf("Could not parse percentage: '%%' not found")
-		return
-	}
-	percentageFloat, err := strconv.ParseFloat(s[:percentIndex], 64)
-	if err != nil {
-		return
-	}
-	f = percentageFloat / 100
-	return
-}
+type unmarshallableServiceGraph ServiceGraph
