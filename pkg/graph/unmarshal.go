@@ -28,6 +28,11 @@ func (g *ServiceGraph) UnmarshalJSON(b []byte) (err error) {
 		*g = ServiceGraph(unmarshallable)
 	})
 
+	err = validate(*g)
+	if err != nil {
+		return
+	}
+
 	return
 }
 

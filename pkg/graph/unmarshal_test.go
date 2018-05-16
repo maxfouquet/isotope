@@ -20,6 +20,16 @@ func TestServiceGraph_UnmarshalJSON(t *testing.T) {
 	}{
 		{jsonWithOneService, graphWithOneService, nil},
 		{jsonWithDefaultsAndManyServices, graphWithDefaultsAndManyServices, nil},
+		{
+			jsonWithRequestToUndefinedService,
+			ServiceGraph{},
+			ErrRequestToUndefinedService{"b"},
+		},
+		{
+			jsonWithNestedConcurrentCommand,
+			ServiceGraph{},
+			ErrNestedConcurrentCommand,
+		},
 	}
 
 	for _, test := range tests {
@@ -29,11 +39,14 @@ func TestServiceGraph_UnmarshalJSON(t *testing.T) {
 
 			var graph ServiceGraph
 			err := json.Unmarshal(test.input, &graph)
-			if test.err != err {
-				t.Errorf("expected %v; actual %v", test.err, err)
-			}
-			if !reflect.DeepEqual(test.graph, graph) {
-				t.Errorf("expected %v; actual %v", test.graph, graph)
+			if test.err == nil {
+				if !reflect.DeepEqual(test.graph, graph) {
+					t.Errorf("expected %v; actual %v", test.graph, graph)
+				}
+			} else {
+				if test.err != err {
+					t.Errorf("expected %v; actual %v", test.err, err)
+				}
 			}
 		})
 	}
@@ -129,4 +142,32 @@ var (
 			}),
 		},
 	}}
+	jsonWithRequestToUndefinedService = []byte(`
+		{
+			"services": [
+				{
+					"name": "a",
+					"script": [{ "call": "b"}]
+				}
+			]
+		}
+	`)
+	jsonWithNestedConcurrentCommand = []byte(`
+		{
+			"services": [
+				{
+					"name": "a"
+				},
+				{
+					"name": "b",
+					"script": [
+						[
+							[{ "call": "a" }, { "call": "a" }],
+							{ "sleep": "10ms" }
+						]
+					]
+				}
+			]
+		}
+	`)
 )
