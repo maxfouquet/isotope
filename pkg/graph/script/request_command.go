@@ -14,10 +14,16 @@ type RequestCommand struct {
 	Size size.ByteSize `json:"size"`
 }
 
+var (
+	// DefaultRequestCommand is used by UnmarshalJSON to set defaults.
+	DefaultRequestCommand RequestCommand
+)
+
 // UnmarshalJSON converts b to a RequestCommand. If b is a JSON string, it is
 // set as c's ServiceName. If b is a JSON object, it's properties are mapped to
 // c.
 func (c *RequestCommand) UnmarshalJSON(b []byte) (err error) {
+	*c = DefaultRequestCommand
 	isJSONString := b[0] == '"'
 	if isJSONString {
 		var s string
