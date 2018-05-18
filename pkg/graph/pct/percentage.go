@@ -2,6 +2,7 @@ package pct
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -66,4 +67,8 @@ func FromFloat64(f float64) (p Percentage, err error) {
 		err = OutOfRangeError{f}
 	}
 	return
+}
+
+func (p Percentage) String() string {
+	return fmt.Sprintf("%0.2f%%", p*100)
 }

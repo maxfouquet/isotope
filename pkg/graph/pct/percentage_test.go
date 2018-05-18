@@ -59,3 +59,27 @@ func TestFromString(t *testing.T) {
 		})
 	}
 }
+
+func TestToString(t *testing.T) {
+	tests := []struct {
+		input Percentage
+		s     string
+	}{
+		{0.0, "0.00%"},
+		{0.1, "10.00%"},
+		{1.0, "100.00%"},
+		{0.51254, "51.25%"},
+	}
+
+	for _, test := range tests {
+		test := test
+		t.Run("", func(t *testing.T) {
+			t.Parallel()
+
+			s := test.input.String()
+			if test.s != s {
+				t.Errorf("expected %v; actual %v", test.s, s)
+			}
+		})
+	}
+}
