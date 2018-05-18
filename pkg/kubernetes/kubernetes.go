@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Tahler/service-grapher/pkg/graph"
+	"github.com/Tahler/service-grapher/pkg/graph/svc"
 	"github.com/ghodss/yaml"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
@@ -16,8 +17,8 @@ import (
 // manifests.
 func ServiceGraphToKubernetesManifests(
 	serviceGraph graph.ServiceGraph) (yamlDoc []byte, err error) {
-	// ConfigMap manifest + 2 manifests per service (i.e. Deployment, Service).
-	numManifests := len(serviceGraph.Services)*2 + 1
+	numServices := len(serviceGraph.Services)
+	numManifests := numManifestsPerService*numServices + numConfigMaps
 	manifests := make([]string, 0, numManifests)
 
 	appendManifest := func(manifest interface{}) error {
@@ -53,6 +54,11 @@ func ServiceGraphToKubernetesManifests(
 	return []byte(yamlDocString), nil
 }
 
+const (
+	numConfigMaps          = 1
+	numManifestsPerService = 2
+)
+
 func makeConfigMap(
 	graph graph.ServiceGraph) (configMap apiv1.ConfigMap, err error) {
 	configMap.APIVersion = "v1"
@@ -62,11 +68,7 @@ func makeConfigMap(
 
 	data := make(map[string]string)
 	for _, service := range graph.Services {
-		marshallable, err := serviceToMarshallable(service)
-		if err != nil {
-			return configMap, err
-		}
-		serviceYAML, err := yaml.Marshal(marshallable)
+		serviceYAML, err := yaml.Marshal(service)
 		if err != nil {
 			return configMap, err
 		}
@@ -76,7 +78,7 @@ func makeConfigMap(
 	return
 }
 
-func makeService(service graph.Service) (k8sService apiv1.Service, err error) {
+func makeService(service svc.Service) (k8sService apiv1.Service, err error) {
 	k8sService.APIVersion = "v1"
 	k8sService.Kind = "Service"
 	k8sService.ObjectMeta.Name = service.Name
@@ -90,7 +92,7 @@ const containerName = "perf-test-service"
 const containerImage = "tahler/perf-test-service"
 
 func makeDeployment(
-	service graph.Service) (k8sDeployment appsv1.Deployment, err error) {
+	service svc.Service) (k8sDeployment appsv1.Deployment, err error) {
 	k8sDeployment.APIVersion = "apps/v1"
 	k8sDeployment.Kind = "Deployment"
 	k8sDeployment.ObjectMeta.Name = service.Name
