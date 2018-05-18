@@ -5,8 +5,8 @@ import (
 
 	"github.com/Tahler/service-grapher/pkg/graph"
 	"github.com/Tahler/service-grapher/pkg/graphviz"
+	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
-	yaml "gopkg.in/yaml.v2"
 )
 
 // graphvizCmd represents the graphviz command
