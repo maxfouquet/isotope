@@ -20,20 +20,30 @@ func (g *ServiceGraph) UnmarshalJSON(b []byte) (err error) {
 		return
 	}
 
-	withGlobalDefaults(metadata.Defaults, func() {
-		var unmarshallable unmarshallableServiceGraph
-		err = json.Unmarshal(b, &unmarshallable)
-		if err != nil {
-			return
-		}
-		*g = ServiceGraph(unmarshallable)
-	})
+	*g, err = parseJSONServiceGraphWithDefaults(b, metadata.Defaults)
+	if err != nil {
+		return
+	}
 
 	err = validate(*g)
 	if err != nil {
 		return
 	}
 
+	return
+}
+
+func parseJSONServiceGraphWithDefaults(
+	b []byte, defaults defaults) (sg ServiceGraph, err error) {
+	withGlobalDefaults(defaults, func() {
+		var unmarshallable unmarshallableServiceGraph
+		innerErr := json.Unmarshal(b, &unmarshallable)
+		if innerErr == nil {
+			sg = ServiceGraph(unmarshallable)
+		} else {
+			err = innerErr
+		}
+	})
 	return
 }
 
