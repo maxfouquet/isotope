@@ -10,6 +10,15 @@ import (
 // number or a JSON string such as "10k" or "16mb" or "32 PB".
 type ByteSize uint64
 
+func (z ByteSize) String() string {
+	return units.BytesSize(float64(z))
+}
+
+// MarshalJSON encodes the ByteSize as a JSON string.
+func (z ByteSize) MarshalJSON() ([]byte, error) {
+	return json.Marshal(z.String())
+}
+
 // UnmarshalJSON converts a JSON number or string to a ByteSize. If b is a JSON
 // number, it must be a positive integer. If b is a JSON string, it must be
 // parsable by units.RAMInBytes.
@@ -37,10 +46,6 @@ func (z *ByteSize) UnmarshalJSON(b []byte) (err error) {
 		}
 	}
 	return
-}
-
-func (z ByteSize) String() string {
-	return units.BytesSize(float64(z))
 }
 
 // FromString converts a string like "10 mb" or "16k" to a ByteSize. See
