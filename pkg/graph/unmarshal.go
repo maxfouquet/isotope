@@ -2,6 +2,7 @@ package graph
 
 import (
 	"encoding/json"
+	"sync"
 
 	"github.com/Tahler/service-grapher/pkg/graph/pct"
 	"github.com/Tahler/service-grapher/pkg/graph/script"
@@ -38,7 +39,10 @@ func (g *ServiceGraph) UnmarshalJSON(b []byte) (err error) {
 
 // defaultDefaults is a stuttery but validly semantic name for the default
 // values when parsing JSON defaults.
-var defaultDefaults = defaults{Type: svctype.ServiceHTTP}
+var (
+	defaultDefaults = defaults{Type: svctype.ServiceHTTP}
+	defaultMutex    sync.Mutex
+)
 
 type serviceGraphJSONMetadata struct {
 	APIVersion string   `json:"apiVersion"`
@@ -54,6 +58,8 @@ type defaults struct {
 }
 
 func withGlobalDefaults(defaults defaults, f func()) {
+	defaultMutex.Lock()
+
 	origDefaultService := svc.DefaultService
 	svc.DefaultService = svc.Service{
 		Type:         defaults.Type,
@@ -71,6 +77,8 @@ func withGlobalDefaults(defaults defaults, f func()) {
 
 	svc.DefaultService = origDefaultService
 	script.DefaultRequestCommand = origDefaultRequestCommand
+
+	defaultMutex.Unlock()
 }
 
 type unmarshallableServiceGraph ServiceGraph
