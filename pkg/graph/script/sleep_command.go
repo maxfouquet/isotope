@@ -22,3 +22,7 @@ func (c *SleepCommand) UnmarshalJSON(b []byte) (err error) {
 	*c = SleepCommand(duration)
 	return
 }
+
+func (c SleepCommand) String() string {
+	return time.Duration(c).String()
+}
