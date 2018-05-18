@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"text/template"
 
-	"github.com/docker/go-units"
-
 	"github.com/Tahler/service-grapher/pkg/graph"
+	"github.com/Tahler/service-grapher/pkg/graph/script"
+	"github.com/Tahler/service-grapher/pkg/graph/svc"
 )
 
 // ServiceGraphToDotLanguage converts a ServiceGraph to a Graphviz DOT language
@@ -66,8 +66,6 @@ type Graph struct {
 // Node represents a node in the Graphviz graph.
 type Node struct {
 	Name         string
-	ComputeUsage string
-	MemoryUsage  string
 	ErrorRate    string
 	ResponseSize string
 	Steps        [][]string
@@ -89,7 +87,7 @@ const graphvizTemplate = `digraph {
   {{ range .Nodes -}}
   {{ .Name }} [label=<
 <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
-  <TR><TD><B>{{ .Name }}</B><BR />CPU: {{ .ComputeUsage }}<BR />RAM: {{ .MemoryUsage }}<BR />Err: {{ .ErrorRate }}</TD></TR>
+  <TR><TD><B>{{ .Name }}</B><BR />Err: {{ .ErrorRate }}</TD></TR>
   {{- range $i, $cmds := .Steps }}
   <TR><TD PORT="{{ $i }}">
   {{- range $j, $cmd := $cmds -}}
@@ -109,16 +107,16 @@ const graphvizTemplate = `digraph {
 `
 
 func getEdgesFromExe(
-	exe graph.Command, idx int, fromServiceName string) (edges []Edge) {
+	exe script.Command, idx int, fromServiceName string) (edges []Edge) {
 	switch cmd := exe.(type) {
-	case graph.ConcurrentCommand:
-		for _, subCmd := range cmd.Commands {
+	case script.ConcurrentCommand:
+		for _, subCmd := range cmd {
 			subEdges := getEdgesFromExe(subCmd, idx, fromServiceName)
 			for _, e := range subEdges {
 				edges = append(edges, e)
 			}
 		}
-	case graph.RequestCommand:
+	case script.RequestCommand:
 		e := Edge{
 			From:      fromServiceName,
 			To:        cmd.ServiceName,
@@ -129,7 +127,7 @@ func getEdgesFromExe(
 	return
 }
 
-func toGraphvizNode(service graph.Service) (Node, []Edge, error) {
+func toGraphvizNode(service svc.Service) (Node, []Edge, error) {
 	steps := make([][]string, 0, len(service.Script))
 	edges := make([]Edge, 0, len(service.Script))
 	for idx, exe := range service.Script {
@@ -146,32 +144,29 @@ func toGraphvizNode(service graph.Service) (Node, []Edge, error) {
 	}
 	n := Node{
 		Name:         service.Name,
-		ComputeUsage: toPercentage(service.ComputeUsage),
-		MemoryUsage:  toPercentage(service.MemoryUsage),
-		ErrorRate:    toPercentage(service.ErrorRate),
-		ResponseSize: units.BytesSize(float64(service.ResponseSize)),
+		ErrorRate:    service.ErrorRate.String(),
+		ResponseSize: service.ResponseSize.String(),
 		Steps:        steps,
 	}
 	return n, edges, nil
 }
 
-func nonConcurrentCommandToString(exe graph.Command) (s string, err error) {
+func nonConcurrentCommandToString(exe script.Command) (s string, err error) {
 	switch cmd := exe.(type) {
-	case graph.SleepCommand:
-		s = fmt.Sprintf("SLEEP %s", cmd.Duration)
-	case graph.RequestCommand:
-		readableRequestSize := units.BytesSize(float64(cmd.Size))
+	case script.SleepCommand:
+		s = fmt.Sprintf("SLEEP %s", cmd)
+	case script.RequestCommand:
 		s = fmt.Sprintf(
-			"%s \"%s\" %s",
-			cmd.HTTPMethod, cmd.ServiceName, readableRequestSize)
+			"CALL \"%s\" %s",
+			cmd.ServiceName, cmd.Size.String())
 	default:
 		err = fmt.Errorf("unexpected type of executable %T", exe)
 	}
 	return
 }
 
-func executableToStringSlice(exe graph.Command) (ss []string, err error) {
-	appendNonConcurrentExe := func(exe graph.Command) error {
+func executableToStringSlice(exe script.Command) (ss []string, err error) {
+	appendNonConcurrentExe := func(exe script.Command) error {
 		s, err := nonConcurrentCommandToString(exe)
 		if err != nil {
 			return err
@@ -180,12 +175,12 @@ func executableToStringSlice(exe graph.Command) (ss []string, err error) {
 		return nil
 	}
 	switch cmd := exe.(type) {
-	case graph.SleepCommand:
+	case script.SleepCommand:
 		err = appendNonConcurrentExe(exe)
-	case graph.RequestCommand:
+	case script.RequestCommand:
 		err = appendNonConcurrentExe(exe)
-	case graph.ConcurrentCommand:
-		for _, exe := range cmd.Commands {
+	case script.ConcurrentCommand:
+		for _, exe := range cmd {
 			err = appendNonConcurrentExe(exe)
 			if err != nil {
 				return
@@ -195,9 +190,4 @@ func executableToStringSlice(exe graph.Command) (ss []string, err error) {
 		err = fmt.Errorf("unexpected type of executable %T", exe)
 	}
 	return
-}
-
-func toPercentage(f float64) string {
-	p := f * 100
-	return fmt.Sprintf("%.2f%%", p)
 }
