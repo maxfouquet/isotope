@@ -1,40 +1,39 @@
 digraph {
-    node [
-        fontsize = "16"
-        fontname = "courier"
-        shape = plaintext
-    ];
+  node [
+    fontsize = "16"
+    fontname = "courier"
+    shape = plaintext
+  ];
 
-    A [label=<
+  a [label=<
 <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
-  <TR><TD><B>A</B><BR />CPU: 50%<BR />RAM: 20%<BR />Err: 0.01%</TD></TR>
+  <TR><TD><B>a</B><BR />Type: HTTP<BR />Err: 0.01%</TD></TR>
   <TR><TD PORT="0">SLEEP 100ms</TD></TR>
 </TABLE>>];
 
-    B [label=<
+  b [label=<
 <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
-  <TR><TD><B>B</B><BR />CPU: 10%<BR />RAM: 10%<BR />Err: 0%</TD></TR>
+  <TR><TD><B>b</B><BR />Type: gRPC<BR />Err: 0.00%</TD></TR>
 </TABLE>>];
 
-    C [label=<
+  c [label=<
 <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
-  <TR><TD><B>C</B><BR />CPU: 10%<BR />RAM: 10%<BR />Err: 0%</TD></TR>
-  <TR><TD PORT="0">GET "A" 10K</TD></TR>
-  <TR><TD PORT="1">POST "B" 1K</TD></TR>
+  <TR><TD><B>c</B><BR />Type: HTTP<BR />Err: 0.00%</TD></TR>
+  <TR><TD PORT="0">CALL "a" 10KiB</TD></TR>
+  <TR><TD PORT="1">CALL "b" 1KiB</TD></TR>
 </TABLE>>];
 
-    D [label=<
+  d [label=<
 <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
-  <TR><TD><B>D</B><BR />CPU: 10%<BR />RAM: 10%<BR />Err: 0%</TD></TR>
-  <TR><TD PORT="0">GET "A" 1K<BR />GET "C" 1K</TD></TR>
+  <TR><TD><B>d</B><BR />Type: HTTP<BR />Err: 0.00%</TD></TR>
+  <TR><TD PORT="0">CALL "a" 1KiB<BR />CALL "c" 1KiB</TD></TR>
   <TR><TD PORT="1">SLEEP 10ms</TD></TR>
-  <TR><TD PORT="2">DELETE "B" 1K</TD></TR>
+  <TR><TD PORT="2">CALL "b" 1KiB</TD></TR>
 </TABLE>>];
 
-    C:0 -> A
-    C:1 -> B
-
-    D:0 -> A
-    D:0 -> C
-    D:2 -> B
+  c:0 -> a
+  c:1 -> b
+  d:0 -> a
+  d:0 -> c
+  d:2 -> b
 }

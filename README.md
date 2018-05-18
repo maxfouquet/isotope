@@ -9,32 +9,30 @@ architecture.
 
 ```yaml
 apiVersion: v1alpha1
-default:
+kind: MockServiceGraph
+defaults:
+  type: grpc
   requestSize: 1 KB
   responseSize: 16 KB
-  computeUsage: 10%
-  memoryUsage: 10%
 services:
-  A:
-    computeUsage: 50%
-    memoryUsage: 20%
-    errorRate: 0.01%
-    script:
-    - sleep: 100ms
-  B:
-  C:
-    script:
-    - get:
-        service: A
-        size: 10K
-    - post: B
-  D:
-    # Call A and C concurrently, process, then call B.
-    script:
-    - - get: A
-      - get: C
-    - sleep: 10ms
-    - delete: B
+- name: a
+  errorRate: 0.01%
+  script:
+  - sleep: 100ms
+- name: b
+  type: grpc
+- name: c
+  script:
+  - call:
+      service: a
+      size: 10K
+  - call: b
+- name: d
+  script:
+  - - call: a
+    - call: c
+  - sleep: 10ms
+  - call: b
 ```
 
 Represents a service graph like:
@@ -49,52 +47,53 @@ kind: ConfigMap
 metadata:
   name: scripts
 data:
-  A:
-    computeUsage: 50%
-    memoryUsage: 20%
-    errorRate: 0.01%
+  a: |
+    errorRate: 0.0001
+    name: a
+    responseSize: 16KiB
     script:
     - sleep: 100ms
-  B:
-    computeUsage: 10%
-    memoryUsage: 10%
-    errorRate: 0%
-  C:
-    computeUsage: 10%
-    memoryUsage: 10%
-    errorRate: 0%
+    type: http
+  b: |
+    name: b
+    responseSize: 16KiB
+    type: grpc
+  c: |
+    name: c
+    responseSize: 16KiB
     script:
-    - get:
-        service: A
-        payloadSize: 10K
-    - post:
-        service: B
-        payloadSize: 1 KB
-  D:
-    computeUsage: 10%
-    memoryUsage: 10%
-    errorRate: 0%
+    - call:
+        service: a
+        size: 10KiB
+    - call:
+        service: b
+        size: 1KiB
+    type: http
+  d: |
+    name: d
+    responseSize: 16KiB
     script:
-    - - get:
-          service: A
-          payloadSize: 1 KB
-      - get:
-          service: C
-          payloadSize: 1 KB
+    - - call:
+          service: a
+          size: 1KiB
+      - call:
+          service: c
+          size: 1KiB
     - sleep: 10ms
-    - delete:
-        service: B
-        payloadSize: 1 KB
+    - call:
+        service: b
+        size: 1KiB
+    type: http
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: A
+  name: a
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: A
+  name: a
 spec:
   template:
     spec:
@@ -105,12 +104,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: B
+  name: b
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: B
+  name: b
 spec:
   template:
     spec:
@@ -121,12 +120,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: C
+  name: c
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: C
+  name: c
 spec:
   template:
     spec:
@@ -137,12 +136,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: D
+  name: d
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: D
+  name: d
 spec:
   template:
     spec:
@@ -156,17 +155,19 @@ spec:
 
 ```yaml
 apiVersion: {{ Version }} # Required. K8s-like API version.
+kind: MockServiceGraph
 default: # Optional. Default to empty map.
-  computeUsage: {{ Percentage }} # Optional. Default 0%.
-  memoryUsage: {{ Percentage }} # Optional. Default 0%.
+  type: {{ "http" | "grpc" }} # Optional. Default "http".
   errorRate: {{ Percentage }} # Optional. Default 0%.
-  payloadSize: {{ DataSize }} # Optional. Default 0.
+  requestSize: {{ ByteSize }} # Optional. Default 0.
+  responseSize: {{ ByteSize }} # Optional. Default 0.
+  script: {{ Script }} # Optional. See below for spec.
 services: # Required. List of services in the graph.
-  {{ ServiceName }}: # Required. Name of the service.
-    computeUsage: {{ Percentage }} # Optional. Overrides default.
-    memoryUsage: {{ Percentage }} # Optional. Overrides default.
-    errorRate: {{ Percentage }} # Optional. Overrides default.
-    script: {{ Script }} # Optional. See below for spec.
+- name: {{ ServiceName }}: # Required. Name of the service.
+  type: {{ "http" | "grpc" }} # Optional. Default "http".
+  responseSize: {{ ByteSize }} # Optional. Default 0.
+  errorRate: {{ Percentage }} # Optional. Overrides default.
+  script: {{ Script }} # Optional. See below for spec.
 ```
 
 #### Default
@@ -174,7 +175,7 @@ services: # Required. List of services in the graph.
 At the global scope a `default` map may be placed to indicate settings which
 should hold for omitted settings for its current and nested scopes.
 
-Default-able settings include `computeUsage`, `memoryUsage`, `script`,
+Default-able settings include `type`, `script`, `responseSize`,
 `requestSize`, and `errorRate`.
 
 ##### Example
@@ -182,25 +183,26 @@ Default-able settings include `computeUsage`, `memoryUsage`, `script`,
 ```yaml
 apiVersion: v1alpha1
 default:
-  computeUsage: 10%
   errorRate: 0.1%
-  payloadSize: 100KB
-  # memoryUsage: 0% # Inherited from default.
+  requestSize: 100KB
+  # responseSize: 0 # Inherited from default.
+  # type: "http" # Inherited from default.
+  # script: [] # Inherited from default (acts like an echo server).
 services:
-  A:
-    memoryUsage: 80%
-    script:
-    - get: B # payloadSize: 100KB # Inherited from default.
-    - get:
-        service: B
-        payloadSize: 80B
-    # computeUsage: 10% # Inherited from default.
-    # errorRate: 10% # Inherited from default.
-  B:
-    errorRate: 5%
-    # computeUsage: 10% # Inherited from default.
-    # memoryUsage: 0% # Inherited from default.
-    # script: {} # Inherited from default (acts like an echo server).
+- name: a
+  memoryUsage: 80%
+  script:
+  - call: b # payloadSize: 100KB # Inherited from default.
+  - call:
+      service: b
+      payloadSize: 80B
+  # computeUsage: 10% # Inherited from default.
+  # errorRate: 10% # Inherited from default.
+- name: b
+  errorRate: 5%
+  # computeUsage: 10% # Inherited from default.
+  # memoryUsage: 0% # Inherited from default.
+  # script: [] # Inherited from default.
 ```
 
 #### Script
@@ -229,40 +231,40 @@ sleep: {{ Duration }}
 
 ###### Send Request
 
-`get`, `head`, `post`, `put`, `delete`, `connect`, `options`, `trace`,
-`patch`: Sends the respective HTTP request to another service.
+`call`: Sends a HTTP/gRPC request (depending on the receiving service's type)
+to another service.
 
 ```yaml
-{{ HttpMethod }}: {{ ServiceName }}
+call: {{ ServiceName }}
 ```
 
 OR
 
 ```yaml
-{{ HttpMethod }}:
+call:
   service: {{ ServiceName }}
-  payloadSize: {{ DataSize (e.g. 1 KB) }}
+  payloadSize: {{ ByteSize (e.g. 1 KB) }}
 ```
 
 ##### Examples
 
-Get B, then post to B _sequentially_:
+Call A, then call B _sequentially_:
 
 ```yaml
 script:
-- get: B
-- post: B
+- call: A
+- call: B
 ```
 
-GET A, B, and C _concurrently_, sleep to simulate work, and finally POST to D:
+Call A, B, and C _concurrently_, sleep to simulate work, and finally call D:
 
 ```yaml
 script:
-- - get: A
-  - get: B
-  - get: C
+- - call: A
+  - call: B
+  - call: C
 - sleep: 10ms
-- post: D
+- call: D
 ```
 
 ## Architecture and pipeline
