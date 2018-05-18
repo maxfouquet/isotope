@@ -8,6 +8,37 @@ import (
 // Command is the top level interface for commands.
 type Command interface{}
 
+const (
+	sleepCommandKey   = "sleep"
+	requestCommandKey = "call"
+)
+
+func commandsToMarshallable(cmds []Command) ([]interface{}, error) {
+	marshallableCmds := make([]interface{}, 0, len(cmds))
+	for _, cmd := range cmds {
+		marshallableCmd, err := commandToMarshallable(cmd)
+		if err != nil {
+			return marshallableCmds, err
+		}
+		marshallableCmds = append(marshallableCmds, marshallableCmd)
+	}
+	return marshallableCmds, nil
+}
+
+func commandToMarshallable(cmd Command) (marshallable interface{}, err error) {
+	switch cmd := cmd.(type) {
+	case SleepCommand:
+		marshallable = map[string]string{sleepCommandKey: cmd.String()}
+	case RequestCommand:
+		marshallable = map[string]RequestCommand{requestCommandKey: cmd}
+	case ConcurrentCommand:
+		marshallable, err = commandsToMarshallable(cmd)
+	default:
+		err = InvalidCommandTypeError{cmd}
+	}
+	return
+}
+
 func parseJSONCommands(b []byte) ([]Command, error) {
 	var wrappedCmds []unmarshallableCommand
 	err := json.Unmarshal(b, &wrappedCmds)
@@ -41,12 +72,12 @@ func (c *unmarshallableCommand) UnmarshalJSON(b []byte) error {
 			return err
 		}
 		switch key {
-		case "sleep":
+		case sleepCommandKey:
 			c.Command, err = parseSleepCommandFromJSONMap(b)
 			if err != nil {
 				return err
 			}
-		case "call":
+		case requestCommandKey:
 			c.Command, err = parseRequestCommandFromJSONMap(b)
 			if err != nil {
 				return err
@@ -96,6 +127,16 @@ func parseRequestCommandFromJSONMap(b []byte) (cmd RequestCommand, err error) {
 	for _, cmd = range m {
 	}
 	return
+}
+
+// InvalidCommandTypeError is returned when a type-switch on a Command does not
+// reveal a known Command.
+type InvalidCommandTypeError struct {
+	Command Command
+}
+
+func (e InvalidCommandTypeError) Error() string {
+	return fmt.Sprintf("invalid command type: %T", e.Command)
 }
 
 // MultipleKeysInCommandMapError is returned when there is more than one key in
