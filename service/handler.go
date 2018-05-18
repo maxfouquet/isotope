@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/Tahler/service-grapher/pkg/graph"
+	"github.com/Tahler/service-grapher/pkg/graph/svc"
 )
 
 // pathTracesHeaderKey must be in Train-Case.
@@ -16,7 +16,7 @@ const pathTracesHeaderKey = "Path-Traces"
 var serviceID = os.Getenv("HOSTNAME")
 
 type serviceHandler struct {
-	graph.Service
+	svc.Service
 }
 
 func (h serviceHandler) ServeHTTP(
@@ -80,7 +80,7 @@ func stampPaths(paths []string, stamp string) []string {
 // errorChance randomly returns an error h.ErrorRate percent of the time.
 func (h serviceHandler) errorChance() (err error) {
 	random := rand.Float64()
-	if random < h.ErrorRate {
+	if random < float64(h.ErrorRate) {
 		err = fmt.Errorf("server randomly failed with a chance of %v", h.ErrorRate)
 	}
 	return

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/Tahler/service-grapher/pkg/graph"
+	"github.com/Tahler/service-grapher/pkg/graph/svctype"
 	"istio.io/fortio/fgrpc"
 	"istio.io/fortio/fhttp"
 )
@@ -27,11 +27,11 @@ func main() {
 }
 
 // TODO: This switch should instead be two different programs / images.
-func startServer(serviceType graph.ServiceType) (err error) {
+func startServer(serviceType svctype.ServiceType) (err error) {
 	switch serviceType {
-	case graph.HTTPService:
+	case svctype.ServiceHTTP:
 		err = startHTTPServer()
-	case graph.GRPCService:
+	case svctype.ServiceGRPC:
 		err = startGRPCServer()
 	default:
 		err = fmt.Errorf("unknown value of service type: %v", serviceType)
@@ -50,7 +50,7 @@ func startHTTPServer() (err error) {
 func startGRPCServer() (err error) {
 	boundPort := fgrpc.PingServer(port, fgrpc.DefaultHealthServiceName, 0)
 	if boundPort == -1 {
-		err = errors.New("failed to start GRPC server")
+		err = errors.New("failed to start gRPC server")
 	}
 	return
 }

@@ -4,18 +4,18 @@ import (
 	"io/ioutil"
 	"log"
 
-	"github.com/Tahler/service-grapher/pkg/graph"
-	yaml "gopkg.in/yaml.v2"
+	"github.com/Tahler/service-grapher/pkg/graph/svc"
+	"github.com/ghodss/yaml"
 )
 
 const configFilePath = "/etc/config/service.yaml"
 
-func getService() (service graph.Service, err error) {
+func getService() (service svc.Service, err error) {
 	serviceYAML, err := ioutil.ReadFile(configFilePath)
 	if err != nil {
 		return
 	}
 	log.Printf("Unmarshalling\n%s", serviceYAML)
-	err = yaml.Unmarshal([]byte(serviceYAML), &service)
+	err = yaml.Unmarshal(serviceYAML, &service)
 	return
 }

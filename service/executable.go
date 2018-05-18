@@ -8,19 +8,19 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Tahler/service-grapher/pkg/graph"
-
+	"github.com/Tahler/service-grapher/pkg/graph/script"
+	"github.com/Tahler/service-grapher/pkg/graph/size"
 	multierror "github.com/hashicorp/go-multierror"
 )
 
 func execute(step interface{}, forwardableHeader http.Header) (
 	paths []string, err error) {
 	switch cmd := step.(type) {
-	case graph.SleepCommand:
+	case script.SleepCommand:
 		executeSleepCommand(cmd)
-	case graph.RequestCommand:
+	case script.RequestCommand:
 		paths, err = executeRequestCommand(cmd, forwardableHeader)
-	case graph.ConcurrentCommand:
+	case script.ConcurrentCommand:
 		paths, err = executeConcurrentCommand(cmd, forwardableHeader)
 	default:
 		log.Fatalf("unknown command type in script: %T", cmd)
@@ -28,23 +28,22 @@ func execute(step interface{}, forwardableHeader http.Header) (
 	return
 }
 
-func executeSleepCommand(cmd graph.SleepCommand) {
-	time.Sleep(cmd.Duration)
+func executeSleepCommand(cmd script.SleepCommand) {
+	time.Sleep(time.Duration(cmd))
 }
 
 // Execute sends an HTTP request to another service. Assumes DNS is available
 // which maps exe.ServiceName to the relevant URL to reach the service.
 func executeRequestCommand(
-	cmd graph.RequestCommand, forwardableHeader http.Header) (
+	cmd script.RequestCommand, forwardableHeader http.Header) (
 	paths []string, err error) {
 	url := fmt.Sprintf("http://%s:%v", cmd.ServiceName, port)
-	request, err := buildRequest(
-		cmd.HTTPMethod, url, cmd.Size, forwardableHeader)
+	request, err := buildRequest(url, cmd.Size, forwardableHeader)
 	if err != nil {
 		return
 	}
 	log.Printf(
-		"Sending %s request to %s (%s)", cmd.HTTPMethod, cmd.ServiceName, url)
+		"Sending request to %s (%s)", cmd.ServiceName, url)
 	response, err := http.DefaultClient.Do(request)
 	if err != nil {
 		return
@@ -58,11 +57,10 @@ func executeRequestCommand(
 	return
 }
 
-func buildRequest(
-	method graph.HTTPMethod, url string, size int64, requestHeader http.Header) (
+func buildRequest(url string, size size.ByteSize, requestHeader http.Header) (
 	request *http.Request, err error) {
 	payload := make([]byte, size, size)
-	request, err = http.NewRequest(string(method), url, bytes.NewBuffer(payload))
+	request, err = http.NewRequest("GET", url, bytes.NewBuffer(payload))
 	if err != nil {
 		return
 	}
@@ -79,12 +77,13 @@ func copyHeader(request *http.Request, header http.Header) {
 // executeConcurrentCommand calls each command in exe.Commands asynchronously
 // and waits for each to complete.
 func executeConcurrentCommand(
-	cmd graph.ConcurrentCommand, forwardableHeader http.Header) (
+	cmd script.ConcurrentCommand, forwardableHeader http.Header) (
 	paths []string, errs error) {
+	numSubCmds := len(cmd)
 	wg := sync.WaitGroup{}
-	wg.Add(len(cmd.Commands))
-	pathsChan := make(chan []string, len(cmd.Commands))
-	for _, subCmd := range cmd.Commands {
+	wg.Add(numSubCmds)
+	pathsChan := make(chan []string, numSubCmds)
+	for _, subCmd := range cmd {
 		go func(step interface{}) {
 			defer wg.Done()
 
