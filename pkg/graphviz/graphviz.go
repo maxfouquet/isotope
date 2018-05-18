@@ -66,6 +66,7 @@ type Graph struct {
 // Node represents a node in the Graphviz graph.
 type Node struct {
 	Name         string
+	Type         string
 	ErrorRate    string
 	ResponseSize string
 	Steps        [][]string
@@ -87,7 +88,7 @@ const graphvizTemplate = `digraph {
   {{ range .Nodes -}}
   {{ .Name }} [label=<
 <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
-  <TR><TD><B>{{ .Name }}</B><BR />Err: {{ .ErrorRate }}</TD></TR>
+  <TR><TD><B>{{ .Name }}</B><BR />Type: {{ .Type }}<BR />Err: {{ .ErrorRate }}</TD></TR>
   {{- range $i, $cmds := .Steps }}
   <TR><TD PORT="{{ $i }}">
   {{- range $j, $cmd := $cmds -}}
@@ -144,6 +145,7 @@ func toGraphvizNode(service svc.Service) (Node, []Edge, error) {
 	}
 	n := Node{
 		Name:         service.Name,
+		Type:         service.Type.String(),
 		ErrorRate:    service.ErrorRate.String(),
 		ResponseSize: service.ResponseSize.String(),
 		Steps:        steps,

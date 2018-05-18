@@ -7,15 +7,17 @@ import (
 	"time"
 
 	"github.com/Tahler/service-grapher/pkg/graph"
+	"github.com/Tahler/service-grapher/pkg/graph/script"
+	"github.com/Tahler/service-grapher/pkg/graph/svc"
+	"github.com/Tahler/service-grapher/pkg/graph/svctype"
 )
 
 func TestServiceGraphToGraph(t *testing.T) {
 	expected := Graph{
 		Nodes: []Node{
 			Node{
-				Name:         "A",
-				ComputeUsage: "50.00%",
-				MemoryUsage:  "20.00%",
+				Name:         "a",
+				Type:         "HTTP",
 				ErrorRate:    "0.01%",
 				ResponseSize: "10KiB",
 				Steps: [][]string{
@@ -25,153 +27,127 @@ func TestServiceGraphToGraph(t *testing.T) {
 				},
 			},
 			Node{
-				Name:         "B",
-				ComputeUsage: "10.00%",
-				MemoryUsage:  "10.00%",
+				Name:         "b",
+				Type:         "gRPC",
 				ErrorRate:    "0.00%",
 				ResponseSize: "10KiB",
 				Steps:        [][]string{},
 			},
 			Node{
-				Name:         "C",
-				ComputeUsage: "10.00%",
-				MemoryUsage:  "10.00%",
+				Name:         "c",
+				Type:         "HTTP",
 				ErrorRate:    "0.00%",
 				ResponseSize: "10KiB",
 				Steps: [][]string{
 					[]string{
-						"GET \"A\" 10KiB",
+						"CALL \"a\" 10KiB",
 					},
 					[]string{
-						"POST \"B\" 1KiB",
+						"CALL \"b\" 1KiB",
 					},
 				},
 			},
 			Node{
-				Name:         "D",
-				ComputeUsage: "10.00%",
-				MemoryUsage:  "10.00%",
+				Name:         "d",
+				Type:         "HTTP",
 				ErrorRate:    "0.00%",
 				ResponseSize: "10KiB",
 				Steps: [][]string{
 					[]string{
-						"GET \"A\" 1KiB",
-						"GET \"C\" 1KiB",
+						"CALL \"a\" 1KiB",
+						"CALL \"c\" 1KiB",
 					},
 					[]string{
 						"SLEEP 10ms",
 					},
 					[]string{
-						"DELETE \"B\" 1KiB",
+						"CALL \"b\" 1KiB",
 					},
 				},
 			},
 		},
 		Edges: []Edge{
 			Edge{
-				From:      "C",
-				To:        "A",
+				From:      "c",
+				To:        "a",
 				StepIndex: 0,
 			},
 			Edge{
-				From:      "C",
-				To:        "B",
+				From:      "c",
+				To:        "b",
 				StepIndex: 1,
 			},
 			Edge{
-				From:      "D",
-				To:        "A",
+				From:      "d",
+				To:        "a",
 				StepIndex: 0,
 			},
 			Edge{
-				From:      "D",
-				To:        "C",
+				From:      "d",
+				To:        "c",
 				StepIndex: 0,
 			},
 			Edge{
-				From:      "D",
-				To:        "B",
+				From:      "d",
+				To:        "b",
 				StepIndex: 2,
 			},
 		},
 	}
 
 	serviceGraph := graph.ServiceGraph{
-		Services: map[string]graph.Service{
-			"A": graph.Service{
-				Name: "A",
-				ServiceSettings: graph.ServiceSettings{
-					ComputeUsage: 0.5,
-					MemoryUsage:  0.2,
-					ErrorRate:    0.0001,
-					ResponseSize: 10240,
+		Services: []svc.Service{
+			{
+				Name:         "a",
+				Type:         svctype.ServiceHTTP,
+				ErrorRate:    0.0001,
+				ResponseSize: 10240,
+				Script: []script.Command{
+					script.SleepCommand(100 * time.Millisecond),
 				},
-				Script: []graph.Command{
-					graph.SleepCommand{
-						Duration: 100 * time.Millisecond,
+			},
+			{
+				Name:         "b",
+				Type:         svctype.ServiceGRPC,
+				ErrorRate:    0,
+				ResponseSize: 10240,
+			},
+			{
+				Name:         "c",
+				Type:         svctype.ServiceHTTP,
+				ErrorRate:    0,
+				ResponseSize: 10240,
+				Script: []script.Command{
+					script.RequestCommand{
+						ServiceName: "a",
+						Size:        10240,
+					},
+					script.RequestCommand{
+						ServiceName: "b",
+						Size:        1024,
 					},
 				},
 			},
-			"B": graph.Service{
-				Name: "B",
-				ServiceSettings: graph.ServiceSettings{
-					ComputeUsage: 0.1,
-					MemoryUsage:  0.1,
-					ErrorRate:    0,
-					ResponseSize: 10240,
-				},
-			},
-			"C": graph.Service{
-				Name: "C",
-				ServiceSettings: graph.ServiceSettings{
-					ComputeUsage: 0.1,
-					MemoryUsage:  0.1,
-					ErrorRate:    0,
-					ResponseSize: 10240,
-				},
-				Script: []graph.Command{
-					graph.RequestCommand{
-						HTTPMethod:  "GET",
-						ServiceName: "A",
-						Size: 10240,
-					},
-					graph.RequestCommand{
-						HTTPMethod:  "POST",
-						ServiceName: "B",
-						Size: 1024,
-					},
-				},
-			},
-			"D": graph.Service{
-				Name: "D",
-				ServiceSettings: graph.ServiceSettings{
-					ComputeUsage: 0.1,
-					MemoryUsage:  0.1,
-					ErrorRate:    0,
-					ResponseSize: 10240,
-				},
-				Script: []graph.Command{
-					graph.ConcurrentCommand{
-						Commands: []graph.Command{
-							graph.RequestCommand{
-								HTTPMethod:  "GET",
-								ServiceName: "A",
-								Size: 1024,
-							},
-							graph.RequestCommand{
-								HTTPMethod:  "GET",
-								ServiceName: "C",
-								Size: 1024,
-							},
+			{
+				Name:         "d",
+				Type:         svctype.ServiceHTTP,
+				ErrorRate:    0,
+				ResponseSize: 10240,
+				Script: []script.Command{
+					script.ConcurrentCommand([]script.Command{
+						script.RequestCommand{
+							ServiceName: "a",
+							Size:        1024,
 						},
-					},
-					graph.SleepCommand{
-						Duration: 10 * time.Millisecond,
-					},
-					graph.RequestCommand{
-						HTTPMethod:  "DELETE",
-						ServiceName: "B",
-						Size: 1024,
+						script.RequestCommand{
+							ServiceName: "c",
+							Size:        1024,
+						},
+					}),
+					script.SleepCommand(10 * time.Millisecond),
+					script.RequestCommand{
+						ServiceName: "b",
+						Size:        1024,
 					},
 				},
 			},
@@ -187,10 +163,10 @@ func TestServiceGraphToGraph(t *testing.T) {
 }
 
 func graphsAreEqual(left Graph, right Graph) bool {
-	sortNodes(left.Nodes)
-	sortEdges(left.Edges)
-	sortNodes(right.Nodes)
-	sortEdges(right.Edges)
+	// sortNodes(left.Nodes)
+	// sortEdges(left.Edges)
+	// sortNodes(right.Nodes)
+	// sortEdges(right.Edges)
 	return reflect.DeepEqual(left, right)
 }
 
