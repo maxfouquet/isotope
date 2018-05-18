@@ -125,8 +125,6 @@ func getEdgesFromExe(
 			StepIndex: idx,
 		}
 		edges = append(edges, e)
-	case graph.SleepCommand:
-	default:
 	}
 	return
 }
