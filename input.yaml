@@ -1,0 +1,25 @@
+apiVersion: v1alpha1
+kind: MockServiceGraph
+defaults:
+  type: http
+  requestSize: 1 KB
+  responseSize: 16 KB
+services:
+- name: a
+  errorRate: 0.01%
+  script:
+  - sleep: 100ms
+- name: b
+  type: grpc
+- name: c
+  script:
+  - call:
+      service: a
+      size: 10K
+  - call: b
+- name: d
+  script:
+  - - call: a
+    - call: c
+  - sleep: 10ms
+  - call: b
