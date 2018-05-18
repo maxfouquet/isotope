@@ -11,6 +11,15 @@ import (
 // number between 0 and 1 or a JSON string between "0%" and "100%".
 type Percentage float64
 
+func (p Percentage) String() string {
+	return fmt.Sprintf("%0.2f%%", p*100)
+}
+
+// MarshalJSON encodes the Percentage as a JSON number.
+func (p Percentage) MarshalJSON() ([]byte, error) {
+	return json.Marshal(float64(p))
+}
+
 // UnmarshalJSON converts and validates a JSON string or number to a Percentage.
 // If b is a JSON string, it must match X.X%, that is, a float between 0 and 100
 // encoded as a string with a trailing '%'. If b is a JSON number, it must be
@@ -67,8 +76,4 @@ func FromFloat64(f float64) (p Percentage, err error) {
 		err = OutOfRangeError{f}
 	}
 	return
-}
-
-func (p Percentage) String() string {
-	return fmt.Sprintf("%0.2f%%", p*100)
 }
