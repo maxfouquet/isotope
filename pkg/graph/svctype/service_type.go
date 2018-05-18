@@ -3,6 +3,7 @@ package svctype
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 // ServiceType describes what protocol the service supports.
@@ -25,6 +26,11 @@ func (t ServiceType) String() (s string) {
 		s = "gRPC"
 	}
 	return
+}
+
+// MarshalJSON encodes the ServiceType as a JSON string.
+func (t ServiceType) MarshalJSON() ([]byte, error) {
+	return json.Marshal(strings.ToLower(t.String()))
 }
 
 // UnmarshalJSON converts a JSON string to a ServiceType.
