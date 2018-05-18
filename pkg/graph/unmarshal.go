@@ -46,6 +46,7 @@ var (
 
 type serviceGraphJSONMetadata struct {
 	APIVersion string   `json:"apiVersion"`
+	Kind       string   `json:"kind"`
 	Defaults   defaults `json:"defaults"`
 }
 
