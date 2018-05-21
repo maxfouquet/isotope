@@ -4,14 +4,23 @@ import (
 	"net/http"
 )
 
-var forwardableHeadersSet = map[string]bool{
-	"X-Request-Id":      true,
-	"X-B3-Traceid":      true,
-	"X-B3-Spanid":       true,
-	"X-B3-Parentspanid": true,
-	"X-B3-Sampled":      true,
-	"X-B3-Flags":        true,
-	"X-Ot-Span-Context": true,
+var (
+	forwardableHeaders = []string{
+		"X-Request-Id",
+		"X-B3-Traceid",
+		"X-B3-Spanid",
+		"X-B3-Parentspanid",
+		"X-B3-Sampled",
+		"X-B3-Flags",
+		"X-Ot-Span-Context",
+	}
+	forwardableHeadersSet = make(map[string]bool, len(forwardableHeaders))
+)
+
+func init() {
+	for _, key := range forwardableHeaders {
+		forwardableHeadersSet[key] = true
+	}
 }
 
 func extractForwardableHeader(
