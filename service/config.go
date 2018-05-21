@@ -35,6 +35,7 @@ func init() {
 	if !ok {
 		log.Fatalf(`service with name "%s" does not exist`, name)
 	}
+	logService(service)
 }
 
 func readServiceGraphFromYAMLFile(
@@ -61,4 +62,12 @@ func lookupService(
 		}
 	}
 	return
+}
+
+func logService(service svc.Service) {
+	serviceYAML, err := yaml.Marshal(service)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Acting as service %s:\n%s", service.Name, serviceYAML)
 }
