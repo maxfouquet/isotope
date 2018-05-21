@@ -22,8 +22,8 @@ type serviceHandler struct {
 func (h serviceHandler) ServeHTTP(
 	writer http.ResponseWriter, request *http.Request) {
 
-	respond := func(status int, paths []string) {
-		stampHeader(writer.Header(), status, paths)
+	respond := func(status int, paths []string, isLocalErr bool) {
+		stampHeader(writer.Header(), paths, isLocalErr)
 
 		log.Printf(
 			"Echoing (%v) to client %s, %s=%v",
@@ -34,7 +34,7 @@ func (h serviceHandler) ServeHTTP(
 	}
 
 	if err := h.errorChance(); err != nil {
-		respond(http.StatusInternalServerError, nil)
+		respond(http.StatusInternalServerError, nil, true)
 		return
 	}
 
@@ -47,16 +47,19 @@ func (h serviceHandler) ServeHTTP(
 		}
 		if err != nil {
 			log.Println(err)
-			respond(http.StatusInternalServerError, allPaths)
+			respond(http.StatusInternalServerError, allPaths, false)
 			return
 		}
 	}
 
-	respond(http.StatusOK, allPaths)
+	respond(http.StatusOK, allPaths, false)
 }
 
-func stampHeader(header http.Header, status int, paths []string) {
-	stamp := fmt.Sprintf("%s(%v)", serviceID, status)
+func stampHeader(header http.Header, paths []string, isLocalErr bool) {
+	stamp := fmt.Sprintf("%s (%s)", service.Name, serviceID)
+	if isLocalErr {
+		stamp += " (ERROR)"
+	}
 
 	var stampedPaths []string
 	if len(paths) == 0 {
