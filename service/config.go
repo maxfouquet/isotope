@@ -9,6 +9,7 @@ import (
 	"github.com/Tahler/service-grapher/pkg/consts"
 	"github.com/Tahler/service-grapher/pkg/graph"
 	"github.com/Tahler/service-grapher/pkg/graph/svc"
+	"github.com/Tahler/service-grapher/pkg/graph/svctype"
 	"github.com/ghodss/yaml"
 )
 
@@ -17,16 +18,18 @@ var (
 		consts.ConfigPath, consts.ServiceGraphYAMLFileName)
 
 	// Set by init().
-	serviceGraph graph.ServiceGraph
+	serviceTypes map[string]svctype.ServiceType
 	service      svc.Service
 )
 
 func init() {
-	var err error
-	serviceGraph, err = readServiceGraphFromYAMLFile(serviceGraphYAMLFilePath)
+	serviceGraph, err := readServiceGraphFromYAMLFile(serviceGraphYAMLFilePath)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	serviceTypes = extractServiceTypes(serviceGraph)
+
 	name, ok := os.LookupEnv(consts.ServiceNameEnvKey)
 	if !ok {
 		log.Fatalf(`env var "%s" is not set`, consts.ServiceNameEnvKey)
@@ -50,6 +53,16 @@ func readServiceGraphFromYAMLFile(
 		return
 	}
 	return
+}
+
+func extractServiceTypes(
+	serviceGraph graph.ServiceGraph) map[string]svctype.ServiceType {
+	serviceTypes := make(
+		map[string]svctype.ServiceType, len(serviceGraph.Services))
+	for _, service := range serviceGraph.Services {
+		serviceTypes[service.Name] = service.Type
+	}
+	return serviceTypes
 }
 
 func lookupService(
