@@ -36,7 +36,11 @@ func executeRequestCommand(
 	cmd script.RequestCommand, forwardableHeader http.Header) (
 	paths []string, err error) {
 	destName := cmd.ServiceName
-	response, err := sendRequest(destName, cmd.Size, forwardableHeader)
+	destType, ok := serviceTypes[destName]
+	if !ok {
+		err = fmt.Errorf("service %s does not exist", destName)
+	}
+	response, err := sendRequest(destName, destType, cmd.Size, forwardableHeader)
 	if err != nil {
 		return
 	}

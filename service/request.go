@@ -8,10 +8,12 @@ import (
 
 	"github.com/Tahler/service-grapher/pkg/consts"
 	"github.com/Tahler/service-grapher/pkg/graph/size"
+	"github.com/Tahler/service-grapher/pkg/graph/svctype"
 )
 
 func sendRequest(
 	destName string,
+	destType svctype.ServiceType,
 	size size.ByteSize,
 	requestHeader http.Header) (*http.Response, error) {
 	url := fmt.Sprintf("http://%s:%v", destName, consts.ServicePort)
