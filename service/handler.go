@@ -13,7 +13,7 @@ import (
 // pathTracesHeaderKey must be in Train-Case.
 const pathTracesHeaderKey = "Path-Traces"
 
-var serviceID = os.Getenv("HOSTNAME")
+var hostname = os.Getenv("HOSTNAME")
 
 type serviceHandler struct {
 	svc.Service
@@ -56,7 +56,7 @@ func (h serviceHandler) ServeHTTP(
 }
 
 func stampHeader(header http.Header, paths []string, isLocalErr bool) {
-	stamp := fmt.Sprintf("%s (%s)", service.Name, serviceID)
+	stamp := fmt.Sprintf("%s (%s)", service.Name, hostname)
 	if isLocalErr {
 		stamp += " (ERROR)"
 	}
