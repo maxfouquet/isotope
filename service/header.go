@@ -5,13 +5,13 @@ import (
 )
 
 var forwardableHeadersSet = map[string]bool{
-	"x-request-id":      true,
-	"x-b3-traceid":      true,
-	"x-b3-spanid":       true,
-	"x-b3-parentspanid": true,
-	"x-b3-sampled":      true,
-	"x-b3-flags":        true,
-	"x-ot-span-context": true,
+	"X-Request-Id":      true,
+	"X-B3-Traceid":      true,
+	"X-B3-Spanid":       true,
+	"X-B3-Parentspanid": true,
+	"X-B3-Sampled":      true,
+	"X-B3-Flags":        true,
+	"X-Ot-Span-Context": true,
 }
 
 func extractForwardableHeader(
