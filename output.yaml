@@ -1,0 +1,237 @@
+apiVersion: v1
+data:
+  service-graph: |
+    services:
+    - errorRate: 50%
+      name: a
+      responseSize: 16KiB
+      script:
+      - sleep: 100ms
+      type: http
+    - name: b
+      responseSize: 16KiB
+      type: grpc
+    - name: c
+      responseSize: 16KiB
+      script:
+      - call:
+          service: a
+          size: 10KiB
+      - call:
+          service: b
+          size: 1KiB
+      type: http
+    - name: d
+      responseSize: 16KiB
+      script:
+      - - call:
+            service: a
+            size: 1KiB
+        - call:
+            service: c
+            size: 1KiB
+      - sleep: 10ms
+      - call:
+          service: b
+          size: 1KiB
+      type: http
+kind: ConfigMap
+metadata:
+  creationTimestamp: "2018-05-21T19:50:29Z"
+  name: service-graph-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2018-05-21T19:50:29Z"
+  name: a
+spec:
+  selector:
+    matchLabels:
+      app: a
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: a
+    spec:
+      containers:
+      - env:
+        - name: SERVICE_NAME
+          value: a
+        image: tahler/perf-test-service
+        name: perf-test-service
+        resources: {}
+        volumeMounts:
+        - mountPath: /etc/config
+          name: config-volume
+      volumes:
+      - configMap:
+          items:
+          - key: service-graph
+            path: service-graph.yaml
+          name: service-graph-config
+        name: config-volume
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: "2018-05-21T19:50:29Z"
+  name: a
+spec:
+  ports:
+  - port: 8080
+    targetPort: 0
+  selector:
+    app: a
+status:
+  loadBalancer: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2018-05-21T19:50:29Z"
+  name: b
+spec:
+  selector:
+    matchLabels:
+      app: b
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: b
+    spec:
+      containers:
+      - env:
+        - name: SERVICE_NAME
+          value: b
+        image: tahler/perf-test-service
+        name: perf-test-service
+        resources: {}
+        volumeMounts:
+        - mountPath: /etc/config
+          name: config-volume
+      volumes:
+      - configMap:
+          items:
+          - key: service-graph
+            path: service-graph.yaml
+          name: service-graph-config
+        name: config-volume
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: "2018-05-21T19:50:29Z"
+  name: b
+spec:
+  ports:
+  - port: 8080
+    targetPort: 0
+  selector:
+    app: b
+status:
+  loadBalancer: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2018-05-21T19:50:29Z"
+  name: c
+spec:
+  selector:
+    matchLabels:
+      app: c
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: c
+    spec:
+      containers:
+      - env:
+        - name: SERVICE_NAME
+          value: c
+        image: tahler/perf-test-service
+        name: perf-test-service
+        resources: {}
+        volumeMounts:
+        - mountPath: /etc/config
+          name: config-volume
+      volumes:
+      - configMap:
+          items:
+          - key: service-graph
+            path: service-graph.yaml
+          name: service-graph-config
+        name: config-volume
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: "2018-05-21T19:50:29Z"
+  name: c
+spec:
+  ports:
+  - port: 8080
+    targetPort: 0
+  selector:
+    app: c
+status:
+  loadBalancer: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2018-05-21T19:50:29Z"
+  name: d
+spec:
+  selector:
+    matchLabels:
+      app: d
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: d
+    spec:
+      containers:
+      - env:
+        - name: SERVICE_NAME
+          value: d
+        image: tahler/perf-test-service
+        name: perf-test-service
+        resources: {}
+        volumeMounts:
+        - mountPath: /etc/config
+          name: config-volume
+      volumes:
+      - configMap:
+          items:
+          - key: service-graph
+            path: service-graph.yaml
+          name: service-graph-config
+        name: config-volume
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: "2018-05-21T19:50:29Z"
+  name: d
+spec:
+  ports:
+  - port: 8080
+    targetPort: 0
+  selector:
+    app: d
+status:
+  loadBalancer: {}
