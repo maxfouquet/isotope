@@ -82,6 +82,7 @@ type Edge struct {
 const graphvizTemplate = `digraph {
   node [
     fontsize = "16"
+    fontname = "courier"
     shape = plaintext
   ];
 
