@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Tahler/service-grapher/pkg/consts"
 	"github.com/Tahler/service-grapher/pkg/graph/script"
 	"github.com/Tahler/service-grapher/pkg/graph/size"
 	multierror "github.com/hashicorp/go-multierror"
@@ -37,7 +38,7 @@ func executeSleepCommand(cmd script.SleepCommand) {
 func executeRequestCommand(
 	cmd script.RequestCommand, forwardableHeader http.Header) (
 	paths []string, err error) {
-	url := fmt.Sprintf("http://%s:%v", cmd.ServiceName, port)
+	url := fmt.Sprintf("http://%s:%v", cmd.ServiceName, consts.ServicePort)
 	request, err := buildRequest(url, cmd.Size, forwardableHeader)
 	if err != nil {
 		return

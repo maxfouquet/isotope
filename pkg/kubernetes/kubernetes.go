@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Tahler/service-grapher/pkg/consts"
 	"github.com/Tahler/service-grapher/pkg/graph"
 	"github.com/Tahler/service-grapher/pkg/graph/svc"
 	"github.com/ghodss/yaml"
@@ -57,24 +58,22 @@ func ServiceGraphToKubernetesManifests(
 const (
 	numConfigMaps          = 1
 	numManifestsPerService = 2
+
+	configMapName = "service-graph-config"
 )
 
 func makeConfigMap(
 	graph graph.ServiceGraph) (configMap apiv1.ConfigMap, err error) {
 	configMap.APIVersion = "v1"
 	configMap.Kind = "ConfigMap"
-	configMap.ObjectMeta.Name = "service-configs"
+	configMap.ObjectMeta.Name = configMapName
 	timestamp(&configMap.ObjectMeta)
 
-	data := make(map[string]string)
-	for _, service := range graph.Services {
-		serviceYAML, err := yaml.Marshal(service)
-		if err != nil {
-			return configMap, err
-		}
-		data[service.Name] = string(serviceYAML)
+	graphYAMLBytes, err := yaml.Marshal(graph)
+	if err != nil {
+		return
 	}
-	configMap.Data = data
+	configMap.Data = map[string]string{"service-graph": string(graphYAMLBytes)}
 	return
 }
 
@@ -83,13 +82,10 @@ func makeService(service svc.Service) (k8sService apiv1.Service, err error) {
 	k8sService.Kind = "Service"
 	k8sService.ObjectMeta.Name = service.Name
 	timestamp(&k8sService.ObjectMeta)
-	k8sService.Spec.Ports = []apiv1.ServicePort{{Port: 8080}}
+	k8sService.Spec.Ports = []apiv1.ServicePort{{Port: consts.ServicePort}}
 	k8sService.Spec.Selector = map[string]string{"app": service.Name}
 	return
 }
-
-const containerName = "perf-test-service"
-const containerImage = "tahler/perf-test-service"
 
 func makeDeployment(
 	service svc.Service) (k8sDeployment appsv1.Deployment, err error) {
@@ -112,12 +108,15 @@ func makeDeployment(
 			Spec: apiv1.PodSpec{
 				Containers: []apiv1.Container{
 					{
-						Name:  containerName,
-						Image: containerImage,
+						Name:  consts.ServiceContainerName,
+						Image: consts.ServiceImageName,
+						Env: []apiv1.EnvVar{
+							{Name: consts.ServiceNameEnvKey, Value: service.Name},
+						},
 						VolumeMounts: []apiv1.VolumeMount{
 							{
 								Name:      "config-volume",
-								MountPath: "/etc/config",
+								MountPath: consts.ConfigPath,
 							},
 						},
 					},
@@ -128,12 +127,12 @@ func makeDeployment(
 						VolumeSource: apiv1.VolumeSource{
 							ConfigMap: &apiv1.ConfigMapVolumeSource{
 								LocalObjectReference: apiv1.LocalObjectReference{
-									Name: "service-configs",
+									Name: configMapName,
 								},
 								Items: []apiv1.KeyToPath{
 									{
-										Key:  service.Name,
-										Path: "service.yaml",
+										Key:  consts.ServiceGraphConfigMapKey,
+										Path: consts.ServiceGraphYAMLFileName,
 									},
 								},
 							},
