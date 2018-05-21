@@ -1,16 +1,13 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"log"
 	"net/http"
 	"sync"
 	"time"
 
-	"github.com/Tahler/service-grapher/pkg/consts"
 	"github.com/Tahler/service-grapher/pkg/graph/script"
-	"github.com/Tahler/service-grapher/pkg/graph/size"
 	multierror "github.com/hashicorp/go-multierror"
 )
 
@@ -38,41 +35,17 @@ func executeSleepCommand(cmd script.SleepCommand) {
 func executeRequestCommand(
 	cmd script.RequestCommand, forwardableHeader http.Header) (
 	paths []string, err error) {
-	url := fmt.Sprintf("http://%s:%v", cmd.ServiceName, consts.ServicePort)
-	request, err := buildRequest(url, cmd.Size, forwardableHeader)
-	if err != nil {
-		return
-	}
-	log.Printf(
-		"Sending request to %s (%s)", cmd.ServiceName, url)
-	response, err := http.DefaultClient.Do(request)
+	destName := cmd.ServiceName
+	response, err := sendRequest(destName, cmd.Size, forwardableHeader)
 	if err != nil {
 		return
 	}
 	paths = response.Header[pathTracesHeaderKey]
-	log.Printf("%s responded with %s", cmd.ServiceName, response.Status)
+	log.Printf("%s responded with %s", destName, response.Status)
 	if response.StatusCode == http.StatusInternalServerError {
-		err = fmt.Errorf(
-			"service %s responded with %s", cmd.ServiceName, response.Status)
+		err = fmt.Errorf("service %s responded with %s", destName, response.Status)
 	}
 	return
-}
-
-func buildRequest(url string, size size.ByteSize, requestHeader http.Header) (
-	request *http.Request, err error) {
-	payload := make([]byte, size, size)
-	request, err = http.NewRequest("GET", url, bytes.NewBuffer(payload))
-	if err != nil {
-		return
-	}
-	copyHeader(request, requestHeader)
-	return
-}
-
-func copyHeader(request *http.Request, header http.Header) {
-	for key, values := range header {
-		request.Header[key] = values
-	}
 }
 
 // executeConcurrentCommand calls each command in exe.Commands asynchronously
