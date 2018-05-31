@@ -3,19 +3,16 @@ kind: MockServiceGraph
 defaults:
   type: http
   requestSize: 1 KB
-  responseSize: 16 KB
+  responseSize: 1 KB
 services:
 - name: a
-  errorRate: 0.01%
+  errorRate: 10%
   script:
   - sleep: 100ms
 - name: b
-  type: grpc
 - name: c
   script:
-  - call:
-      service: a
-      size: 10K
+  - call: a
   - call: b
 - name: d
   isEntrypoint: true

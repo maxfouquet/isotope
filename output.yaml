@@ -2,28 +2,28 @@ apiVersion: v1
 data:
   service-graph: |
     services:
-    - errorRate: 0.0001
+    - errorRate: 0.1
       name: a
-      responseSize: 16KiB
+      responseSize: 1KiB
       script:
       - sleep: 100ms
       type: http
     - name: b
-      responseSize: 16KiB
-      type: grpc
+      responseSize: 1KiB
+      type: http
     - name: c
-      responseSize: 16KiB
+      responseSize: 1KiB
       script:
       - call:
           service: a
-          size: 10KiB
+          size: 1KiB
       - call:
           service: b
           size: 1KiB
       type: http
     - isEntrypoint: true
       name: d
-      responseSize: 16KiB
+      responseSize: 1KiB
       script:
       - - call:
             service: a
@@ -144,9 +144,6 @@ kind: Deployment
 metadata:
   creationTimestamp: "2018-06-08T04:42:54Z"
   name: c
-spec:
-  selector:
-    matchLabels:
       app: c
   strategy: {}
   template:
