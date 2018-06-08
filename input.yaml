@@ -18,6 +18,7 @@ services:
       size: 10K
   - call: b
 - name: d
+  isEntrypoint: true
   script:
   - - call: a
     - call: c

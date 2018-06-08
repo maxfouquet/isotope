@@ -15,6 +15,10 @@ type Service struct {
 	// Type describes what protocol the service supports (e.g. HTTP, gRPC).
 	Type svctype.ServiceType `json:"type,omitempty"`
 
+	// IsEntrypoint indicates that this service is an entrypoint into the service
+	// graph, representing a public service.
+	IsEntrypoint bool `json:"isEntrypoint,omitempty"`
+
 	// ErrorRate is the percentage chance between 0 and 1 that this service
 	// should respond with a 500 server error rather than 200 OK.
 	ErrorRate pct.Percentage `json:"errorRate,omitempty"`
