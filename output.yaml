@@ -38,24 +38,24 @@ data:
       type: http
 kind: ConfigMap
 metadata:
-  creationTimestamp: "2018-06-08T04:42:54Z"
+  creationTimestamp: "2018-06-08T17:40:02Z"
   name: service-graph-config
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  creationTimestamp: "2018-06-08T04:42:54Z"
+  creationTimestamp: "2018-06-08T17:40:02Z"
   name: a
 spec:
   selector:
     matchLabels:
-      app: a
+      app: service-graph
   strategy: {}
   template:
     metadata:
       creationTimestamp: null
       labels:
-        app: a
+        app: service-graph
     spec:
       containers:
       - env:
@@ -79,32 +79,32 @@ status: {}
 apiVersion: v1
 kind: Service
 metadata:
-  creationTimestamp: "2018-06-08T04:42:54Z"
+  creationTimestamp: "2018-06-08T17:40:02Z"
   name: a
 spec:
   ports:
   - port: 8080
     targetPort: 0
   selector:
-    app: a
+    app: service-graph
 status:
   loadBalancer: {}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  creationTimestamp: "2018-06-08T04:42:54Z"
+  creationTimestamp: "2018-06-08T17:40:02Z"
   name: b
 spec:
   selector:
     matchLabels:
-      app: b
+      app: service-graph
   strategy: {}
   template:
     metadata:
       creationTimestamp: null
       labels:
-        app: b
+        app: service-graph
     spec:
       containers:
       - env:
@@ -128,29 +128,32 @@ status: {}
 apiVersion: v1
 kind: Service
 metadata:
-  creationTimestamp: "2018-06-08T04:42:54Z"
+  creationTimestamp: "2018-06-08T17:40:02Z"
   name: b
 spec:
   ports:
   - port: 8080
     targetPort: 0
   selector:
-    app: b
+    app: service-graph
 status:
   loadBalancer: {}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  creationTimestamp: "2018-06-08T04:42:54Z"
+  creationTimestamp: "2018-06-08T17:40:02Z"
   name: c
-      app: c
+spec:
+  selector:
+    matchLabels:
+      app: service-graph
   strategy: {}
   template:
     metadata:
       creationTimestamp: null
       labels:
-        app: c
+        app: service-graph
     spec:
       containers:
       - env:
@@ -174,32 +177,32 @@ status: {}
 apiVersion: v1
 kind: Service
 metadata:
-  creationTimestamp: "2018-06-08T04:42:54Z"
+  creationTimestamp: "2018-06-08T17:40:02Z"
   name: c
 spec:
   ports:
   - port: 8080
     targetPort: 0
   selector:
-    app: c
+    app: service-graph
 status:
   loadBalancer: {}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  creationTimestamp: "2018-06-08T04:42:54Z"
+  creationTimestamp: "2018-06-08T17:40:02Z"
   name: d
 spec:
   selector:
     matchLabels:
-      app: d
+      app: service-graph
   strategy: {}
   template:
     metadata:
       creationTimestamp: null
       labels:
-        app: d
+        app: service-graph
     spec:
       containers:
       - env:
@@ -223,13 +226,13 @@ status: {}
 apiVersion: v1
 kind: Service
 metadata:
-  creationTimestamp: "2018-06-08T04:42:54Z"
+  creationTimestamp: "2018-06-08T17:40:02Z"
   name: d
 spec:
   ports:
   - port: 8080
     targetPort: 0
   selector:
-    app: d
+    app: service-graph
 status:
   loadBalancer: {}

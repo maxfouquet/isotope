@@ -14,6 +14,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+var serviceGraphLabels = map[string]string{"app": "service-graph"}
+
 // ServiceGraphToKubernetesManifests converts a ServiceGraph to Kubernetes
 // manifests.
 func ServiceGraphToKubernetesManifests(
@@ -83,7 +85,7 @@ func makeService(service svc.Service) (k8sService apiv1.Service, err error) {
 	k8sService.ObjectMeta.Name = service.Name
 	timestamp(&k8sService.ObjectMeta)
 	k8sService.Spec.Ports = []apiv1.ServicePort{{Port: consts.ServicePort}}
-	k8sService.Spec.Selector = map[string]string{"app": service.Name}
+	k8sService.Spec.Selector = serviceGraphLabels
 	return
 }
 
@@ -95,15 +97,11 @@ func makeDeployment(
 	timestamp(&k8sDeployment.ObjectMeta)
 	k8sDeployment.Spec = appsv1.DeploymentSpec{
 		Selector: &metav1.LabelSelector{
-			MatchLabels: map[string]string{
-				"app": service.Name,
-			},
+			MatchLabels: serviceGraphLabels,
 		},
 		Template: apiv1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
-				Labels: map[string]string{
-					"app": service.Name,
-				},
+				Labels: serviceGraphLabels,
 			},
 			Spec: apiv1.PodSpec{
 				Containers: []apiv1.Container{
