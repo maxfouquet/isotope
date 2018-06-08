@@ -1,0 +1,15 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: client
+spec:
+  template:
+    metadata:
+      labels:
+        app: client
+    spec:
+      containers:
+      - name: fortio-client
+        image: istio/fortio
+        args: ["load", "http://d:8080"]
+      restartPolicy: Never
