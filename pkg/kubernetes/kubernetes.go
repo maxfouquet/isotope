@@ -37,20 +37,29 @@ func ServiceGraphToKubernetesManifests(
 	if err != nil {
 		return
 	}
-	appendManifest(configMap)
+	err = appendManifest(configMap)
+	if err != nil {
+		return
+	}
 
 	for _, service := range serviceGraph.Services {
 		k8sDeployment, err := makeDeployment(service)
 		if err != nil {
 			return nil, err
 		}
-		appendManifest(k8sDeployment)
+		err = appendManifest(k8sDeployment)
+		if err != nil {
+			return nil, err
+		}
 
 		k8sService, err := makeService(service)
 		if err != nil {
 			return nil, err
 		}
-		appendManifest(k8sService)
+		err = appendManifest(k8sService)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	yamlDocString := strings.Join(manifests, "---\n")
