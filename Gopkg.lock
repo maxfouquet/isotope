@@ -184,6 +184,7 @@
   name = "k8s.io/api"
   packages = [
     "apps/v1",
+    "batch/v1",
     "core/v1"
   ]
   revision = "b7d77fa220f5130ec63c2ca7167dd9653449c64d"
@@ -219,6 +220,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "84119110090125718b82f2404123806121f634dec5687f46fd60a895c5137d63"
+  inputs-digest = "f04900599d20167ba5a6eab88182c3e92d6cd41d06fd9a37c6570f5417c3d8c2"
   solver-name = "gps-cdcl"
   solver-version = 1
