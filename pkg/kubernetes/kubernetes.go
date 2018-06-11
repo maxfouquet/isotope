@@ -151,6 +151,7 @@ func makeDeployment(
 			},
 		},
 	}
+	timestamp(&k8sDeployment.Spec.Template.ObjectMeta)
 	return
 }
 
