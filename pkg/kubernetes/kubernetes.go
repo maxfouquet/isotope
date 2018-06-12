@@ -15,6 +15,22 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+const (
+	// ServiceGraphNamespace is the namespace all service graph related resources
+	// (i.e. ConfigMap, Services, and Deployments) will reside in.
+	ServiceGraphNamespace = "service-graph"
+
+	numConfigMaps          = 1
+	numManifestsPerService = 2
+
+	configMapName = "service-graph-config"
+)
+
+var (
+	serviceGraphAppLabels  = map[string]string{"app": "service-graph"}
+	serviceGraphNodeLabels = map[string]string{"role": "service"}
+)
+
 // ServiceGraphToKubernetesManifests converts a ServiceGraph to Kubernetes
 // manifests.
 func ServiceGraphToKubernetesManifests(
@@ -76,23 +92,12 @@ func combineLabels(a, b map[string]string) map[string]string {
 	return c
 }
 
-const (
-	numConfigMaps          = 1
-	numManifestsPerService = 2
-
-	configMapName = "service-graph-config"
-)
-
-var (
-	serviceGraphAppLabels  = map[string]string{"app": "service-graph"}
-	serviceGraphNodeLabels = map[string]string{"role": "service"}
-)
-
 func makeConfigMap(
 	graph graph.ServiceGraph) (configMap apiv1.ConfigMap, err error) {
 	configMap.APIVersion = "v1"
 	configMap.Kind = "ConfigMap"
 	configMap.ObjectMeta.Name = configMapName
+	configMap.ObjectMeta.Namespace = ServiceGraphNamespace
 	configMap.ObjectMeta.Labels = serviceGraphAppLabels
 	timestamp(&configMap.ObjectMeta)
 
@@ -108,6 +113,7 @@ func makeService(service svc.Service) (k8sService apiv1.Service, err error) {
 	k8sService.APIVersion = "v1"
 	k8sService.Kind = "Service"
 	k8sService.ObjectMeta.Name = service.Name
+	k8sService.ObjectMeta.Namespace = ServiceGraphNamespace
 	k8sService.ObjectMeta.Labels = serviceGraphAppLabels
 	timestamp(&k8sService.ObjectMeta)
 	k8sService.Spec.Ports = []apiv1.ServicePort{{Port: consts.ServicePort}}
@@ -120,6 +126,7 @@ func makeDeployment(
 	k8sDeployment.APIVersion = "apps/v1"
 	k8sDeployment.Kind = "Deployment"
 	k8sDeployment.ObjectMeta.Name = service.Name
+	k8sDeployment.ObjectMeta.Namespace = ServiceGraphNamespace
 	k8sDeployment.ObjectMeta.Labels = serviceGraphAppLabels
 	timestamp(&k8sDeployment.ObjectMeta)
 	k8sDeployment.Spec = appsv1.DeploymentSpec{

@@ -51,7 +51,8 @@ const fortioImage = "istio/fortio:0.11.0"
 var fortioClientLabels = map[string]string{"app": "client"}
 
 func entrypointToFortioClientJob(entrypoint svc.Service) (job batchv1.Job) {
-	url := fmt.Sprintf("http://%s:%v", entrypoint.Name, consts.ServicePort)
+	url := fmt.Sprintf("http://%s.%s.svc.cluster.local:%v",
+		entrypoint.Name, ServiceGraphNamespace, consts.ServicePort)
 
 	job.APIVersion = "batch/v1"
 	job.Kind = "Job"
