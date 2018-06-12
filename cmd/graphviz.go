@@ -3,8 +3,8 @@ package cmd
 import (
 	"io/ioutil"
 
-	"github.com/Tahler/service-grapher/pkg/graph"
-	"github.com/Tahler/service-grapher/pkg/graphviz"
+	"github.com/Tahler/isotope/pkg/graph"
+	"github.com/Tahler/isotope/pkg/graphviz"
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 )

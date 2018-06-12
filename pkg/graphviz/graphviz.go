@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"text/template"
 
-	"github.com/Tahler/service-grapher/pkg/graph"
-	"github.com/Tahler/service-grapher/pkg/graph/script"
-	"github.com/Tahler/service-grapher/pkg/graph/svc"
+	"github.com/Tahler/isotope/pkg/graph"
+	"github.com/Tahler/isotope/pkg/graph/script"
+	"github.com/Tahler/isotope/pkg/graph/svc"
 )
 
 // ServiceGraphToDotLanguage converts a ServiceGraph to a Graphviz DOT language

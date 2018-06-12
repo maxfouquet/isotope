@@ -1,10 +1,10 @@
 package svc
 
 import (
-	"github.com/Tahler/service-grapher/pkg/graph/pct"
-	"github.com/Tahler/service-grapher/pkg/graph/script"
-	"github.com/Tahler/service-grapher/pkg/graph/size"
-	"github.com/Tahler/service-grapher/pkg/graph/svctype"
+	"github.com/Tahler/isotope/pkg/graph/pct"
+	"github.com/Tahler/isotope/pkg/graph/script"
+	"github.com/Tahler/isotope/pkg/graph/size"
+	"github.com/Tahler/isotope/pkg/graph/svctype"
 )
 
 // Service describes a service in the service graph.

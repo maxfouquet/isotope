@@ -6,9 +6,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/Tahler/service-grapher/pkg/consts"
-	"github.com/Tahler/service-grapher/pkg/graph/size"
-	"github.com/Tahler/service-grapher/pkg/graph/svctype"
+	"github.com/Tahler/isotope/pkg/consts"
+	"github.com/Tahler/isotope/pkg/graph/size"
+	"github.com/Tahler/isotope/pkg/graph/svctype"
 )
 
 func sendRequest(

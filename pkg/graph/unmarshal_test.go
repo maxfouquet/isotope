@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Tahler/service-grapher/pkg/graph/script"
-	"github.com/Tahler/service-grapher/pkg/graph/svc"
+	"github.com/Tahler/isotope/pkg/graph/script"
+	"github.com/Tahler/isotope/pkg/graph/svc"
 
-	"github.com/Tahler/service-grapher/pkg/graph/svctype"
+	"github.com/Tahler/isotope/pkg/graph/svctype"
 )
 
 func TestServiceGraph_UnmarshalJSON(t *testing.T) {

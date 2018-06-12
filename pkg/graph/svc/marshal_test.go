@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/Tahler/service-grapher/pkg/graph/svctype"
+	"github.com/Tahler/isotope/pkg/graph/svctype"
 )
 
 func TestService_MarshalJSON(t *testing.T) {

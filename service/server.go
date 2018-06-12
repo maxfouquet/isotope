@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/Tahler/service-grapher/pkg/consts"
-	"github.com/Tahler/service-grapher/pkg/graph/svc"
-	"github.com/Tahler/service-grapher/pkg/graph/svctype"
+	"github.com/Tahler/isotope/pkg/consts"
+	"github.com/Tahler/isotope/pkg/graph/svc"
+	"github.com/Tahler/isotope/pkg/graph/svctype"
 	"istio.io/fortio/fgrpc"
 	"istio.io/fortio/fhttp"
 )

@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/Tahler/service-grapher/pkg/graph/svc"
+	"github.com/Tahler/isotope/pkg/graph/svc"
 )
 
 // pathTracesHeaderKey must be in Train-Case.

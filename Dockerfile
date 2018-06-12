@@ -2,7 +2,7 @@ FROM golang:1.10.2 AS builder
 
 RUN go get -u github.com/golang/dep/cmd/dep
 
-WORKDIR /go/src/github.com/Tahler/service-grapher
+WORKDIR /go/src/github.com/Tahler/isotope
 
 COPY Gopkg.toml Gopkg.toml
 COPY Gopkg.lock Gopkg.lock
@@ -21,7 +21,7 @@ FROM ubuntu
 RUN apt-get update
 RUN apt-get install -y curl
 WORKDIR /root
-COPY --from=builder /go/src/github.com/Tahler/service-grapher/app .
+COPY --from=builder /go/src/github.com/Tahler/isotope/app .
 EXPOSE 8080
 
 CMD ["./app"]

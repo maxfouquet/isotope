@@ -1,4 +1,7 @@
-# Service Grapher
+# Isotope
+
+Isotope (**is**ti**o** **to**pology **pe**rformance) benchmarks Istio against
+various service graph topologies.
 
 ## service-graph.yaml
 

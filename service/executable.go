@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Tahler/service-grapher/pkg/graph/script"
+	"github.com/Tahler/isotope/pkg/graph/script"
 	multierror "github.com/hashicorp/go-multierror"
 )
 

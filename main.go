@@ -1,6 +1,6 @@
 package main
 
-import "github.com/Tahler/service-grapher/cmd"
+import "github.com/Tahler/isotope/cmd"
 
 func main() {
 	cmd.Execute()

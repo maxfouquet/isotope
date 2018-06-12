@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Tahler/service-grapher/pkg/consts"
-	"github.com/Tahler/service-grapher/pkg/graph"
-	"github.com/Tahler/service-grapher/pkg/graph/svc"
+	"github.com/Tahler/isotope/pkg/consts"
+	"github.com/Tahler/isotope/pkg/graph"
+	"github.com/Tahler/isotope/pkg/graph/svc"
 	"github.com/ghodss/yaml"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"

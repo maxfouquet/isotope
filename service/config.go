@@ -6,10 +6,10 @@ import (
 	"os"
 	"path"
 
-	"github.com/Tahler/service-grapher/pkg/consts"
-	"github.com/Tahler/service-grapher/pkg/graph"
-	"github.com/Tahler/service-grapher/pkg/graph/svc"
-	"github.com/Tahler/service-grapher/pkg/graph/svctype"
+	"github.com/Tahler/isotope/pkg/consts"
+	"github.com/Tahler/isotope/pkg/graph"
+	"github.com/Tahler/isotope/pkg/graph/svc"
+	"github.com/Tahler/isotope/pkg/graph/svctype"
 	"github.com/ghodss/yaml"
 )
 
