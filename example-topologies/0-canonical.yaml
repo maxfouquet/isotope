@@ -1,0 +1,22 @@
+apiVersion: v1alpha1
+kind: MockServiceGraph
+defaults:
+  type: http
+  requestSize: 1 KB
+  responseSize: 1 KB
+services:
+- name: a
+  script:
+  - sleep: 100ms
+- name: b
+- name: c
+  script:
+  - call: a
+  - call: b
+- name: d
+  isEntrypoint: true
+  script:
+  - - call: a
+    - call: c
+  - sleep: 10ms
+  - call: b

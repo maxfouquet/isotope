@@ -5,19 +5,14 @@ defaults:
   requestSize: 1 KB
   responseSize: 1 KB
 services:
-- name: a
-  errorRate: 10%
+- isEntrypoint: true
+  name: a
   script:
-  - sleep: 100ms
+  - call: b
 - name: b
+  script:
+  - call: c
 - name: c
   script:
-  - call: a
-  - call: b
+  - call: d
 - name: d
-  isEntrypoint: true
-  script:
-  - - call: a
-    - call: c
-  - sleep: 10ms
-  - call: b
