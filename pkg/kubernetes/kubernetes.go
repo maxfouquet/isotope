@@ -23,9 +23,9 @@ func ServiceGraphToKubernetesManifests(
 	manifests := make([]string, 0, numManifests)
 
 	appendManifest := func(manifest interface{}) error {
-		yamlDoc, err := yaml.Marshal(manifest)
-		if err != nil {
-			return err
+		yamlDoc, innerErr := yaml.Marshal(manifest)
+		if innerErr != nil {
+			return innerErr
 		}
 		manifests = append(manifests, string(yamlDoc))
 		return nil
