@@ -157,6 +157,11 @@ func makeDeployment(
 								MountPath: consts.ConfigPath,
 							},
 						},
+						Ports: []apiv1.ContainerPort{
+							{
+								ContainerPort: consts.ServicePort,
+							},
+						},
 						ReadinessProbe: &apiv1.Probe{
 							Handler: apiv1.Handler{
 								TCPSocket: &apiv1.TCPSocketAction{
