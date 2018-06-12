@@ -58,7 +58,9 @@ func entrypointToFortioClientJob(entrypoint svc.Service) (job batchv1.Job) {
 	job.ObjectMeta.Name = "client"
 	timestamp(&job.ObjectMeta)
 	job.Spec.Template = apiv1.PodTemplateSpec{
-		ObjectMeta: metav1.ObjectMeta{Labels: fortioClientLabels},
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: combineLabels(serviceGraphAppLabels, fortioClientLabels),
+		},
 		Spec: apiv1.PodSpec{
 			Containers: []apiv1.Container{
 				{

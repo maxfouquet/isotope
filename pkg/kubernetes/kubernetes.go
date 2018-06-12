@@ -65,6 +65,17 @@ func ServiceGraphToKubernetesManifests(
 	return []byte(yamlDocString), nil
 }
 
+func combineLabels(a, b map[string]string) map[string]string {
+	c := make(map[string]string, len(a)+len(b))
+	for k, v := range a {
+		c[k] = v
+	}
+	for k, v := range b {
+		c[k] = v
+	}
+	return c
+}
+
 const (
 	numConfigMaps          = 1
 	numManifestsPerService = 2
@@ -72,11 +83,17 @@ const (
 	configMapName = "service-graph-config"
 )
 
+var (
+	serviceGraphAppLabels  = map[string]string{"app": "service-graph"}
+	serviceGraphNodeLabels = map[string]string{"role": "service"}
+)
+
 func makeConfigMap(
 	graph graph.ServiceGraph) (configMap apiv1.ConfigMap, err error) {
 	configMap.APIVersion = "v1"
 	configMap.Kind = "ConfigMap"
 	configMap.ObjectMeta.Name = configMapName
+	configMap.ObjectMeta.Labels = serviceGraphAppLabels
 	timestamp(&configMap.ObjectMeta)
 
 	graphYAMLBytes, err := yaml.Marshal(graph)
@@ -91,9 +108,10 @@ func makeService(service svc.Service) (k8sService apiv1.Service, err error) {
 	k8sService.APIVersion = "v1"
 	k8sService.Kind = "Service"
 	k8sService.ObjectMeta.Name = service.Name
+	k8sService.ObjectMeta.Labels = serviceGraphAppLabels
 	timestamp(&k8sService.ObjectMeta)
 	k8sService.Spec.Ports = []apiv1.ServicePort{{Port: consts.ServicePort}}
-	k8sService.Spec.Selector = map[string]string{"app": service.Name}
+	k8sService.Spec.Selector = map[string]string{"name": service.Name}
 	return
 }
 
@@ -102,18 +120,21 @@ func makeDeployment(
 	k8sDeployment.APIVersion = "apps/v1"
 	k8sDeployment.Kind = "Deployment"
 	k8sDeployment.ObjectMeta.Name = service.Name
+	k8sDeployment.ObjectMeta.Labels = serviceGraphAppLabels
 	timestamp(&k8sDeployment.ObjectMeta)
 	k8sDeployment.Spec = appsv1.DeploymentSpec{
 		Selector: &metav1.LabelSelector{
 			MatchLabels: map[string]string{
-				"app": service.Name,
+				"name": service.Name,
 			},
 		},
 		Template: apiv1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
-				Labels: map[string]string{
-					"app": service.Name,
-				},
+				Labels: combineLabels(
+					serviceGraphNodeLabels,
+					map[string]string{
+						"name": service.Name,
+					}),
 			},
 			Spec: apiv1.PodSpec{
 				Containers: []apiv1.Container{
