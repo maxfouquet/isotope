@@ -12,6 +12,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // ServiceGraphToKubernetesManifests converts a ServiceGraph to Kubernetes
@@ -127,6 +128,15 @@ func makeDeployment(
 								Name:      "config-volume",
 								MountPath: consts.ConfigPath,
 							},
+						},
+						ReadinessProbe: &apiv1.Probe{
+							Handler: apiv1.Handler{
+								TCPSocket: &apiv1.TCPSocketAction{
+									Port: intstr.FromInt(consts.ServicePort),
+								},
+							},
+							InitialDelaySeconds: 5,
+							PeriodSeconds:       10,
 						},
 					},
 				},
