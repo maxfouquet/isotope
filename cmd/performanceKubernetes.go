@@ -1,11 +1,6 @@
 package cmd
 
 import (
-	"io/ioutil"
-
-	"github.com/Tahler/isotope/pkg/graph"
-	"github.com/Tahler/isotope/pkg/kubernetes"
-	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 )
 
@@ -14,29 +9,9 @@ var performanceKubernetesCmd = &cobra.Command{
 	Use:   "kubernetes",
 	Short: "Convert service graph YAML to manifests for performance testing",
 	Run: func(cmd *cobra.Command, args []string) {
-		inFileName := args[0]
-		yamlContents, err := ioutil.ReadFile(inFileName)
+		err := runner.run_topologies(args)
 		exitIfError(err)
-
-		var serviceGraph graph.ServiceGraph
-		exitIfError(yaml.Unmarshal(yamlContents, &serviceGraph))
-
-		serviceGraphManifest, err := kubernetes.ServiceGraphToKubernetesManifests(
-			serviceGraph)
-		exitIfError(err)
-
-		clientManifest, err := kubernetes.ServiceGraphToFortioClientManifest(
-			serviceGraph)
-		exitIfError(err)
-
-		exitIfError(writeManifest("service-graph.yaml", serviceGraphManifest))
-
-		exitIfError(writeManifest("client.yaml", clientManifest))
 	},
-}
-
-func writeManifest(fileName string, manifest []byte) error {
-	return ioutil.WriteFile(fileName, manifest, 0644)
 }
 
 func init() {
