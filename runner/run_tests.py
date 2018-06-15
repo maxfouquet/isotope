@@ -8,7 +8,8 @@ import logging
 import subprocess
 import sys
 import time
-from typing import Any, Callable, List, Tuple
+import traceback
+from typing import Any, Callable, List, Optional, Tuple, Type
 
 DEFAULT_NAMESPACE = 'default'
 SERVICE_GRAPH_NAMESPACE = 'service-graph'
@@ -63,34 +64,53 @@ def gen_yaml(topology_path: str) -> Tuple[str, str]:
 
 def test_service_graph(service_graph_path: str, client_path: str,
                        output_path: str) -> None:
-    create_namespace(SERVICE_GRAPH_NAMESPACE)
-    create_from_manifest(service_graph_path)
-    block_until_deployments_are_ready(SERVICE_GRAPH_NAMESPACE)
-    block_until(service_graph_is_ready)
-    # TODO: Why is this extra buffer necessary?
-    logging.debug('sleeping for 30 seconds as an extra buffer')
-    time.sleep(30)
+    with NamespacedYamlResources(service_graph_path, SERVICE_GRAPH_NAMESPACE):
+        block_until_deployments_are_ready(SERVICE_GRAPH_NAMESPACE)
+        block_until(service_graph_is_ready)
+        # TODO: Why is this extra buffer necessary?
+        logging.debug('sleeping for 30 seconds as an extra buffer')
+        time.sleep(30)
 
-    create_from_manifest(client_path)
-    block_until(client_job_is_complete)
+        with YamlResources(client_path):
+            block_until(client_job_is_complete)
+            write_job_logs(output_path, CLIENT_JOB_NAME)
 
-    write_job_logs(output_path, CLIENT_JOB_NAME)
 
-    delete_from_manifest(client_path)
-    delete_from_manifest(service_graph_path)
-    delete_namespace(SERVICE_GRAPH_NAMESPACE)
+class YamlResources:
+    def __init__(self, path: str) -> None:
+        self.path = path
+
+    def __enter__(self) -> None:
+        create_from_manifest(self.path)
+
+    def __exit__(self, exception_type: Optional[Type[BaseException]],
+                 exception_value: Optional[Exception],
+                 traceback: traceback.TracebackException) -> None:
+        delete_from_manifest(self.path)
+
+
+class NamespacedYamlResources(YamlResources):
+    def __init__(self, path: str, namespace: str = DEFAULT_NAMESPACE) -> None:
+        super().__init__(path)
+        self.namespace = namespace
+
+    def __enter__(self) -> None:
+        create_namespace(self.namespace)
+        super().__enter__()
+
+    def __exit__(self, exception_type: Optional[Type[BaseException]],
+                 exception_value: Optional[Exception],
+                 traceback: traceback.TracebackException) -> None:
+        super().__exit__(exception_type, exception_value, traceback)
+        delete_namespace(self.namespace)
 
 
 def test_service_graph_with_istio(istio_path: str, service_graph_path: str,
                                   client_path: str, output_path: str) -> None:
-    create_namespace(ISTIO_NAMESPACE)
-    create_from_manifest(istio_path)
-    block_until_deployments_are_ready(ISTIO_NAMESPACE)
+    with NamespacedYamlResources(istio_path, ISTIO_NAMESPACE):
+        block_until_deployments_are_ready(ISTIO_NAMESPACE)
 
-    test_service_graph(service_graph_path, client_path, output_path)
-
-    delete_from_manifest(istio_path)
-    delete_namespace(ISTIO_NAMESPACE)
+        test_service_graph(service_graph_path, client_path, output_path)
 
 
 def write_job_logs(path: str, job_name: str) -> None:
