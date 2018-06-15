@@ -1,0 +1,24 @@
+serviceMonitors:
+- name: service-graph-monitor
+  selector:
+    matchLabels:
+      app: service-graph
+  namespaceSelector:
+    matchNames:
+    - service-graph
+  endpoints:
+  - targetPort: 8080
+
+storageSpec:
+  volumeClaimTemplate:
+    spec:
+      # It's necessary to specify "" as the storageClassName
+      # so that the default storage class won't be used, see
+      # https://kubernetes.io/docs/concepts/storage/persistent-volumes/#class-1
+      storageClassName: ""
+      volumeName: prometheus-persistent-volume
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10G
