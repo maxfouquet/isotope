@@ -56,9 +56,10 @@ def get_basename_no_ext(path: str) -> str:
 
 def gen_yaml(topology_path: str) -> Tuple[str, str]:
     logging.info('generating Kubernetes manifests from %s', topology_path)
-    run_cmd([
-        'go', 'run', '../main.go', 'performance', 'kubernetes', topology_path
-    ])
+    subprocess.run(
+        # TODO: main.go is relative to the repo root, not the WD.
+        ['go', 'run', 'main.go', 'performance', 'kubernetes', topology_path],
+        check=True)
     return 'service-graph.yaml', 'client.yaml'
 
 
@@ -117,7 +118,8 @@ def write_job_logs(path: str, job_name: str) -> None:
     logging.info('retrieving logs for %s', job_name)
     # TODO: get logs for each pod in job
     # TODO: get logs for the successful pod in job
-    logs = check_run_kubectl(['logs', 'job/{}'.format(job_name)])
+    proc = run_kubectl(['logs', 'job/{}'.format(job_name)], check=True)
+    logs = proc.stdout
     write_to_file(path, logs)
 
 
@@ -129,58 +131,67 @@ def write_to_file(path: str, contents: str) -> None:
 
 def create_namespace(namespace: str = DEFAULT_NAMESPACE) -> None:
     logging.info('creating namespace %s', namespace)
-    check_run_kubectl(['create', 'namespace', namespace])
+    run_kubectl(['create', 'namespace', namespace], check=True)
 
 
 def delete_namespace(namespace: str = DEFAULT_NAMESPACE) -> None:
     logging.info('deleting namespace %s', namespace)
-    check_run_kubectl(['delete', 'namespace', namespace])
+    run_kubectl(['delete', 'namespace', namespace], check=True)
     block_until(lambda: namespace_is_deleted(namespace))
 
 
 def namespace_is_deleted(namespace: str = DEFAULT_NAMESPACE) -> bool:
-    _, _, status = run_kubectl(['get', 'namespace', namespace])
-    return status != 0
+    proc = run_kubectl(['get', 'namespace', namespace])
+    return proc.returncode != 0
 
 
 def create_from_manifest(path: str) -> None:
     logging.info('creating from %s', path)
-    check_run_kubectl(['create', '-f', path])
+    run_kubectl(['create', '-f', path], check=True)
 
 
 def service_graph_is_ready() -> bool:
-    out = check_run_kubectl([
-        '--namespace', SERVICE_GRAPH_NAMESPACE, 'get', 'pods', '--selector',
-        SERVICE_GRAPH_SERVICE_SELECTOR, '-o',
-        'jsonpath={.items[*].status.conditions[?(@.type=="Ready")].status}'
-    ])
+    proc = run_kubectl(
+        [
+            '--namespace', SERVICE_GRAPH_NAMESPACE, 'get', 'pods',
+            '--selector', SERVICE_GRAPH_SERVICE_SELECTOR, '-o',
+            'jsonpath={.items[*].status.conditions[?(@.type=="Ready")].status}'
+        ],
+        check=True)
+    out = proc.stdout
     all_services_ready = out != '' and 'False' not in out
     return all_services_ready
 
 
 def client_job_is_complete() -> bool:
-    out = check_run_kubectl([
-        'get', 'job', CLIENT_JOB_NAME, '-o',
-        'jsonpath={.status.conditions[?(@.type=="Complete")].status}'
-    ])
-    return 'True' in out
+    proc = run_kubectl(
+        [
+            'get', 'job', CLIENT_JOB_NAME, '-o',
+            'jsonpath={.status.conditions[?(@.type=="Complete")].status}'
+        ],
+        check=True)
+    return 'True' in proc.stdout
 
 
 def block_until_deployments_are_ready(
         namespace: str = DEFAULT_NAMESPACE) -> None:
-    out = check_run_kubectl([
-        '--namespace', namespace, 'get', 'deployments', '-o',
-        'jsonpath={.items[*].metadata.name}'
-    ])
-    deployments = out.split(' ')
+    proc = run_kubectl(
+        [
+            '--namespace', namespace, 'get', 'deployments', '-o',
+            'jsonpath={.items[*].metadata.name}'
+        ],
+        check=True)
+    deployments = proc.stdout.split(' ')
     logging.info('waiting for deployments in %s (%s) to rollout', namespace,
                  deployments)
     for deployment in deployments:
         # kubectl blocks until ready.
-        check_run_kubectl([
-            '--namespace', namespace, 'rollout', 'status', 'deployment',
-            deployment
-        ])
+        run_kubectl(
+            [
+                '--namespace', namespace, 'rollout', 'status', 'deployment',
+                deployment
+            ],
+            check=True)
 
 
 def block_until(predicate: Callable[[], bool]) -> None:
@@ -190,43 +201,11 @@ def block_until(predicate: Callable[[], bool]) -> None:
 
 def delete_from_manifest(path: str) -> None:
     logging.info('deleting from %s', path)
-    check_run_kubectl(['delete', '-f', path])
+    run_kubectl(['delete', '-f', path], check=True)
 
 
-def run_kubectl(args: List[str]) -> Tuple[str, str, int]:
-    return run_cmd(['kubectl', *args])
-
-
-def check_run_kubectl(args: List[str]) -> str:
-    try:
-        out, _, _ = run_cmd(['kubectl', *args], check=True)
-        return out
-    except subprocess.CalledProcessError as e:
-        logging.error('process exited with code %d\n'
-                      '%s\n', e.returncode, e.stderr)
-        raise e
-
-
-def run_cmd(params: List[str], input: str = None,
-            **kwargs: Any) -> Tuple[str, str, int]:
-    logging.debug('%s', ' '.join(params))
-
-    proc = subprocess.run(
-        params,
-        input=input,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        **kwargs)
-
-    out = proc.stdout.decode('utf-8')
-    if out:
-        logging.debug('STDOUT: %s', out)
-
-    err = proc.stderr.decode('utf-8')
-    if err:
-        logging.debug('STDERR: %s', err)
-
-    return out, err, proc.returncode
+def run_kubectl(args: List[str], check=False) -> subprocess.CompletedProcess:
+    return subprocess.run(['kubectl', *args], check=check)
 
 
 if __name__ == '__main__':
