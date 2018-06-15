@@ -56,7 +56,7 @@ def get_basename_no_ext(path: str) -> str:
 
 def gen_yaml(topology_path: str) -> Tuple[str, str]:
     logging.info('generating Kubernetes manifests from %s', topology_path)
-    subprocess.run(
+    run_cmd(
         # TODO: main.go is relative to the repo root, not the WD.
         ['go', 'run', 'main.go', 'performance', 'kubernetes', topology_path],
         check=True)
@@ -102,6 +102,9 @@ class NamespacedYamlResources(YamlResources):
     def __exit__(self, exception_type: Optional[Type[BaseException]],
                  exception_value: Optional[Exception],
                  traceback: traceback.TracebackException) -> None:
+        if exception_type is not None:
+            logging.error('%s', exception_value)
+            logging.info('caught error, exiting')
         super().__exit__(exception_type, exception_value, traceback)
         delete_namespace(self.namespace)
 
@@ -205,7 +208,16 @@ def delete_from_manifest(path: str) -> None:
 
 
 def run_kubectl(args: List[str], check=False) -> subprocess.CompletedProcess:
-    return subprocess.run(['kubectl', *args], check=check)
+    return run_cmd(['kubectl', *args], check=check)
+
+
+def run_cmd(args: List[str], check=False) -> subprocess.CompletedProcess:
+    proc = subprocess.run(args, check=check)
+    if proc.stdout:
+        proc.stdout = proc.stdout.decode('utf-8')
+    if proc.stderr:
+        proc.stderr = proc.stderr.decode('utf-8')
+    return proc
 
 
 if __name__ == '__main__':
