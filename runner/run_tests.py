@@ -17,6 +17,7 @@ SERVICE_GRAPH_SERVICE_SELECTOR = 'role=service'
 CLIENT_JOB_NAME = 'client'
 ISTIO_NAMESPACE = 'istio-system'
 
+PROMETHEUS_SCRAPE_INTERVAL = datetime.timedelta(seconds=30)
 RETRY_INTERVAL = datetime.timedelta(seconds=5)
 
 
@@ -75,6 +76,12 @@ def test_service_graph(service_graph_path: str, client_path: str,
         with YamlResources(client_path):
             block_until(client_job_is_complete)
             write_job_logs(output_path, CLIENT_JOB_NAME)
+            block_until_prometheus_has_scraped()
+
+
+def block_until_prometheus_has_scraped() -> None:
+    logging.info('allowing Prometheus time to scrape final metrics')
+    time.sleep(PROMETHEUS_SCRAPE_INTERVAL.seconds)
 
 
 class YamlResources:
