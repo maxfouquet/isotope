@@ -212,7 +212,8 @@ def run_kubectl(args: List[str], check=False) -> subprocess.CompletedProcess:
 
 
 def run_cmd(args: List[str], check=False) -> subprocess.CompletedProcess:
-    proc = subprocess.run(args, check=check)
+    proc = subprocess.run(
+        args, check=check, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if proc.stdout:
         proc.stdout = proc.stdout.decode('utf-8')
     if proc.stderr:
