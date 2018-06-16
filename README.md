@@ -269,3 +269,17 @@ script:
 - sleep: 10ms
 - call: D
 ```
+
+## Pipeline
+
+1. Create GKE cluster
+1. Install Prometheus Operator
+   1. `kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user "$(gcloud config get-value account)"`
+   1. `kubectl create -f persistent-volume.yaml`
+   1. `kubectl create -f helm-service-account.yaml`
+   1. `helm init --service-account tiller --wait`
+   1. `helm repo add coreos https://s3-eu-west-1.amazonaws.com/coreos-charts/stable`
+   1. `helm install coreos/prometheus-operator --name prometheus-operator --namespace monitoring`
+   1. `helm install coreos/prometheus --name prometheus --namespace monitoring --values values-prometheus.yaml`
+      - Need to wait until PVC is created, then recreate the prometheus pod
+1. `./runner/run_tests.py ...`
