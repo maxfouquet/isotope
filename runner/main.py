@@ -69,6 +69,8 @@ def setup_cluster() -> None:
 def create_cluster() -> None:
     logging.info('creating cluster "%s"', CLUSTER_NAME)
     run_gcloud(['container', 'clusters', 'create', CLUSTER_NAME], check=True)
+    run_gcloud(
+        ['container', 'clusters', 'get-credentials', CLUSTER_NAME], check=True)
 
 
 def create_cluster_role_binding() -> None:
