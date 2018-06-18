@@ -75,13 +75,13 @@ def test_service_graph(service_graph_path: str, client_path: str,
     with resources.NamespacedYaml(service_graph_path,
                                   consts.SERVICE_GRAPH_NAMESPACE):
         wait.until_deployments_are_ready(consts.SERVICE_GRAPH_NAMESPACE)
-        wait.until(service_graph_is_ready)
+        wait.until_service_graph_is_ready()
         # TODO: Why is this extra buffer necessary?
         logging.debug('sleeping for 30 seconds as an extra buffer')
         time.sleep(30)
 
         with resources.Yaml(client_path):
-            wait.until(client_job_is_complete)
+            wait.until_client_job_is_complete()
             write_job_logs(output_path, consts.CLIENT_JOB_NAME)
             wait.until_prometheus_has_scraped()
 
@@ -107,29 +107,6 @@ def write_to_file(path: str, contents: str) -> None:
     logging.debug('writing contents to %s', path)
     with open(path, 'w') as f:
         f.writelines(contents)
-
-
-def service_graph_is_ready() -> bool:
-    proc = sh.run_kubectl(
-        [
-            '--namespace', consts.SERVICE_GRAPH_NAMESPACE, 'get', 'pods',
-            '--selector', consts.SERVICE_GRAPH_SERVICE_SELECTOR, '-o',
-            'jsonpath={.items[*].status.conditions[?(@.type=="Ready")].status}'
-        ],
-        check=True)
-    out = proc.stdout
-    all_services_ready = out != '' and 'False' not in out
-    return all_services_ready
-
-
-def client_job_is_complete() -> bool:
-    proc = sh.run_kubectl(
-        [
-            'get', 'job', consts.CLIENT_JOB_NAME, '-o',
-            'jsonpath={.status.conditions[?(@.type=="Complete")].status}'
-        ],
-        check=True)
-    return 'True' in proc.stdout
 
 
 if __name__ == '__main__':

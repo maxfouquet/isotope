@@ -38,3 +38,34 @@ def until_deployments_are_ready(
 def until_prometheus_has_scraped() -> None:
     logging.info('allowing Prometheus time to scrape final metrics')
     time.sleep(PROMETHEUS_SCRAPE_INTERVAL.seconds)
+
+
+def until_service_graph_is_ready() -> None:
+    until(_service_graph_is_ready)
+
+
+def _service_graph_is_ready() -> bool:
+    proc = sh.run_kubectl(
+        [
+            '--namespace', consts.SERVICE_GRAPH_NAMESPACE, 'get', 'pods',
+            '--selector', consts.SERVICE_GRAPH_SERVICE_SELECTOR, '-o',
+            'jsonpath={.items[*].status.conditions[?(@.type=="Ready")].status}'
+        ],
+        check=True)
+    out = proc.stdout
+    all_services_ready = out != '' and 'False' not in out
+    return all_services_ready
+
+
+def until_client_job_is_complete() -> None:
+    until(_client_job_is_complete)
+
+
+def _client_job_is_complete() -> bool:
+    proc = sh.run_kubectl(
+        [
+            'get', 'job', consts.CLIENT_JOB_NAME, '-o',
+            'jsonpath={.status.conditions[?(@.type=="Complete")].status}'
+        ],
+        check=True)
+    return 'True' in proc.stdout
