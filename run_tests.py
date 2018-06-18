@@ -3,7 +3,7 @@
 import argparse
 import logging
 
-from runner import cluster, test_pipeline
+from runner import cluster, resources, test_pipeline
 
 CLUSTER_NAME = 'isotope-cluster'
 
@@ -17,7 +17,8 @@ def main() -> None:
         cluster.setup(CLUSTER_NAME)
 
     for topology_path in args.topology_paths:
-        test_pipeline.run(topology_path)
+        # TODO: Test cross product of Istio levels and topologies.
+        test_pipeline.run(topology_path, resources.ISTIO_YAML_PATH)
 
 
 def parse_args() -> argparse.Namespace:

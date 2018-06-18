@@ -11,17 +11,21 @@ _MAIN_GO_PATH = os.path.realpath(
                  'main.go'))
 
 
-def run(topology_path: str) -> None:
+def run(topology_path: str, istio_path: str = None) -> None:
     service_graph_path, client_path = _gen_yaml(topology_path)
 
-    base_name_no_ext = _get_basename_no_ext(topology_path)
+    def test() -> None:
+        topology_name = _get_basename_no_ext(topology_path)
+        istio_name = _get_basename_no_ext(istio_path) if istio_path else None
+        _test_service_graph(service_graph_path, client_path,
+                            '{}_{}.log'.format(topology_name, istio_name))
 
-    _test_service_graph(service_graph_path, client_path,
-                        '{}_no-istio.log'.format(base_name_no_ext))
-
-    _test_service_graph_with_istio(
-        resources.ISTIO_YAML_PATH, service_graph_path, client_path,
-        '{}_with-istio.log'.format(base_name_no_ext))
+    if istio_path is None:
+        test()
+    else:
+        with resources.NamespacedYaml(istio_path, consts.ISTIO_NAMESPACE):
+            wait.until_deployments_are_ready(consts.ISTIO_NAMESPACE)
+            test()
 
 
 def _get_basename_no_ext(path: str) -> str:
@@ -55,14 +59,6 @@ def _test_service_graph(service_graph_path: str, client_path: str,
             wait.until_client_job_is_complete()
             _write_job_logs(output_path, consts.CLIENT_JOB_NAME)
             wait.until_prometheus_has_scraped()
-
-
-def _test_service_graph_with_istio(istio_path: str, service_graph_path: str,
-                                   client_path: str, output_path: str) -> None:
-    with resources.NamespacedYaml(istio_path, consts.ISTIO_NAMESPACE):
-        wait.until_deployments_are_ready(consts.ISTIO_NAMESPACE)
-
-        _test_service_graph(service_graph_path, client_path, output_path)
 
 
 def _write_job_logs(path: str, job_name: str) -> None:
