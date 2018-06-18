@@ -318,9 +318,9 @@ def run_cmd(args: List[str], check=False) -> subprocess.CompletedProcess:
         raise e
 
     if proc.stdout is not None:
-        proc.stdout = proc.stdout.decode('utf-8')
+        proc.stdout = proc.stdout.decode('utf-8').strip()
     if proc.stderr is not None:
-        proc.stderr = proc.stderr.decode('utf-8')
+        proc.stderr = proc.stderr.decode('utf-8').strip()
     return proc
 
 
