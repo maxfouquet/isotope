@@ -16,6 +16,7 @@ SERVICE_GRAPH_NAMESPACE = 'service-graph'
 SERVICE_GRAPH_SERVICE_SELECTOR = 'role=service'
 CLIENT_JOB_NAME = 'client'
 ISTIO_NAMESPACE = 'istio-system'
+MONITORING_NAMESPACE = 'monitoring'
 
 RESOURCES_DIR = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__), 'resources'))
@@ -32,11 +33,16 @@ PROMETHEUS_VALUES_YAML_PATH = os.path.join(RESOURCES_DIR,
 PROMETHEUS_SCRAPE_INTERVAL = datetime.timedelta(seconds=30)
 RETRY_INTERVAL = datetime.timedelta(seconds=5)
 
+CLUSTER_NAME = 'isotope-cluster'
+
 
 def main() -> None:
     args = parse_args()
     log_level = getattr(logging, args.log_level)
     logging.basicConfig(level=log_level, format='%(levelname)s\t> %(message)s')
+
+    if args.create_cluster:
+        setup_cluster()
 
     for topology_path in args.topology_paths:
         service_graph_path, client_path = gen_yaml(topology_path)
@@ -51,9 +57,69 @@ def main() -> None:
             '{}_with-istio.log'.format(base_name_no_ext))
 
 
+def setup_cluster() -> None:
+    create_cluster()
+    create_cluster_role_binding()
+    create_persistent_volume()
+    initialize_helm()
+    helm_add_prometheus_operator()
+    helm_add_prometheus()
+
+
+def create_cluster() -> None:
+    logging.info('creating cluster "%s"', CLUSTER_NAME)
+    run_gcloud(['container', 'clusters', 'create', CLUSTER_NAME], check=True)
+
+
+def create_cluster_role_binding() -> None:
+    proc = run_gcloud(['config', 'get-value', 'account'], check=True)
+    account = proc.stdout
+    run_kubectl(
+        [
+            'create', 'clusterrolebinding', 'cluster-admin-binding'
+            '--clusterrole', 'cluster-admin', '--user', account
+        ],
+        check=True)
+
+
+def create_persistent_volume() -> None:
+    run_kubectl(['create', '-f', PERSISTENT_VOLUME_YAML_PATH], check=True)
+
+
+def initialize_helm() -> None:
+    run_kubectl(['create', '-f', HELM_SERVICE_ACCOUNT_YAML_PATH], check=True)
+    run_helm(['init', '--service-account', 'tiller', '--wait'], check=True)
+    run_helm(
+        [
+            'repo', 'add', 'coreos',
+            'https://s3-eu-west-1.amazonaws.com/coreos-charts/stable'
+        ],
+        check=True)
+
+
+def helm_add_prometheus_operator() -> None:
+    run_helm(
+        [
+            'install', 'coreos/prometheus-operator', '--name',
+            'prometheus-operator', '--namespace', MONITORING_NAMESPACE
+        ],
+        check=True)
+
+
+def helm_add_prometheus() -> None:
+    run_helm(
+        [
+            'install', 'coreos/prometheus', '--name', 'prometheus',
+            '--namespace', MONITORING_NAMESPACE, '--values',
+            PROMETHEUS_VALUES_YAML_PATH
+        ],
+        check=True)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument('topology_paths', metavar='PATH', type=str, nargs='+')
+    parser.add_argument('--create_cluster', default=False, action='store_true')
     parser.add_argument(
         '--log_level',
         type=str,
@@ -229,8 +295,16 @@ def delete_from_manifest(path: str) -> None:
     run_kubectl(['delete', '-f', path], check=True)
 
 
+def run_gcloud(args: List[str], check=False) -> subprocess.CompletedProcess:
+    return run_cmd(['gcloud', *args], check=check)
+
+
 def run_kubectl(args: List[str], check=False) -> subprocess.CompletedProcess:
     return run_cmd(['kubectl', *args], check=check)
+
+
+def run_helm(args: List[str], check=False) -> subprocess.CompletedProcess:
+    return run_cmd(['helm', *args], check=check)
 
 
 def run_cmd(args: List[str], check=False) -> subprocess.CompletedProcess:
