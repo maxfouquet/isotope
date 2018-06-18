@@ -45,16 +45,19 @@ def main() -> None:
         setup_cluster()
 
     for topology_path in args.topology_paths:
-        service_graph_path, client_path = gen_yaml(topology_path)
+        run_test(topology_path)
 
-        base_name_no_ext = get_basename_no_ext(topology_path)
 
-        test_service_graph(service_graph_path, client_path,
-                           '{}_no-istio.log'.format(base_name_no_ext))
-
-        test_service_graph_with_istio(
-            ISTIO_YAML_PATH, service_graph_path, client_path,
-            '{}_with-istio.log'.format(base_name_no_ext))
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('topology_paths', metavar='PATH', type=str, nargs='+')
+    parser.add_argument('--create_cluster', default=False, action='store_true')
+    parser.add_argument(
+        '--log_level',
+        type=str,
+        choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'],
+        default='INFO')
+    return parser.parse_args()
 
 
 def setup_cluster() -> None:
@@ -118,16 +121,17 @@ def helm_add_prometheus() -> None:
         check=True)
 
 
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
-    parser.add_argument('topology_paths', metavar='PATH', type=str, nargs='+')
-    parser.add_argument('--create_cluster', default=False, action='store_true')
-    parser.add_argument(
-        '--log_level',
-        type=str,
-        choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'],
-        default='INFO')
-    return parser.parse_args()
+def run_test(topology_path: str) -> None:
+    service_graph_path, client_path = gen_yaml(topology_path)
+
+    base_name_no_ext = get_basename_no_ext(topology_path)
+
+    test_service_graph(service_graph_path, client_path,
+                       '{}_no-istio.log'.format(base_name_no_ext))
+
+    test_service_graph_with_istio(ISTIO_YAML_PATH, service_graph_path,
+                                  client_path,
+                                  '{}_with-istio.log'.format(base_name_no_ext))
 
 
 def get_basename_no_ext(path: str) -> str:
