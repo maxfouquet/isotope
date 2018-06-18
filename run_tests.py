@@ -11,7 +11,7 @@ import time
 import traceback
 from typing import Any, Callable, List, Optional, Tuple, Type
 
-from runner import consts
+from runner import consts, sh
 
 RESOURCES_DIR = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__), 'runner/resources'))
@@ -66,15 +66,16 @@ def setup_cluster() -> None:
 
 def create_cluster() -> None:
     logging.info('creating cluster "%s"', CLUSTER_NAME)
-    run_gcloud(['container', 'clusters', 'create', CLUSTER_NAME], check=True)
-    run_gcloud(
+    sh.run_gcloud(
+        ['container', 'clusters', 'create', CLUSTER_NAME], check=True)
+    sh.run_gcloud(
         ['container', 'clusters', 'get-credentials', CLUSTER_NAME], check=True)
 
 
 def create_cluster_role_binding() -> None:
-    proc = run_gcloud(['config', 'get-value', 'account'], check=True)
+    proc = sh.run_gcloud(['config', 'get-value', 'account'], check=True)
     account = proc.stdout
-    run_kubectl(
+    sh.run_kubectl(
         [
             'create', 'clusterrolebinding', 'cluster-admin-binding'
             '--clusterrole', 'cluster-admin', '--user', account
@@ -83,13 +84,14 @@ def create_cluster_role_binding() -> None:
 
 
 def create_persistent_volume() -> None:
-    run_kubectl(['create', '-f', PERSISTENT_VOLUME_YAML_PATH], check=True)
+    sh.run_kubectl(['create', '-f', PERSISTENT_VOLUME_YAML_PATH], check=True)
 
 
 def initialize_helm() -> None:
-    run_kubectl(['create', '-f', HELM_SERVICE_ACCOUNT_YAML_PATH], check=True)
-    run_helm(['init', '--service-account', 'tiller', '--wait'], check=True)
-    run_helm(
+    sh.run_kubectl(
+        ['create', '-f', HELM_SERVICE_ACCOUNT_YAML_PATH], check=True)
+    sh.run_helm(['init', '--service-account', 'tiller', '--wait'], check=True)
+    sh.run_helm(
         [
             'repo', 'add', 'coreos',
             'https://s3-eu-west-1.amazonaws.com/coreos-charts/stable'
@@ -98,7 +100,7 @@ def initialize_helm() -> None:
 
 
 def helm_add_prometheus_operator() -> None:
-    run_helm(
+    sh.run_helm(
         [
             'install', 'coreos/prometheus-operator', '--name',
             'prometheus-operator', '--namespace', consts.MONITORING_NAMESPACE
@@ -107,7 +109,7 @@ def helm_add_prometheus_operator() -> None:
 
 
 def helm_add_prometheus() -> None:
-    run_helm(
+    sh.run_helm(
         [
             'install', 'coreos/prometheus', '--name', 'prometheus',
             '--namespace', consts.MONITORING_NAMESPACE, '--values',
@@ -136,7 +138,7 @@ def get_basename_no_ext(path: str) -> str:
 
 def gen_yaml(topology_path: str) -> Tuple[str, str]:
     logging.info('generating Kubernetes manifests from %s', topology_path)
-    run_cmd(
+    sh.run_cmd(
         # TODO: main.go is relative to the repo root, not the WD.
         [
             'go', 'run', 'main.go', 'performance', 'kubernetes', topology_path,
@@ -212,7 +214,7 @@ def write_job_logs(path: str, job_name: str) -> None:
     logging.info('retrieving logs for %s', job_name)
     # TODO: get logs for each pod in job
     # TODO: get logs for the successful pod in job
-    proc = run_kubectl(['logs', 'job/{}'.format(job_name)], check=True)
+    proc = sh.run_kubectl(['logs', 'job/{}'.format(job_name)], check=True)
     logs = proc.stdout
     write_to_file(path, logs)
 
@@ -225,27 +227,27 @@ def write_to_file(path: str, contents: str) -> None:
 
 def create_namespace(namespace: str = consts.DEFAULT_NAMESPACE) -> None:
     logging.info('creating namespace %s', namespace)
-    run_kubectl(['create', 'namespace', namespace], check=True)
+    sh.run_kubectl(['create', 'namespace', namespace], check=True)
 
 
 def delete_namespace(namespace: str = consts.DEFAULT_NAMESPACE) -> None:
     logging.info('deleting namespace %s', namespace)
-    run_kubectl(['delete', 'namespace', namespace], check=True)
+    sh.run_kubectl(['delete', 'namespace', namespace], check=True)
     block_until(lambda: namespace_is_deleted(namespace))
 
 
 def namespace_is_deleted(namespace: str = consts.DEFAULT_NAMESPACE) -> bool:
-    proc = run_kubectl(['get', 'namespace', namespace])
+    proc = sh.run_kubectl(['get', 'namespace', namespace])
     return proc.returncode != 0
 
 
 def create_from_manifest(path: str) -> None:
     logging.info('creating from %s', path)
-    run_kubectl(['create', '-f', path], check=True)
+    sh.run_kubectl(['create', '-f', path], check=True)
 
 
 def service_graph_is_ready() -> bool:
-    proc = run_kubectl(
+    proc = sh.run_kubectl(
         [
             '--namespace', consts.SERVICE_GRAPH_NAMESPACE, 'get', 'pods',
             '--selector', consts.SERVICE_GRAPH_SERVICE_SELECTOR, '-o',
@@ -258,7 +260,7 @@ def service_graph_is_ready() -> bool:
 
 
 def client_job_is_complete() -> bool:
-    proc = run_kubectl(
+    proc = sh.run_kubectl(
         [
             'get', 'job', consts.CLIENT_JOB_NAME, '-o',
             'jsonpath={.status.conditions[?(@.type=="Complete")].status}'
@@ -269,7 +271,7 @@ def client_job_is_complete() -> bool:
 
 def block_until_deployments_are_ready(
         namespace: str = consts.DEFAULT_NAMESPACE) -> None:
-    proc = run_kubectl(
+    proc = sh.run_kubectl(
         [
             '--namespace', namespace, 'get', 'deployments', '-o',
             'jsonpath={.items[*].metadata.name}'
@@ -280,7 +282,7 @@ def block_until_deployments_are_ready(
                  deployments)
     for deployment in deployments:
         # kubectl blocks until ready.
-        run_kubectl(
+        sh.run_kubectl(
             [
                 '--namespace', namespace, 'rollout', 'status', 'deployment',
                 deployment
@@ -295,34 +297,7 @@ def block_until(predicate: Callable[[], bool]) -> None:
 
 def delete_from_manifest(path: str) -> None:
     logging.info('deleting from %s', path)
-    run_kubectl(['delete', '-f', path], check=True)
-
-
-def run_gcloud(args: List[str], check=False) -> subprocess.CompletedProcess:
-    return run_cmd(['gcloud', *args], check=check)
-
-
-def run_kubectl(args: List[str], check=False) -> subprocess.CompletedProcess:
-    return run_cmd(['kubectl', *args], check=check)
-
-
-def run_helm(args: List[str], check=False) -> subprocess.CompletedProcess:
-    return run_cmd(['helm', *args], check=check)
-
-
-def run_cmd(args: List[str], check=False) -> subprocess.CompletedProcess:
-    try:
-        proc = subprocess.run(
-            args, check=check, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    except subprocess.CalledProcessError as e:
-        logging.error('%s', e)
-        raise e
-
-    if proc.stdout is not None:
-        proc.stdout = proc.stdout.decode('utf-8').strip()
-    if proc.stderr is not None:
-        proc.stderr = proc.stderr.decode('utf-8').strip()
-    return proc
+    sh.run_kubectl(['delete', '-f', path], check=True)
 
 
 if __name__ == '__main__':
