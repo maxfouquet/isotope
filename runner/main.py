@@ -308,8 +308,13 @@ def run_helm(args: List[str], check=False) -> subprocess.CompletedProcess:
 
 
 def run_cmd(args: List[str], check=False) -> subprocess.CompletedProcess:
-    proc = subprocess.run(
-        args, check=check, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    try:
+        proc = subprocess.run(
+            args, check=check, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except subprocess.CalledProcessError as e:
+        logging.error('%s', e)
+        raise e
+
     if proc.stdout is not None:
         proc.stdout = proc.stdout.decode('utf-8')
     if proc.stderr is not None:
