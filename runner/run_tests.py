@@ -17,6 +17,18 @@ SERVICE_GRAPH_SERVICE_SELECTOR = 'role=service'
 CLIENT_JOB_NAME = 'client'
 ISTIO_NAMESPACE = 'istio-system'
 
+RESOURCES_DIR = os.path.realpath(
+    os.path.join(os.getcwd(), os.path.dirname(__file__), 'resources'))
+CLIENT_YAML_PATH = os.path.join(RESOURCES_DIR, 'client.yaml')
+HELM_SERVICE_ACCOUNT_YAML_PATH = os.path.join(RESOURCES_DIR,
+                                              'helm-service-account.yaml')
+ISTIO_YAML_PATH = os.path.join(RESOURCES_DIR, 'istio.yaml')
+PERSISTENT_VOLUME_YAML_PATH = os.path.join(RESOURCES_DIR,
+                                           'persistent-volume.yaml')
+SERVICE_GRAPH_YAML_PATH = os.path.join(RESOURCES_DIR, 'service-graph.yaml')
+PROMETHEUS_VALUES_YAML_PATH = os.path.join(RESOURCES_DIR,
+                                           'values-prometheus.yaml')
+
 PROMETHEUS_SCRAPE_INTERVAL = datetime.timedelta(seconds=30)
 RETRY_INTERVAL = datetime.timedelta(seconds=5)
 
@@ -35,7 +47,7 @@ def main() -> None:
                            '{}_no-istio.log'.format(base_name_no_ext))
 
         test_service_graph_with_istio(
-            'istio.yaml', service_graph_path, client_path,
+            ISTIO_YAML_PATH, service_graph_path, client_path,
             '{}_with-istio.log'.format(base_name_no_ext))
 
 
@@ -59,9 +71,12 @@ def gen_yaml(topology_path: str) -> Tuple[str, str]:
     logging.info('generating Kubernetes manifests from %s', topology_path)
     run_cmd(
         # TODO: main.go is relative to the repo root, not the WD.
-        ['go', 'run', 'main.go', 'performance', 'kubernetes', topology_path],
+        [
+            'go', 'run', 'main.go', 'performance', 'kubernetes', topology_path,
+            SERVICE_GRAPH_YAML_PATH, CLIENT_YAML_PATH
+        ],
         check=True)
-    return 'service-graph.yaml', 'client.yaml'
+    return SERVICE_GRAPH_YAML_PATH, CLIENT_YAML_PATH
 
 
 def test_service_graph(service_graph_path: str, client_path: str,
