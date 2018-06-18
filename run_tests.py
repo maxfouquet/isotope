@@ -11,15 +11,10 @@ import time
 import traceback
 from typing import Any, Callable, List, Optional, Tuple, Type
 
-DEFAULT_NAMESPACE = 'default'
-SERVICE_GRAPH_NAMESPACE = 'service-graph'
-SERVICE_GRAPH_SERVICE_SELECTOR = 'role=service'
-CLIENT_JOB_NAME = 'client'
-ISTIO_NAMESPACE = 'istio-system'
-MONITORING_NAMESPACE = 'monitoring'
+from runner import consts
 
 RESOURCES_DIR = os.path.realpath(
-    os.path.join(os.getcwd(), os.path.dirname(__file__), 'resources'))
+    os.path.join(os.getcwd(), os.path.dirname(__file__), 'runner/resources'))
 CLIENT_YAML_PATH = os.path.join(RESOURCES_DIR, 'client.yaml')
 HELM_SERVICE_ACCOUNT_YAML_PATH = os.path.join(RESOURCES_DIR,
                                               'helm-service-account.yaml')
@@ -106,7 +101,7 @@ def helm_add_prometheus_operator() -> None:
     run_helm(
         [
             'install', 'coreos/prometheus-operator', '--name',
-            'prometheus-operator', '--namespace', MONITORING_NAMESPACE
+            'prometheus-operator', '--namespace', consts.MONITORING_NAMESPACE
         ],
         check=True)
 
@@ -115,7 +110,7 @@ def helm_add_prometheus() -> None:
     run_helm(
         [
             'install', 'coreos/prometheus', '--name', 'prometheus',
-            '--namespace', MONITORING_NAMESPACE, '--values',
+            '--namespace', consts.MONITORING_NAMESPACE, '--values',
             PROMETHEUS_VALUES_YAML_PATH
         ],
         check=True)
@@ -153,8 +148,9 @@ def gen_yaml(topology_path: str) -> Tuple[str, str]:
 
 def test_service_graph(service_graph_path: str, client_path: str,
                        output_path: str) -> None:
-    with NamespacedYamlResources(service_graph_path, SERVICE_GRAPH_NAMESPACE):
-        block_until_deployments_are_ready(SERVICE_GRAPH_NAMESPACE)
+    with NamespacedYamlResources(service_graph_path,
+                                 consts.SERVICE_GRAPH_NAMESPACE):
+        block_until_deployments_are_ready(consts.SERVICE_GRAPH_NAMESPACE)
         block_until(service_graph_is_ready)
         # TODO: Why is this extra buffer necessary?
         logging.debug('sleeping for 30 seconds as an extra buffer')
@@ -162,7 +158,7 @@ def test_service_graph(service_graph_path: str, client_path: str,
 
         with YamlResources(client_path):
             block_until(client_job_is_complete)
-            write_job_logs(output_path, CLIENT_JOB_NAME)
+            write_job_logs(output_path, consts.CLIENT_JOB_NAME)
             block_until_prometheus_has_scraped()
 
 
@@ -185,7 +181,8 @@ class YamlResources:
 
 
 class NamespacedYamlResources(YamlResources):
-    def __init__(self, path: str, namespace: str = DEFAULT_NAMESPACE) -> None:
+    def __init__(self, path: str,
+                 namespace: str = consts.DEFAULT_NAMESPACE) -> None:
         super().__init__(path)
         self.namespace = namespace
 
@@ -205,8 +202,8 @@ class NamespacedYamlResources(YamlResources):
 
 def test_service_graph_with_istio(istio_path: str, service_graph_path: str,
                                   client_path: str, output_path: str) -> None:
-    with NamespacedYamlResources(istio_path, ISTIO_NAMESPACE):
-        block_until_deployments_are_ready(ISTIO_NAMESPACE)
+    with NamespacedYamlResources(istio_path, consts.ISTIO_NAMESPACE):
+        block_until_deployments_are_ready(consts.ISTIO_NAMESPACE)
 
         test_service_graph(service_graph_path, client_path, output_path)
 
@@ -226,18 +223,18 @@ def write_to_file(path: str, contents: str) -> None:
         f.writelines(contents)
 
 
-def create_namespace(namespace: str = DEFAULT_NAMESPACE) -> None:
+def create_namespace(namespace: str = consts.DEFAULT_NAMESPACE) -> None:
     logging.info('creating namespace %s', namespace)
     run_kubectl(['create', 'namespace', namespace], check=True)
 
 
-def delete_namespace(namespace: str = DEFAULT_NAMESPACE) -> None:
+def delete_namespace(namespace: str = consts.DEFAULT_NAMESPACE) -> None:
     logging.info('deleting namespace %s', namespace)
     run_kubectl(['delete', 'namespace', namespace], check=True)
     block_until(lambda: namespace_is_deleted(namespace))
 
 
-def namespace_is_deleted(namespace: str = DEFAULT_NAMESPACE) -> bool:
+def namespace_is_deleted(namespace: str = consts.DEFAULT_NAMESPACE) -> bool:
     proc = run_kubectl(['get', 'namespace', namespace])
     return proc.returncode != 0
 
@@ -250,8 +247,8 @@ def create_from_manifest(path: str) -> None:
 def service_graph_is_ready() -> bool:
     proc = run_kubectl(
         [
-            '--namespace', SERVICE_GRAPH_NAMESPACE, 'get', 'pods',
-            '--selector', SERVICE_GRAPH_SERVICE_SELECTOR, '-o',
+            '--namespace', consts.SERVICE_GRAPH_NAMESPACE, 'get', 'pods',
+            '--selector', consts.SERVICE_GRAPH_SERVICE_SELECTOR, '-o',
             'jsonpath={.items[*].status.conditions[?(@.type=="Ready")].status}'
         ],
         check=True)
@@ -263,7 +260,7 @@ def service_graph_is_ready() -> bool:
 def client_job_is_complete() -> bool:
     proc = run_kubectl(
         [
-            'get', 'job', CLIENT_JOB_NAME, '-o',
+            'get', 'job', consts.CLIENT_JOB_NAME, '-o',
             'jsonpath={.status.conditions[?(@.type=="Complete")].status}'
         ],
         check=True)
@@ -271,7 +268,7 @@ def client_job_is_complete() -> bool:
 
 
 def block_until_deployments_are_ready(
-        namespace: str = DEFAULT_NAMESPACE) -> None:
+        namespace: str = consts.DEFAULT_NAMESPACE) -> None:
     proc = run_kubectl(
         [
             '--namespace', namespace, 'get', 'deployments', '-o',
