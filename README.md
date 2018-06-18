@@ -3,6 +3,19 @@
 Isotope (**is**ti**o** **to**pology **pe**rformance) benchmarks Istio against
 various service graph topologies.
 
+## Repository Structure
+
+| Item               | Role                                                                      |
+|--------------------|---------------------------------------------------------------------------|
+| example-topologies | Examples of topology configurations                                       |
+| run_tests.py       | CLI to run tests against topologies                                       |
+| runner             | Python module used by `run_tests.py`                                      |
+| main.go            | CLI to access Go program for converting topology YAML into other formats  |
+| cmd                | Cobra commands for `main.go`                                              |
+| pkg                | Go packages imported by `cmd`                                             |
+| service            | Go program (migrated to Tahler/fortio:mock-service)                       |
+| Dockerfile         | Creates `service`'s Docker image (migrated to Tahler/fortio:mock-service) |
+
 ## service-graph.yaml
 
 Describes a service graph to be tested which mocks a real world service-oriented
