@@ -11,7 +11,7 @@ import time
 import traceback
 from typing import Any, Callable, List, Optional, Tuple, Type
 
-from runner import consts, sh
+from runner import consts, sh, wait
 
 RESOURCES_DIR = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__), 'runner/resources'))
@@ -24,9 +24,6 @@ PERSISTENT_VOLUME_YAML_PATH = os.path.join(RESOURCES_DIR,
 SERVICE_GRAPH_YAML_PATH = os.path.join(RESOURCES_DIR, 'service-graph.yaml')
 PROMETHEUS_VALUES_YAML_PATH = os.path.join(RESOURCES_DIR,
                                            'values-prometheus.yaml')
-
-PROMETHEUS_SCRAPE_INTERVAL = datetime.timedelta(seconds=30)
-RETRY_INTERVAL = datetime.timedelta(seconds=5)
 
 CLUSTER_NAME = 'isotope-cluster'
 
@@ -152,21 +149,16 @@ def test_service_graph(service_graph_path: str, client_path: str,
                        output_path: str) -> None:
     with NamespacedYamlResources(service_graph_path,
                                  consts.SERVICE_GRAPH_NAMESPACE):
-        block_until_deployments_are_ready(consts.SERVICE_GRAPH_NAMESPACE)
-        block_until(service_graph_is_ready)
+        wait.until_deployments_are_ready(consts.SERVICE_GRAPH_NAMESPACE)
+        wait.until(service_graph_is_ready)
         # TODO: Why is this extra buffer necessary?
         logging.debug('sleeping for 30 seconds as an extra buffer')
         time.sleep(30)
 
         with YamlResources(client_path):
-            block_until(client_job_is_complete)
+            wait.until(client_job_is_complete)
             write_job_logs(output_path, consts.CLIENT_JOB_NAME)
-            block_until_prometheus_has_scraped()
-
-
-def block_until_prometheus_has_scraped() -> None:
-    logging.info('allowing Prometheus time to scrape final metrics')
-    time.sleep(PROMETHEUS_SCRAPE_INTERVAL.seconds)
+            wait.until_prometheus_has_scraped()
 
 
 class YamlResources:
@@ -205,7 +197,7 @@ class NamespacedYamlResources(YamlResources):
 def test_service_graph_with_istio(istio_path: str, service_graph_path: str,
                                   client_path: str, output_path: str) -> None:
     with NamespacedYamlResources(istio_path, consts.ISTIO_NAMESPACE):
-        block_until_deployments_are_ready(consts.ISTIO_NAMESPACE)
+        wait.until_deployments_are_ready(consts.ISTIO_NAMESPACE)
 
         test_service_graph(service_graph_path, client_path, output_path)
 
@@ -233,7 +225,7 @@ def create_namespace(namespace: str = consts.DEFAULT_NAMESPACE) -> None:
 def delete_namespace(namespace: str = consts.DEFAULT_NAMESPACE) -> None:
     logging.info('deleting namespace %s', namespace)
     sh.run_kubectl(['delete', 'namespace', namespace], check=True)
-    block_until(lambda: namespace_is_deleted(namespace))
+    wait.until(lambda: namespace_is_deleted(namespace))
 
 
 def namespace_is_deleted(namespace: str = consts.DEFAULT_NAMESPACE) -> bool:
@@ -267,32 +259,6 @@ def client_job_is_complete() -> bool:
         ],
         check=True)
     return 'True' in proc.stdout
-
-
-def block_until_deployments_are_ready(
-        namespace: str = consts.DEFAULT_NAMESPACE) -> None:
-    proc = sh.run_kubectl(
-        [
-            '--namespace', namespace, 'get', 'deployments', '-o',
-            'jsonpath={.items[*].metadata.name}'
-        ],
-        check=True)
-    deployments = proc.stdout.split(' ')
-    logging.info('waiting for deployments in %s (%s) to rollout', namespace,
-                 deployments)
-    for deployment in deployments:
-        # kubectl blocks until ready.
-        sh.run_kubectl(
-            [
-                '--namespace', namespace, 'rollout', 'status', 'deployment',
-                deployment
-            ],
-            check=True)
-
-
-def block_until(predicate: Callable[[], bool]) -> None:
-    while not predicate():
-        time.sleep(RETRY_INTERVAL.seconds)
 
 
 def delete_from_manifest(path: str) -> None:
