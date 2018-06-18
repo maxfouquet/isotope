@@ -8,6 +8,15 @@ serviceMonitors:
     - service-graph
   endpoints:
   - targetPort: 8080
+- name: istio-mixer-monitor
+  selector:
+    matchLabels:
+      istio: mixer
+  namespaceSelector:
+    matchNames:
+    - istio-system
+  endpoints:
+  - targetPort: 42422
 
 storageSpec:
   volumeClaimTemplate:
