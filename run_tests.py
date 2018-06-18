@@ -11,7 +11,7 @@ import time
 import traceback
 from typing import Any, Callable, List, Optional, Tuple, Type
 
-from runner import consts, resources, sh, wait
+from runner import cluster, consts, resources, sh, wait
 
 CLUSTER_NAME = 'isotope-cluster'
 
@@ -22,7 +22,7 @@ def main() -> None:
     logging.basicConfig(level=log_level, format='%(levelname)s\t> %(message)s')
 
     if args.create_cluster:
-        setup_cluster()
+        cluster.setup(CLUSTER_NAME)
 
     for topology_path in args.topology_paths:
         run_test(topology_path)
@@ -38,70 +38,6 @@ def parse_args() -> argparse.Namespace:
         choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'],
         default='INFO')
     return parser.parse_args()
-
-
-def setup_cluster() -> None:
-    create_cluster()
-    create_cluster_role_binding()
-    create_persistent_volume()
-    initialize_helm()
-    helm_add_prometheus_operator()
-    helm_add_prometheus()
-
-
-def create_cluster() -> None:
-    logging.info('creating cluster "%s"', CLUSTER_NAME)
-    sh.run_gcloud(
-        ['container', 'clusters', 'create', CLUSTER_NAME], check=True)
-    sh.run_gcloud(
-        ['container', 'clusters', 'get-credentials', CLUSTER_NAME], check=True)
-
-
-def create_cluster_role_binding() -> None:
-    proc = sh.run_gcloud(['config', 'get-value', 'account'], check=True)
-    account = proc.stdout
-    sh.run_kubectl(
-        [
-            'create', 'clusterrolebinding', 'cluster-admin-binding'
-            '--clusterrole', 'cluster-admin', '--user', account
-        ],
-        check=True)
-
-
-def create_persistent_volume() -> None:
-    sh.run_kubectl(
-        ['create', '-f', resources.PERSISTENT_VOLUME_YAML_PATH], check=True)
-
-
-def initialize_helm() -> None:
-    sh.run_kubectl(
-        ['create', '-f', resources.HELM_SERVICE_ACCOUNT_YAML_PATH], check=True)
-    sh.run_helm(['init', '--service-account', 'tiller', '--wait'], check=True)
-    sh.run_helm(
-        [
-            'repo', 'add', 'coreos',
-            'https://s3-eu-west-1.amazonaws.com/coreos-charts/stable'
-        ],
-        check=True)
-
-
-def helm_add_prometheus_operator() -> None:
-    sh.run_helm(
-        [
-            'install', 'coreos/prometheus-operator', '--name',
-            'prometheus-operator', '--namespace', consts.MONITORING_NAMESPACE
-        ],
-        check=True)
-
-
-def helm_add_prometheus() -> None:
-    sh.run_helm(
-        [
-            'install', 'coreos/prometheus', '--name', 'prometheus',
-            '--namespace', consts.MONITORING_NAMESPACE, '--values',
-            resources.PROMETHEUS_VALUES_YAML_PATH
-        ],
-        check=True)
 
 
 def run_test(topology_path: str) -> None:
