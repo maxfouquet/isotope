@@ -50,6 +50,9 @@ func ServiceGraphToKubernetesManifests(
 		return nil
 	}
 
+	namespace := makeServiceGraphNamespace()
+	err = appendManifest(namespace)
+
 	configMap, err := makeConfigMap(serviceGraph, labels)
 	if err != nil {
 		return
@@ -92,6 +95,15 @@ func combineLabels(a, b map[string]string) map[string]string {
 		c[k] = v
 	}
 	return c
+}
+
+func makeServiceGraphNamespace() (namespace apiv1.Namespace) {
+	namespace.APIVersion = "v1"
+	namespace.Kind = "Namespace"
+	namespace.ObjectMeta.Name = consts.ServiceGraphNamespace
+	namespace.ObjectMeta.Labels = map[string]string{"istio-injection": "enabled"}
+	timestamp(&namespace.ObjectMeta)
+	return
 }
 
 func makeConfigMap(graph graph.ServiceGraph, labels map[string]string) (

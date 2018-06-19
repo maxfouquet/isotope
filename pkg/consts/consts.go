@@ -9,6 +9,10 @@ const (
 	// ServicePort is the port the service will run on.
 	ServicePort = 8080
 
+	// ServiceGraphNamespace is the name of the namespace that all service graph
+	// related components will live in.
+	ServiceGraphNamespace = "service-graph"
+
 	// ConfigPath is the parent directory of all service configuration files.
 	ConfigPath = "/etc/config"
 	// ServiceGraphYAMLFileName is the name of the file which contains the
