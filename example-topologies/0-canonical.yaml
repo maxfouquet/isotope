@@ -1,7 +1,6 @@
 apiVersion: v1alpha1
 kind: MockServiceGraph
 defaults:
-  type: http
   requestSize: 1 KB
   responseSize: 1 KB
 services:
