@@ -23,7 +23,8 @@ const (
 	numConfigMaps          = 1
 	numManifestsPerService = 2
 
-	configMapName = "service-graph-config"
+	configVolume           = "config-volume"
+	serviceGraphConfigName = "service-graph-config"
 )
 
 var (
@@ -34,7 +35,8 @@ var (
 // ServiceGraphToKubernetesManifests converts a ServiceGraph to Kubernetes
 // manifests.
 func ServiceGraphToKubernetesManifests(
-	serviceGraph graph.ServiceGraph) (yamlDoc []byte, err error) {
+	serviceGraph graph.ServiceGraph, labels map[string]string) (
+	yamlDoc []byte, err error) {
 	numServices := len(serviceGraph.Services)
 	numManifests := numManifestsPerService*numServices + numConfigMaps
 	manifests := make([]string, 0, numManifests)
@@ -48,7 +50,7 @@ func ServiceGraphToKubernetesManifests(
 		return nil
 	}
 
-	configMap, err := makeConfigMap(serviceGraph)
+	configMap, err := makeConfigMap(serviceGraph, labels)
 	if err != nil {
 		return
 	}
@@ -92,20 +94,28 @@ func combineLabels(a, b map[string]string) map[string]string {
 	return c
 }
 
-func makeConfigMap(
-	graph graph.ServiceGraph) (configMap apiv1.ConfigMap, err error) {
-	configMap.APIVersion = "v1"
-	configMap.Kind = "ConfigMap"
-	configMap.ObjectMeta.Name = configMapName
-	configMap.ObjectMeta.Namespace = ServiceGraphNamespace
-	configMap.ObjectMeta.Labels = serviceGraphAppLabels
-	timestamp(&configMap.ObjectMeta)
+func makeConfigMap(graph graph.ServiceGraph, labels map[string]string) (
+	configMap apiv1.ConfigMap, err error) {
 
 	graphYAMLBytes, err := yaml.Marshal(graph)
 	if err != nil {
 		return
 	}
-	configMap.Data = map[string]string{"service-graph": string(graphYAMLBytes)}
+	labelsYAMLBytes, err := yaml.Marshal(labels)
+	if err != nil {
+		return
+	}
+
+	configMap.APIVersion = "v1"
+	configMap.Kind = "ConfigMap"
+	configMap.ObjectMeta.Name = serviceGraphConfigName
+	configMap.ObjectMeta.Namespace = ServiceGraphNamespace
+	configMap.ObjectMeta.Labels = serviceGraphAppLabels
+	timestamp(&configMap.ObjectMeta)
+	configMap.Data = map[string]string{
+		consts.ServiceGraphConfigMapKey: string(graphYAMLBytes),
+		consts.LabelsConfigMapKey:       string(labelsYAMLBytes),
+	}
 	return
 }
 
@@ -153,7 +163,7 @@ func makeDeployment(
 						},
 						VolumeMounts: []apiv1.VolumeMount{
 							{
-								Name:      "config-volume",
+								Name:      configVolume,
 								MountPath: consts.ConfigPath,
 							},
 						},
@@ -175,16 +185,20 @@ func makeDeployment(
 				},
 				Volumes: []apiv1.Volume{
 					{
-						Name: "config-volume",
+						Name: configVolume,
 						VolumeSource: apiv1.VolumeSource{
 							ConfigMap: &apiv1.ConfigMapVolumeSource{
 								LocalObjectReference: apiv1.LocalObjectReference{
-									Name: configMapName,
+									Name: serviceGraphConfigName,
 								},
 								Items: []apiv1.KeyToPath{
 									{
 										Key:  consts.ServiceGraphConfigMapKey,
 										Path: consts.ServiceGraphYAMLFileName,
+									},
+									{
+										Key:  consts.LabelsConfigMapKey,
+										Path: consts.LabelsYAMLFileName,
 									},
 								},
 							},

@@ -16,7 +16,8 @@ var performanceKubernetesCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		inPath := args[0]
 		serviceGraphOutPath := args[1]
-		clientOutPath := args[2]
+		istioMetricsOutPath := args[2]
+		clientOutPath := args[3]
 
 		yamlContents, err := ioutil.ReadFile(inPath)
 		exitIfError(err)
@@ -24,15 +25,22 @@ var performanceKubernetesCmd = &cobra.Command{
 		var serviceGraph graph.ServiceGraph
 		exitIfError(yaml.Unmarshal(yamlContents, &serviceGraph))
 
-		serviceGraphManifest, err := kubernetes.ServiceGraphToKubernetesManifests(
-			serviceGraph)
+		labels, err := kubernetes.LabelsFor(inPath)
 		exitIfError(err)
+
+		serviceGraphManifest, err := kubernetes.ServiceGraphToKubernetesManifests(
+			serviceGraph, labels)
+		exitIfError(err)
+
+		istioMetricsManifest, err := kubernetes.LabelsToIstioManifests(labels)
 
 		clientManifest, err := kubernetes.ServiceGraphToFortioClientManifest(
 			serviceGraph)
 		exitIfError(err)
 
 		exitIfError(writeManifest(serviceGraphOutPath, serviceGraphManifest))
+
+		exitIfError(writeManifest(istioMetricsOutPath, istioMetricsManifest))
 
 		exitIfError(writeManifest(clientOutPath, clientManifest))
 	},

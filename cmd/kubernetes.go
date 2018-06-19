@@ -23,8 +23,11 @@ var kubernetesCmd = &cobra.Command{
 		err = yaml.Unmarshal(yamlContents, &serviceGraph)
 		exitIfError(err)
 
+		labels, err := kubernetes.LabelsFor(inFileName)
+		exitIfError(err)
+
 		manifest, err := kubernetes.ServiceGraphToKubernetesManifests(
-			serviceGraph)
+			serviceGraph, labels)
 		exitIfError(err)
 
 		outFileName := args[1]
