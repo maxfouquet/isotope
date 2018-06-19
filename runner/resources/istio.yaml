@@ -1,3 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: istio-system
 ---
 # Source: istio/charts/mixer/templates/configmap.yaml
 apiVersion: v1
@@ -26,7 +30,7 @@ metadata:
     heritage: Tiller
     istio: mixer
 data:
-  custom-resources.yaml: |-    
+  custom-resources.yaml: |-
     apiVersion: "config.istio.io/v1alpha2"
     kind: attributemanifest
     metadata:
@@ -122,7 +126,7 @@ data:
           valueType: STRING
         request.api_key:
           valueType: STRING
-    
+
     ---
     apiVersion: "config.istio.io/v1alpha2"
     kind: attributemanifest
@@ -420,7 +424,7 @@ data:
         - tcpbytesent.metric
         - tcpbytereceived.metric
     ---
-    
+
     apiVersion: "config.istio.io/v1alpha2"
     kind: kubernetesenv
     metadata:
@@ -433,7 +437,7 @@ data:
       # $ ln -s ~/.kube/config mixer/adapter/kubernetes/kubeconfig
       #
       # kubeconfig_path: "mixer/adapter/kubernetes/kubeconfig"
-    
+
     ---
     apiVersion: "config.istio.io/v1alpha2"
     kind: rule
@@ -513,7 +517,7 @@ data:
             http2MaxRequests: 10000
             maxRequestsPerConnection: 10000
     ---
-    
+
 
 ---
 # Source: istio/charts/prometheus/templates/configmap.yaml
@@ -870,7 +874,7 @@ data:
             - NET_ADMIN
           privileged: true
         restartPolicy: Always
-      
+
       containers:
       - name: istio-proxy
         image: [[ if (isset .ObjectMeta.Annotations "sidecar.istio.io/proxyImage") -]]
@@ -944,7 +948,7 @@ data:
           requests:
             cpu: 100m
             memory: 128Mi
-          
+
         volumeMounts:
         - mountPath: /etc/istio/proxy
           name: istio-envoy
@@ -2206,7 +2210,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: istio-egressgateway
-  namespace: istio-system    
+  namespace: istio-system
   labels:
     chart: egressgateway-0.8.0
     release: istio
@@ -2247,7 +2251,7 @@ spec:
       port: 80
     -
       name: https
-      port: 443  
+      port: 443
 ---
 
 ---
@@ -2256,7 +2260,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: istio-ingressgateway
-  namespace: istio-system    
+  namespace: istio-system
   labels:
     chart: ingressgateway-0.8.0
     release: istio
@@ -2387,7 +2391,7 @@ spec:
         - '-statsd.mapping-config=/etc/statsd/mapping.conf'
         resources:
             {}
-            
+
         volumeMounts:
         - name: config-volume
           mountPath: /etc/statsd
@@ -2493,7 +2497,7 @@ metadata:
     heritage: Tiller
     istio: egressgateway
 spec:
-  replicas: 
+  replicas:
   template:
     metadata:
       labels:
@@ -2536,7 +2540,7 @@ spec:
           - istio-pilot:8080
           resources:
             {}
-            
+
           env:
           - name: POD_NAME
             valueFrom:
@@ -2565,7 +2569,7 @@ spec:
         secret:
           secretName: "istio.default"
           optional: true
-      affinity:      
+      affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
@@ -2613,7 +2617,7 @@ metadata:
     heritage: Tiller
     istio: ingress
 spec:
-  replicas: 
+  replicas:
   template:
     metadata:
       labels:
@@ -2656,7 +2660,7 @@ spec:
           - istio-pilot:8080
           resources:
             {}
-            
+
           env:
           - name: POD_NAME
             valueFrom:
@@ -2689,7 +2693,7 @@ spec:
         secret:
           secretName: istio-ingress-certs
           optional: true
-      affinity:      
+      affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
@@ -2737,7 +2741,7 @@ metadata:
     heritage: Tiller
     istio: ingressgateway
 spec:
-  replicas: 
+  replicas:
   template:
     metadata:
       labels:
@@ -2781,7 +2785,7 @@ spec:
           - istio-pilot:8080
           resources:
             {}
-            
+
           env:
           - name: POD_NAME
             valueFrom:
@@ -2818,7 +2822,7 @@ spec:
         secret:
           secretName: "istio-ingressgateway-certs"
           optional: true
-      affinity:      
+      affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
@@ -2880,7 +2884,7 @@ spec:
         secret:
           secretName: istio.istio-mixer-service-account
           optional: true
-      affinity:      
+      affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
@@ -2929,7 +2933,7 @@ spec:
           - --trace_zipkin_url=http://zipkin:9411/api/v1/spans
         resources:
             {}
-            
+
       - name: istio-proxy
         image: "docker.io/istio/proxyv2:0.8.0"
         imagePullPolicy: IfNotPresent
@@ -2964,7 +2968,7 @@ spec:
             requests:
               cpu: 100m
               memory: 128Mi
-            
+
         volumeMounts:
         - name: istio-certs
           mountPath: /etc/certs
@@ -3012,7 +3016,7 @@ spec:
           - --trace_zipkin_url=http://zipkin:9411/api/v1/spans
         resources:
             {}
-            
+
       - name: istio-proxy
         image: "docker.io/istio/proxyv2:0.8.0"
         imagePullPolicy: IfNotPresent
@@ -3047,13 +3051,13 @@ spec:
             requests:
               cpu: 100m
               memory: 128Mi
-            
+
         volumeMounts:
         - name: istio-certs
           mountPath: /etc/certs
           readOnly: true
 
---- 
+---
 
 ---
 # Source: istio/charts/pilot/templates/deployment.yaml
@@ -3115,7 +3119,7 @@ spec:
             value: "5"
           resources:
             {}
-            
+
           volumeMounts:
           - name: config-volume
             mountPath: /etc/istio/config
@@ -3158,7 +3162,7 @@ spec:
             requests:
               cpu: 100m
               memory: 128Mi
-            
+
           volumeMounts:
           - name: istio-certs
             mountPath: /etc/certs
@@ -3170,7 +3174,7 @@ spec:
       - name: istio-certs
         secret:
           secretName: "istio.istio-pilot-service-account"
-      affinity:      
+      affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
@@ -3251,7 +3255,7 @@ spec:
               port: 9090
           resources:
             {}
-            
+
           volumeMounts:
           - name: config-volume
             mountPath: /etc/prometheus
@@ -3259,7 +3263,7 @@ spec:
       - name: config-volume
         configMap:
           name: prometheus
-      affinity:      
+      affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
@@ -3329,8 +3333,8 @@ spec:
             - --citadel-storage-namespace=istio-system
           resources:
             {}
-            
-      affinity:      
+
+      affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
@@ -3378,7 +3382,7 @@ metadata:
     heritage: Tiller
     istio: sidecar-injector
 spec:
-  replicas: 
+  replicas:
   template:
     metadata:
       labels:
@@ -3438,7 +3442,7 @@ spec:
           items:
           - key: config
             path: config
-      affinity:      
+      affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
