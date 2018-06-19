@@ -14,11 +14,11 @@ var performanceKubernetesCmd = &cobra.Command{
 	Use:   "kubernetes",
 	Short: "Convert service graph YAML to manifests for performance testing",
 	Run: func(cmd *cobra.Command, args []string) {
-		inFileName := args[0]
-		serviceGraphOutFileName := args[1]
-		clientOutFileName := args[2]
+		inPath := args[0]
+		serviceGraphOutPath := args[1]
+		clientOutPath := args[2]
 
-		yamlContents, err := ioutil.ReadFile(inFileName)
+		yamlContents, err := ioutil.ReadFile(inPath)
 		exitIfError(err)
 
 		var serviceGraph graph.ServiceGraph
@@ -32,14 +32,14 @@ var performanceKubernetesCmd = &cobra.Command{
 			serviceGraph)
 		exitIfError(err)
 
-		exitIfError(writeManifest(serviceGraphOutFileName, serviceGraphManifest))
+		exitIfError(writeManifest(serviceGraphOutPath, serviceGraphManifest))
 
-		exitIfError(writeManifest(clientOutFileName, clientManifest))
+		exitIfError(writeManifest(clientOutPath, clientManifest))
 	},
 }
 
-func writeManifest(fileName string, manifest []byte) error {
-	return ioutil.WriteFile(fileName, manifest, 0644)
+func writeManifest(path string, manifest []byte) error {
+	return ioutil.WriteFile(path, manifest, 0644)
 }
 
 func init() {
