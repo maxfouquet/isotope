@@ -14,50 +14,56 @@ import (
 const (
 	labelsName = "labels"
 
-	istioMetricsYAMLTemplate = `apiVersion: "config.istio.io/v1alpha2"
-kind: metric
-metadata:
-  name: request_count
-  namespace: istio-system
-spec:
-  value: "1"
-  dimensions:
+	prometheusValuesYAMLTemplate = `serviceMonitors:
+- name: service-graph-monitor
+  selector:
+    matchLabels:
+      app: service-graph
+  namespaceSelector:
+    matchNames:
+    - service-graph
+  endpoints:
+  - targetPort: 8080
+    metricRelabelings:
     {{- range $key, $value := . }}
-    {{ $key }}: {{ $value }}
+    - targetLabel: {{ $key }}
+      replacement: {{ $value }}
     {{- end }}
-  monitored_resource_type: '"UNSPECIFIED"'
----
-apiVersion: "config.istio.io/v1alpha2"
-kind: prometheus
-metadata:
-  name: request_count_handler
-  namespace: istio-system
-spec:
-  metrics:
-  - name: service_request_count
-    instance_name: request_count.metric.istio-system
-    kind: COUNTER
-    label_names:
+- name: istio-mixer-monitor
+  selector:
+    matchLabels:
+      istio: mixer
+  namespaceSelector:
+    matchNames:
+    - istio-system
+  endpoints:
+  - targetPort: 42422
+    metricRelabelings:
     {{- range $key, $value := . }}
-    - {{ $key }}
+    - targetLabel: {{ $key }}
+      replacement: {{ $value }}
     {{- end }}
+storageSpec:
+  volumeClaimTemplate:
+    spec:
+      # It's necessary to specify "" as the storageClassName
+      # so that the default storage class won't be used, see
+      # https://kubernetes.io/docs/concepts/storage/persistent-volumes/#class-1
+      storageClassName: ""
+      volumeName: prometheus-persistent-volume
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10G
 `
 )
 
-// LabelsToIstioManifests returns the necessary manifests for self-labeling
-// Prometheus metrics for Istio.
-func LabelsToIstioManifests(labels map[string]string) (
-	istioMetricsManifests []byte, err error) {
-	istioMetricsManifests, err = makeIstioMetricsManifests(labels)
-	if err != nil {
-		return
-	}
-	return
-}
-
-func makeIstioMetricsManifests(
-	labels map[string]string) (manifests []byte, err error) {
-	tmpl, err := template.New("istio-metrics").Parse(istioMetricsYAMLTemplate)
+// LabelsToPrometheusValuesYAML returns the values for coreos/prometheus for
+// self-labeling metrics.
+func LabelsToPrometheusValuesYAML(labels map[string]string) (
+	prometheusValuesYAML []byte, err error) {
+	tmpl, err := template.New("prom-values").Parse(prometheusValuesYAMLTemplate)
 	if err != nil {
 		return
 	}
@@ -66,7 +72,7 @@ func makeIstioMetricsManifests(
 	if err = tmpl.Execute(&b, labels); err != nil {
 		return
 	}
-	manifests = b.Bytes()
+	prometheusValuesYAML = b.Bytes()
 	return
 }
 
