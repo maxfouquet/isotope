@@ -40,6 +40,16 @@ def until_prometheus_has_scraped() -> None:
     time.sleep(PROMETHEUS_SCRAPE_INTERVAL.seconds)
 
 
+def until_namespace_is_deleted(
+        namespace: str = consts.DEFAULT_NAMESPACE) -> None:
+    until(lambda: _namespace_is_deleted(namespace))
+
+
+def _namespace_is_deleted(namespace: str = consts.DEFAULT_NAMESPACE) -> bool:
+    proc = sh.run_kubectl(['get', 'namespace', namespace])
+    return proc.returncode != 0
+
+
 def until_service_graph_is_ready() -> None:
     until(_service_graph_is_ready)
 
