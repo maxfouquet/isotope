@@ -23,9 +23,11 @@ def run(topology_path: str, istio_path: str = None) -> None:
     if istio_path is None:
         test()
     else:
-        with resources.NamespacedYaml(istio_path, consts.ISTIO_NAMESPACE):
+        with resources.Yaml(istio_path):
             wait.until_deployments_are_ready(consts.ISTIO_NAMESPACE)
             test()
+
+        wait.until_namespace_is_deleted(consts.ISTIO_NAMESPACE)
 
 
 def _get_basename_no_ext(path: str) -> str:
@@ -47,8 +49,7 @@ def _gen_yaml(topology_path: str) -> Tuple[str, str]:
 
 def _test_service_graph(service_graph_path: str, client_path: str,
                         output_path: str) -> None:
-    with resources.NamespacedYaml(service_graph_path,
-                                  consts.SERVICE_GRAPH_NAMESPACE):
+    with resources.Yaml(service_graph_path):
         wait.until_deployments_are_ready(consts.SERVICE_GRAPH_NAMESPACE)
         wait.until_service_graph_is_ready()
         # TODO: Why is this extra buffer necessary?
@@ -59,6 +60,8 @@ def _test_service_graph(service_graph_path: str, client_path: str,
             wait.until_client_job_is_complete()
             _write_job_logs(output_path, consts.CLIENT_JOB_NAME)
             wait.until_prometheus_has_scraped()
+
+    wait.until_namespace_is_deleted(consts.SERVICE_GRAPH_NAMESPACE)
 
 
 def _write_job_logs(path: str, job_name: str) -> None:
