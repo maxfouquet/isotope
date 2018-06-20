@@ -16,6 +16,7 @@ def run_helm(args: List[str], check=False) -> subprocess.CompletedProcess:
 
 
 def run_cmd(args: List[str], check=False) -> subprocess.CompletedProcess:
+    logging.debug('%s', args)
     try:
         proc = subprocess.run(
             args, check=check, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
