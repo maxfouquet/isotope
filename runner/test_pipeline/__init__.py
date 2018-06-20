@@ -32,12 +32,40 @@ def run(topology_path: str, istio_path: str = None) -> None:
     if istio_path is None:
         test()
     else:
-        with resources.Yaml(istio_path):
+        try:
+            create_istio_repo()
+            create_istio_helm_chart()
             wait.until_deployments_are_ready(consts.ISTIO_NAMESPACE)
 
             test()
 
-        wait.until_namespace_is_deleted(consts.ISTIO_NAMESPACE)
+        finally:
+            delete_istio_helm_chart()
+            wait.until_namespace_is_deleted(consts.ISTIO_NAMESPACE)
+            delete_istio_repo()
+
+
+def create_istio_repo() -> None:
+    sh.run_cmd(['go', 'get', 'istio.io/istio'])
+
+
+def delete_istio_repo() -> None:
+    os.removedirs(consts.ISTIO_REPO_PATH)
+
+
+def create_istio_helm_chart() -> None:
+    helm_chart_path = os.path.join(consts.ISTIO_REPO_PATH, 'install',
+                                   'kubernetes', 'helm', 'istio')
+    sh.run_helm(
+        [
+            'install', helm_chart_path, '--name', 'istio', '--namespace',
+            consts.ISTIO_NAMESPACE
+        ],
+        check=True)
+
+
+def delete_istio_helm_chart() -> None:
+    sh.run_helm(['delete', '--purge', 'istio'], check=True)
 
 
 def _get_basename_no_ext(path: str) -> str:
