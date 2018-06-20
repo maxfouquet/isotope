@@ -3,6 +3,9 @@ import os
 
 from .. import consts, resources, sh
 
+ZONE = 'us-west1-a'
+CLUSTER_VERSION = '1.10.4-gke.0'
+
 
 def setup(cluster_name: str) -> None:
     _create_cluster(cluster_name)
@@ -15,7 +18,12 @@ def setup(cluster_name: str) -> None:
 
 def _create_cluster(name: str) -> None:
     logging.info('creating cluster "%s"', name)
-    sh.run_gcloud(['container', 'clusters', 'create', name], check=True)
+    sh.run_gcloud(
+        [
+            'container', 'clusters', 'create', name, '--zone', ZONE,
+            '--cluster-version', CLUSTER_VERSION
+        ],
+        check=True)
     sh.run_gcloud(
         ['container', 'clusters', 'get-credentials', name], check=True)
 
