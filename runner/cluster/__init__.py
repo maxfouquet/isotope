@@ -25,7 +25,7 @@ def _create_cluster_role_binding() -> None:
     account = proc.stdout
     sh.run_kubectl(
         [
-            'create', 'clusterrolebinding', 'cluster-admin-binding'
+            'create', 'clusterrolebinding', 'cluster-admin-binding',
             '--clusterrole', 'cluster-admin', '--user', account
         ],
         check=True)
