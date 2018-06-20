@@ -20,7 +20,7 @@ def run_cmd(args: List[str], check=False) -> subprocess.CompletedProcess:
         proc = subprocess.run(
             args, check=check, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except subprocess.CalledProcessError as e:
-        logging.error('%s', e)
+        logging.error('%s\n%s', e, e.stderr)
         raise e
 
     if proc.stdout is not None:
