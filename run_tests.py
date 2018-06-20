@@ -5,7 +5,7 @@ import logging
 
 from runner import cluster, resources, test_pipeline
 
-CLUSTER_NAME = 'isotope-cluster'
+CLUSTER_NAME = 'isotope-cluster-1-9-7'
 
 
 def main() -> None:
