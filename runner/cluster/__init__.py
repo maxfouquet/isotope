@@ -33,7 +33,7 @@ def _create_cluster_role_binding() -> None:
 
 def _create_persistent_volume() -> None:
     sh.run_kubectl(
-        ['create', '-f', resources.PERSISTENT_VOLUME_YAML_PATH], check=True)
+        ['apply', '-f', resources.PERSISTENT_VOLUME_YAML_PATH], check=True)
 
 
 def _initialize_helm() -> None:
