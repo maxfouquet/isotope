@@ -12,10 +12,10 @@ CLIENT_YAML_PATH = os.path.join(_RESOURCES_DIR, 'client.yaml')
 HELM_SERVICE_ACCOUNT_YAML_PATH = os.path.join(_RESOURCES_DIR,
                                               'helm-service-account.yaml')
 ISTIO_YAML_PATH = os.path.join(_RESOURCES_DIR, 'istio.yaml')
-PERSISTENT_VOLUME_YAML_PATH = os.path.join(_RESOURCES_DIR,
-                                           'persistent-volume.yaml')
 PROMETHEUS_VALUES_YAML_PATH = os.path.join(_RESOURCES_DIR,
                                            'values-prometheus.yaml')
+PERSISTENT_VOLUME_YAML_PATH = os.path.join(_RESOURCES_DIR,
+                                           'persistent-volume.yaml')
 SERVICE_GRAPH_YAML_PATH = os.path.join(_RESOURCES_DIR, 'service-graph.yaml')
 
 

@@ -12,7 +12,16 @@ _MAIN_GO_PATH = os.path.realpath(
 
 
 def run(topology_path: str, istio_path: str = None) -> None:
-    service_graph_path, client_path = _gen_yaml(topology_path)
+    service_graph_path, prometheus_values_path, client_path = (
+        _gen_yaml(topology_path))
+
+    logging.info('updating Prometheus configuration')
+    sh.run_helm(
+        [
+            'upgrade', 'prometheus', 'coreos/prometheus', '--values',
+            prometheus_values_path
+        ],
+        check=True)
 
     def test() -> None:
         topology_name = _get_basename_no_ext(topology_path)
@@ -25,6 +34,7 @@ def run(topology_path: str, istio_path: str = None) -> None:
     else:
         with resources.Yaml(istio_path):
             wait.until_deployments_are_ready(consts.ISTIO_NAMESPACE)
+
             test()
 
         wait.until_namespace_is_deleted(consts.ISTIO_NAMESPACE)
@@ -35,16 +45,17 @@ def _get_basename_no_ext(path: str) -> str:
     return os.path.splitext(basename)[0]
 
 
-def _gen_yaml(topology_path: str) -> Tuple[str, str]:
+def _gen_yaml(topology_path: str) -> Tuple[str, str, str]:
     logging.info('generating Kubernetes manifests from %s', topology_path)
     sh.run_cmd(
         [
             'go', 'run', _MAIN_GO_PATH, 'performance', 'kubernetes',
             topology_path, resources.SERVICE_GRAPH_YAML_PATH,
-            resources.CLIENT_YAML_PATH
+            resources.PROMETHEUS_VALUES_YAML_PATH, resources.CLIENT_YAML_PATH
         ],
         check=True)
-    return resources.SERVICE_GRAPH_YAML_PATH, resources.CLIENT_YAML_PATH
+    return (resources.SERVICE_GRAPH_YAML_PATH,
+            resources.PROMETHEUS_VALUES_YAML_PATH, resources.CLIENT_YAML_PATH)
 
 
 def _test_service_graph(service_graph_path: str, client_path: str,
