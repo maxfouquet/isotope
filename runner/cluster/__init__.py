@@ -29,6 +29,7 @@ def _create_cluster(name: str) -> None:
 
 
 def _create_cluster_role_binding() -> None:
+    logging.info('creating cluster-admin-binding')
     proc = sh.run_gcloud(['config', 'get-value', 'account'], check=True)
     account = proc.stdout
     sh.run_kubectl(
@@ -40,11 +41,13 @@ def _create_cluster_role_binding() -> None:
 
 
 def _create_persistent_volume() -> None:
+    logging.info('creating persistent volume')
     sh.run_kubectl(
         ['apply', '-f', resources.PERSISTENT_VOLUME_YAML_PATH], check=True)
 
 
 def _initialize_helm() -> None:
+    logging.info('initializing Helm')
     sh.run_kubectl(
         ['create', '-f', resources.HELM_SERVICE_ACCOUNT_YAML_PATH], check=True)
     sh.run_helm(['init', '--service-account', 'tiller', '--wait'], check=True)
@@ -57,6 +60,7 @@ def _initialize_helm() -> None:
 
 
 def _helm_add_prometheus_operator() -> None:
+    logging.info('installing coreos/prometheus-operator')
     sh.run_helm(
         [
             'install', 'coreos/prometheus-operator', '--name',
@@ -66,6 +70,7 @@ def _helm_add_prometheus_operator() -> None:
 
 
 def _helm_add_prometheus() -> None:
+    logging.info('installing coreos/prometheus')
     sh.run_helm(
         [
             'install', 'coreos/prometheus', '--name', 'prometheus',
