@@ -1,5 +1,6 @@
 import logging
 import os
+import tempfile
 import time
 from typing import Tuple
 
@@ -32,40 +33,36 @@ def run(topology_path: str, istio_path: str = None) -> None:
     if istio_path is None:
         test()
     else:
-        try:
-            create_istio_repo()
-            create_istio_helm_chart()
-            wait.until_deployments_are_ready(consts.ISTIO_NAMESPACE)
+        with tempfile.TemporaryDirectory() as tmp_dir_path:
+            istio_repo_path = os.path.join(tmp_dir_path, 'istio')
+            try:
+                _clone_istio_repo(istio_repo_path)
 
-            test()
+                helm_chart_path = os.path.join(istio_repo_path, 'install',
+                                               'kubernetes', 'helm', 'istio')
+                _create_local_helm_chart(helm_chart_path, 'istio',
+                                         consts.ISTIO_NAMESPACE)
 
-        finally:
-            delete_istio_helm_chart()
-            wait.until_namespace_is_deleted(consts.ISTIO_NAMESPACE)
-            delete_istio_repo()
+                wait.until_deployments_are_ready(consts.ISTIO_NAMESPACE)
 
+                test()
 
-def create_istio_repo() -> None:
-    sh.run_cmd(['go', 'get', 'istio.io/istio'])
-
-
-def delete_istio_repo() -> None:
-    os.removedirs(consts.ISTIO_REPO_PATH)
+            finally:
+                sh.run_helm(['delete', '--purge', 'istio'])
+                wait.until_namespace_is_deleted(consts.ISTIO_NAMESPACE)
 
 
-def create_istio_helm_chart() -> None:
-    helm_chart_path = os.path.join(consts.ISTIO_REPO_PATH, 'install',
-                                   'kubernetes', 'helm', 'istio')
-    sh.run_helm(
-        [
-            'install', helm_chart_path, '--name', 'istio', '--namespace',
-            consts.ISTIO_NAMESPACE
-        ],
+def _clone_istio_repo(path: str) -> None:
+    """Clones github.com/istio.io/istio to path."""
+    sh.run_cmd(
+        ['git', 'clone', 'https://github.com/istio/istio.git', path],
         check=True)
 
 
-def delete_istio_helm_chart() -> None:
-    sh.run_helm(['delete', '--purge', 'istio'], check=True)
+def _create_local_helm_chart(path: str, name: str, namespace: str) -> None:
+    sh.run_helm(
+        ['install', path, '--name', name, '--namespace', namespace],
+        check=True)
 
 
 def _get_basename_no_ext(path: str) -> str:
