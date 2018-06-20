@@ -62,6 +62,6 @@ def _helm_add_prometheus() -> None:
         [
             'install', 'coreos/prometheus', '--name', 'prometheus',
             '--namespace', consts.MONITORING_NAMESPACE, '--values',
-            resources.PROMETHEUS_VALUES_YAML_PATH
+            resources.PROMETHEUS_STORAGE_VALUES_YAML_PATH
         ],
         check=True)
