@@ -8,17 +8,19 @@ from .. import consts, sh, wait
 _RESOURCES_DIR = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
-CLIENT_YAML_PATH = os.path.join(_RESOURCES_DIR, 'client.yaml')
 HELM_SERVICE_ACCOUNT_YAML_PATH = os.path.join(_RESOURCES_DIR,
                                               'helm-service-account.yaml')
 ISTIO_YAML_PATH = os.path.join(_RESOURCES_DIR, 'istio.yaml')
 PROMETHEUS_STORAGE_VALUES_YAML_PATH = os.path.join(
     _RESOURCES_DIR, 'values-prometheus-storage.yaml')
-PROMETHEUS_VALUES_YAML_PATH = os.path.join(_RESOURCES_DIR,
-                                           'values-prometheus.yaml')
 PERSISTENT_VOLUME_YAML_PATH = os.path.join(_RESOURCES_DIR,
                                            'persistent-volume.yaml')
-SERVICE_GRAPH_YAML_PATH = os.path.join(_RESOURCES_DIR, 'service-graph.yaml')
+
+CLIENT_GEN_YAML_PATH = os.path.join(_RESOURCES_DIR, 'client.gen.yaml')
+PROMETHEUS_VALUES_GEN_YAML_PATH = os.path.join(_RESOURCES_DIR,
+                                               'values-prometheus.gen.yaml')
+SERVICE_GRAPH_GEN_YAML_PATH = os.path.join(_RESOURCES_DIR,
+                                           'service-graph.gen.yaml')
 
 
 class Yaml:
