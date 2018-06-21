@@ -1,6 +1,6 @@
 import logging
 import subprocess
-from typing import List
+from typing import Dict, List
 
 
 def run_gcloud(args: List[str], check=False) -> subprocess.CompletedProcess:
@@ -15,7 +15,8 @@ def run_helm(args: List[str], check=False) -> subprocess.CompletedProcess:
     return run(['helm', *args], check=check)
 
 
-def run(args: List[str], check=False) -> subprocess.CompletedProcess:
+def run(args: List[str], check=False,
+        env: Dict[str, str] = None) -> subprocess.CompletedProcess:
     logging.debug('%s', args)
     try:
         proc = subprocess.run(
