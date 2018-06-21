@@ -3,7 +3,7 @@ import os
 import time
 from typing import Tuple
 
-from runner import cluster, consts, resources, sh, wait
+from . import cluster, consts, resources, sh, wait
 
 _REPO_ROOT = os.path.join(os.getcwd(),
                           os.path.dirname(os.path.dirname(__file__)))
