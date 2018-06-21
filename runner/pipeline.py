@@ -31,7 +31,7 @@ def run(topology_path: str, istio_path: str = None) -> None:
     if istio_path is None:
         test()
     else:
-        with resources.Yaml(istio_path):
+        with resources.manifest(istio_path):
             wait.until_deployments_are_ready(consts.ISTIO_NAMESPACE)
 
             test()
@@ -61,14 +61,14 @@ def _gen_yaml(topology_path: str) -> Tuple[str, str, str]:
 
 def _test_service_graph(service_graph_path: str, client_path: str,
                         output_path: str) -> None:
-    with resources.Yaml(service_graph_path):
+    with resources.manifest(service_graph_path):
         wait.until_deployments_are_ready(consts.SERVICE_GRAPH_NAMESPACE)
         wait.until_service_graph_is_ready()
         # TODO: Why is this extra buffer necessary?
         logging.debug('sleeping for 30 seconds as an extra buffer')
         time.sleep(30)
 
-        with resources.Yaml(client_path):
+        with resources.manifest(client_path):
             wait.until_client_job_is_complete()
             _write_job_logs(output_path, consts.CLIENT_JOB_NAME)
             wait.until_prometheus_has_scraped()
