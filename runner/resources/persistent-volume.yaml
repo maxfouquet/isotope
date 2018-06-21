@@ -11,18 +11,3 @@ spec:
   gcePersistentDisk:
     pdName: prom-pd
     fsType: ext4
----
-
-# Disable default StorageClass
-apiVersion: storage.k8s.io/v1beta1
-kind: StorageClass
-metadata:
-  name: standard
-  annotations:
-    # disable this default storage class by setting this annotation to false.
-    storageclass.beta.kubernetes.io/is-default-class: "false"
-provisioner: kubernetes.io/gce-pd
-parameters:
-  type: pd-ssd
-  zone: us-west1-a
----
