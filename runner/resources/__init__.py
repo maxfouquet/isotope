@@ -1,7 +1,7 @@
+import contextlib
 import logging
 import os
-import traceback
-from typing import Optional, Type
+from typing import Generator, Optional, Type
 
 from .. import consts, sh, wait
 
@@ -23,17 +23,11 @@ SERVICE_GRAPH_GEN_YAML_PATH = os.path.join(_RESOURCES_DIR,
                                            'service-graph.gen.yaml')
 
 
-class Yaml:
-    def __init__(self, path: str) -> None:
-        self.path = path
-
-    def __enter__(self) -> None:
-        _create_from_manifest(self.path)
-
-    def __exit__(self, exception_type: Optional[Type[BaseException]],
-                 exception_value: Optional[Exception],
-                 traceback: traceback.TracebackException) -> None:
-        _delete_from_manifest(self.path)
+@contextlib.contextmanager
+def manifest(path: str) -> Generator[None, None, None]:
+    _create_from_manifest(path)
+    yield
+    _delete_from_manifest(path)
 
 
 def _create_from_manifest(path: str) -> None:
