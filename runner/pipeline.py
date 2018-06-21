@@ -10,7 +10,7 @@ _REPO_ROOT = os.path.join(os.getcwd(),
 _MAIN_GO_PATH = os.path.join(_REPO_ROOT, 'convert', 'main.go')
 
 
-def run(topology_path: str, istio_path: str = None) -> None:
+def run(topology_path: str, istio_path: str) -> None:
     service_graph_path, prometheus_values_path, client_path = (
         _gen_yaml(topology_path))
 
@@ -22,21 +22,15 @@ def run(topology_path: str, istio_path: str = None) -> None:
         ],
         check=True)
 
-    def test() -> None:
+    with resources.manifest(istio_path):
+        wait.until_deployments_are_ready(consts.ISTIO_NAMESPACE)
+
         topology_name = _get_basename_no_ext(topology_path)
         istio_name = _get_basename_no_ext(istio_path) if istio_path else None
         _test_service_graph(service_graph_path, client_path,
                             '{}_{}.log'.format(topology_name, istio_name))
 
-    if istio_path is None:
-        test()
-    else:
-        with resources.manifest(istio_path):
-            wait.until_deployments_are_ready(consts.ISTIO_NAMESPACE)
-
-            test()
-
-        wait.until_namespace_is_deleted(consts.ISTIO_NAMESPACE)
+    wait.until_namespace_is_deleted(consts.ISTIO_NAMESPACE)
 
 
 def _get_basename_no_ext(path: str) -> str:
