@@ -18,7 +18,7 @@ def main() -> None:
 
     for topology_path in args.topology_paths:
         # TODO: Test cross product of Istio levels and topologies.
-        pipeline.run(topology_path, resources.ISTIO_YAML_PATH)
+        pipeline.run(topology_path)
 
 
 def parse_args() -> argparse.Namespace:

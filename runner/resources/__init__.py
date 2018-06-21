@@ -10,7 +10,6 @@ _RESOURCES_DIR = os.path.realpath(
 
 HELM_SERVICE_ACCOUNT_YAML_PATH = os.path.join(_RESOURCES_DIR,
                                               'helm-service-account.yaml')
-ISTIO_YAML_PATH = os.path.join(_RESOURCES_DIR, 'istio.yaml')
 PROMETHEUS_STORAGE_VALUES_YAML_PATH = os.path.join(
     _RESOURCES_DIR, 'values-prometheus-storage.yaml')
 PERSISTENT_VOLUME_YAML_PATH = os.path.join(_RESOURCES_DIR,

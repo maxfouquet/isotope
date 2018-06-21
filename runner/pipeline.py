@@ -3,14 +3,14 @@ import os
 import time
 from typing import Tuple
 
-from . import cluster, consts, resources, sh, wait
+from . import cluster, consts, istio, resources, sh, wait
 
 _REPO_ROOT = os.path.join(os.getcwd(),
                           os.path.dirname(os.path.dirname(__file__)))
 _MAIN_GO_PATH = os.path.join(_REPO_ROOT, 'convert', 'main.go')
 
 
-def run(topology_path: str, istio_path: str) -> None:
+def run(topology_path: str) -> None:
     service_graph_path, prometheus_values_path, client_path = (
         _gen_yaml(topology_path))
 
@@ -22,15 +22,10 @@ def run(topology_path: str, istio_path: str) -> None:
         ],
         check=True)
 
-    with resources.manifest(istio_path):
-        wait.until_deployments_are_ready(consts.ISTIO_NAMESPACE)
-
+    with istio.latest(consts.HUB, consts.TAG):
         topology_name = _get_basename_no_ext(topology_path)
-        istio_name = _get_basename_no_ext(istio_path) if istio_path else None
         _test_service_graph(service_graph_path, client_path,
-                            '{}_{}.log'.format(topology_name, istio_name))
-
-    wait.until_namespace_is_deleted(consts.ISTIO_NAMESPACE)
+                            '{}.log'.format(topology_name))
 
 
 def _get_basename_no_ext(path: str) -> str:
