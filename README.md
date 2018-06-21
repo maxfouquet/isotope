@@ -13,8 +13,6 @@ various service graph topologies.
 | main.go            | CLI to access Go program for converting topology YAML into other formats  |
 | cmd                | Cobra commands for `main.go`                                              |
 | pkg                | Go packages imported by `cmd`                                             |
-| service            | Go program (migrated to Tahler/fortio:mock-service)                       |
-| Dockerfile         | Creates `service`'s Docker image (migrated to Tahler/fortio:mock-service) |
 
 ## service-graph.yaml
 
