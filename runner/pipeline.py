@@ -5,10 +5,9 @@ from typing import Tuple
 
 from . import cluster, consts, resources, sh, wait
 
-_MAIN_GO_PATH = os.path.realpath(
-    os.path.join(os.getcwd(),
-                 os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-                 'convert', 'main.go'))
+_REPO_ROOT = os.path.join(os.getcwd(),
+                          os.path.dirname(os.path.dirname(__file__)))
+_MAIN_GO_PATH = os.path.join(_REPO_ROOT, 'convert', 'main.go')
 
 
 def run(topology_path: str, istio_path: str = None) -> None:
@@ -50,12 +49,14 @@ def _gen_yaml(topology_path: str) -> Tuple[str, str, str]:
     sh.run(
         [
             'go', 'run', _MAIN_GO_PATH, 'performance', 'kubernetes',
-            topology_path, resources.SERVICE_GRAPH_YAML_PATH,
-            resources.PROMETHEUS_VALUES_YAML_PATH, resources.CLIENT_YAML_PATH
+            topology_path, resources.SERVICE_GRAPH_GEN_YAML_PATH,
+            resources.PROMETHEUS_VALUES_GEN_YAML_PATH,
+            resources.CLIENT_GEN_YAML_PATH
         ],
         check=True)
-    return (resources.SERVICE_GRAPH_YAML_PATH,
-            resources.PROMETHEUS_VALUES_YAML_PATH, resources.CLIENT_YAML_PATH)
+    return (resources.SERVICE_GRAPH_GEN_YAML_PATH,
+            resources.PROMETHEUS_VALUES_GEN_YAML_PATH,
+            resources.CLIENT_GEN_YAML_PATH)
 
 
 def _test_service_graph(service_graph_path: str, client_path: str,
