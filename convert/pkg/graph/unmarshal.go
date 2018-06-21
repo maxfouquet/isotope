@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"sync"
 
-	"github.com/Tahler/isotope/pkg/graph/pct"
-	"github.com/Tahler/isotope/pkg/graph/script"
-	"github.com/Tahler/isotope/pkg/graph/size"
-	"github.com/Tahler/isotope/pkg/graph/svc"
-	"github.com/Tahler/isotope/pkg/graph/svctype"
+	"github.com/Tahler/isotope/convert/pkg/graph/pct"
+	"github.com/Tahler/isotope/convert/pkg/graph/script"
+	"github.com/Tahler/isotope/convert/pkg/graph/size"
+	"github.com/Tahler/isotope/convert/pkg/graph/svc"
+	"github.com/Tahler/isotope/convert/pkg/graph/svctype"
 )
 
 // UnmarshalJSON converts b into a valid ServiceGraph. See validate() for the

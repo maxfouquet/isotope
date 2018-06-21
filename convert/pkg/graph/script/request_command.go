@@ -3,7 +3,7 @@ package script
 import (
 	"encoding/json"
 
-	"github.com/Tahler/isotope/pkg/graph/size"
+	"github.com/Tahler/isotope/convert/pkg/graph/size"
 )
 
 // RequestCommand describes a command to send an HTTP request to another

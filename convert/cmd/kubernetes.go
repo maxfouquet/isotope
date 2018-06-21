@@ -3,8 +3,8 @@ package cmd
 import (
 	"io/ioutil"
 
-	"github.com/Tahler/isotope/pkg/graph"
-	"github.com/Tahler/isotope/pkg/kubernetes"
+	"github.com/Tahler/isotope/convert/pkg/graph"
+	"github.com/Tahler/isotope/convert/pkg/kubernetes"
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 )
