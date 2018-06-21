@@ -1,7 +1,7 @@
 import logging
 import os
 
-from .. import consts, resources, sh
+from . import consts, resources, sh
 
 ZONE = 'us-west1-a'
 CLUSTER_VERSION = '1.10.4-gke.0'

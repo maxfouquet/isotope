@@ -3,7 +3,7 @@ import os
 import time
 from typing import Tuple
 
-from runner import cluster, consts, resources, sh, wait
+from . import cluster, consts, resources, sh, wait
 
 _MAIN_GO_PATH = os.path.realpath(
     os.path.join(os.getcwd(),

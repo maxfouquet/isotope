@@ -3,7 +3,7 @@ import logging
 import time
 from typing import Callable
 
-from .. import consts, sh
+from . import consts, sh
 
 PROMETHEUS_SCRAPE_INTERVAL = datetime.timedelta(seconds=30)
 RETRY_INTERVAL = datetime.timedelta(seconds=5)
