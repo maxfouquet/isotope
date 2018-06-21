@@ -47,7 +47,7 @@ def _get_basename_no_ext(path: str) -> str:
 
 def _gen_yaml(topology_path: str) -> Tuple[str, str, str]:
     logging.info('generating Kubernetes manifests from %s', topology_path)
-    sh.run_cmd(
+    sh.run(
         [
             'go', 'run', _MAIN_GO_PATH, 'performance', 'kubernetes',
             topology_path, resources.SERVICE_GRAPH_YAML_PATH,
