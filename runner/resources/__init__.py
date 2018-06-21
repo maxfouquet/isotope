@@ -43,4 +43,4 @@ def _create_from_manifest(path: str) -> None:
 
 def _delete_from_manifest(path: str) -> None:
     logging.info('deleting from %s', path)
-    sh.run_kubectl(['delete', '-f', path], check=True)
+    sh.run_kubectl(['delete', '-f', path])
