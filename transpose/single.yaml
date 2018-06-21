@@ -1,0 +1,5 @@
+services:
+- name: a
+  isEntrypoint: true
+  responseSize: 128
+  script: []
