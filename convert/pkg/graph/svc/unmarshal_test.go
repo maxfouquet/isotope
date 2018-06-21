@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/Tahler/isotope/pkg/graph/svctype"
+	"github.com/Tahler/isotope/convert/pkg/graph/svctype"
 )
 
 func TestService_UnmarshalJSON(t *testing.T) {

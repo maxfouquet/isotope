@@ -5,14 +5,12 @@ various service graph topologies.
 
 ## Repository Structure
 
-| Item               | Role                                                                      |
-|--------------------|---------------------------------------------------------------------------|
-| example-topologies | Examples of topology configurations                                       |
-| run_tests.py       | CLI to run tests against topologies                                       |
-| runner             | Python module used by `run_tests.py`                                      |
-| main.go            | CLI to access Go program for converting topology YAML into other formats  |
-| cmd                | Cobra commands for `main.go`                                              |
-| pkg                | Go packages imported by `cmd`                                             |
+| Item                | Role                                                   |
+|---------------------|--------------------------------------------------------|
+| example-topologies/ | Examples of topology configurations                    |
+| convert/            | Go command to convert topology YAML into other formats |
+| run_tests.py        | CLI to run tests against topologies                    |
+| runner/             | Python module used by `run_tests.py`                   |
 
 ## service-graph.yaml
 

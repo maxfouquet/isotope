@@ -8,7 +8,7 @@ from runner import cluster, consts, resources, sh, wait
 _MAIN_GO_PATH = os.path.realpath(
     os.path.join(os.getcwd(),
                  os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-                 'main.go'))
+                 'convert', 'main.go'))
 
 
 def run(topology_path: str, istio_path: str = None) -> None:

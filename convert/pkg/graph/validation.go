@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Tahler/isotope/pkg/graph/script"
+	"github.com/Tahler/isotope/convert/pkg/graph/script"
 )
 
 // validate returns nil if g is valid.
