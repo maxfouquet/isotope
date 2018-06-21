@@ -4,7 +4,7 @@ import os
 from . import consts, resources, sh
 
 ZONE = 'us-west1-a'
-CLUSTER_VERSION = '1.10.4-gke.0'
+CLUSTER_VERSION = '1.9.7-gke.3'
 
 
 def setup(cluster_name: str) -> None:
