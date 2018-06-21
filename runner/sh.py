@@ -4,18 +4,18 @@ from typing import List
 
 
 def run_gcloud(args: List[str], check=False) -> subprocess.CompletedProcess:
-    return run_cmd(['gcloud', *args], check=check)
+    return run(['gcloud', *args], check=check)
 
 
 def run_kubectl(args: List[str], check=False) -> subprocess.CompletedProcess:
-    return run_cmd(['kubectl', *args], check=check)
+    return run(['kubectl', *args], check=check)
 
 
 def run_helm(args: List[str], check=False) -> subprocess.CompletedProcess:
-    return run_cmd(['helm', *args], check=check)
+    return run(['helm', *args], check=check)
 
 
-def run_cmd(args: List[str], check=False) -> subprocess.CompletedProcess:
+def run(args: List[str], check=False) -> subprocess.CompletedProcess:
     logging.debug('%s', args)
     try:
         proc = subprocess.run(
