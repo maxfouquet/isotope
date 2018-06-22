@@ -67,7 +67,14 @@ func entrypointToFortioClientJob(entrypoint svc.Service) (job batchv1.Job) {
 				{
 					Name:  "fortio-client",
 					Image: fortioImage,
-					Args:  []string{"load", "-json=-", url},
+					Args: []string{
+						"load",
+						"-json=-",
+						"-c=32",  // 32 concurrent connections.
+						"-qps=0", // Max queries per second.
+						"-t=5m",  // Run for 5 minutes.
+						url,
+					},
 				},
 			},
 			RestartPolicy: apiv1.RestartPolicyNever,
