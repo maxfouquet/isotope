@@ -1,0 +1,14 @@
+fortio_client_image = "istio/fortio:1.0.0"
+fortio_server_image = "tahler/perf-test-service:latest"
+
+# Istio images are pushed here.
+hub = "docker.io/tahler"
+tag = "latest"
+
+# Tests are the cross-product of topologies and istio_components.
+topologies = [
+  "example-topologies/0-canonical.yaml",
+]
+istio_components = [
+  "full",
+]
