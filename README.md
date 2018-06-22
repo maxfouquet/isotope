@@ -9,6 +9,7 @@ various service graph topologies.
 |---------------------|--------------------------------------------------------|
 | example-topologies/ | Examples of topology configurations                    |
 | convert/            | Go command to convert topology YAML into other formats |
+| service/            | Go command to run as a node in the service graph       |
 | run_tests.py        | CLI to run tests against topologies                    |
 | runner/             | Python module used by `run_tests.py`                   |
 
