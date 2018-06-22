@@ -9,19 +9,22 @@ import (
 	"time"
 
 	"github.com/Tahler/isotope/convert/pkg/graph/script"
+	"github.com/Tahler/isotope/convert/pkg/graph/svctype"
 	multierror "github.com/hashicorp/go-multierror"
 	"istio.io/fortio/log"
 )
 
-func execute(step interface{}, forwardableHeader http.Header) (
-	paths []string, err error) {
+func execute(
+	step interface{},
+	forwardableHeader http.Header,
+	serviceTypes map[string]svctype.ServiceType) (paths []string, err error) {
 	switch cmd := step.(type) {
 	case script.SleepCommand:
 		executeSleepCommand(cmd)
 	case script.RequestCommand:
-		paths, err = executeRequestCommand(cmd, forwardableHeader)
+		paths, err = executeRequestCommand(cmd, forwardableHeader, serviceTypes)
 	case script.ConcurrentCommand:
-		paths, err = executeConcurrentCommand(cmd, forwardableHeader)
+		paths, err = executeConcurrentCommand(cmd, forwardableHeader, serviceTypes)
 	default:
 		log.Fatalf("unknown command type in script: %T", cmd)
 	}
@@ -35,8 +38,9 @@ func executeSleepCommand(cmd script.SleepCommand) {
 // Execute sends an HTTP request to another service. Assumes DNS is available
 // which maps exe.ServiceName to the relevant URL to reach the service.
 func executeRequestCommand(
-	cmd script.RequestCommand, forwardableHeader http.Header) (
-	paths []string, err error) {
+	cmd script.RequestCommand,
+	forwardableHeader http.Header,
+	serviceTypes map[string]svctype.ServiceType) (paths []string, err error) {
 	destName := cmd.ServiceName
 	destType, ok := serviceTypes[destName]
 	if !ok {
@@ -68,8 +72,9 @@ func readAllAndClose(r io.ReadCloser) {
 // executeConcurrentCommand calls each command in exe.Commands asynchronously
 // and waits for each to complete.
 func executeConcurrentCommand(
-	cmd script.ConcurrentCommand, forwardableHeader http.Header) (
-	paths []string, errs error) {
+	cmd script.ConcurrentCommand,
+	forwardableHeader http.Header,
+	serviceTypes map[string]svctype.ServiceType) (paths []string, errs error) {
 	numSubCmds := len(cmd)
 	wg := sync.WaitGroup{}
 	wg.Add(numSubCmds)
@@ -79,7 +84,7 @@ func executeConcurrentCommand(
 			defer wg.Done()
 
 			// TODO: Differentiate between actual error and errorRate-caused error.
-			stepPaths, err := execute(step, forwardableHeader)
+			stepPaths, err := execute(step, forwardableHeader, serviceTypes)
 			pathsChan <- stepPaths
 			if err != nil {
 				errs = multierror.Append(errs, err)

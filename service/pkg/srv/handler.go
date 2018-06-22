@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Tahler/isotope/convert/pkg/graph/svc"
+	"github.com/Tahler/isotope/convert/pkg/graph/svctype"
 	"github.com/Tahler/isotope/service/pkg/srv/prometheus"
 	"istio.io/fortio/log"
 )
@@ -19,7 +20,8 @@ var hostname = os.Getenv("HOSTNAME")
 
 // Handler handles the default endpoint by emulating its Service.
 type Handler struct {
-	svc.Service
+	Service      svc.Service
+	ServiceTypes map[string]svctype.ServiceType
 }
 
 func (h Handler) ServeHTTP(
@@ -28,7 +30,7 @@ func (h Handler) ServeHTTP(
 	prometheus.RecordRequest()
 
 	respond := func(status int, paths []string, isLocalErr bool) {
-		stampHeader(writer.Header(), paths, isLocalErr)
+		stampHeader(h.Service.Name, writer.Header(), paths, isLocalErr)
 
 		writer.WriteHeader(status)
 		err := request.Write(writer)
@@ -42,10 +44,10 @@ func (h Handler) ServeHTTP(
 		return
 	}
 
-	allPaths := make([]string, 0, len(h.Script))
-	for _, step := range h.Script {
+	allPaths := make([]string, 0, len(h.Service.Script))
+	for _, step := range h.Service.Script {
 		forwardableHeader := extractForwardableHeader(request.Header)
-		paths, err := execute(step, forwardableHeader)
+		paths, err := execute(step, forwardableHeader, h.ServiceTypes)
 		allPaths = append(allPaths, paths...)
 		if err != nil {
 			log.Errf("%s", err)
@@ -57,8 +59,9 @@ func (h Handler) ServeHTTP(
 	respond(http.StatusOK, allPaths, false)
 }
 
-func stampHeader(header http.Header, paths []string, isLocalErr bool) {
-	stamp := fmt.Sprintf("%s (%s)", Service.Name, hostname)
+func stampHeader(
+	serviceName string, header http.Header, paths []string, isLocalErr bool) {
+	stamp := fmt.Sprintf("%s (%s)", serviceName, hostname)
 	if isLocalErr {
 		stamp += " (ERROR)"
 	}
@@ -83,13 +86,14 @@ func stampPaths(paths []string, stamp string) []string {
 	return stampedPaths
 }
 
-// errorChance randomly returns an error h.ErrorRate percent of the time.
+// errorChance randomly returns an error h.Service.ErrorRate percent of the
+// time.
 func (h Handler) errorChance() (err error) {
 	// TODO: Restore once Fortio can ignore errors.
 	return nil
 	// random := rand.Float64()
-	// if random < float64(h.ErrorRate) {
-	// 	err = fmt.Errorf("server randomly failed with a chance of %v", h.ErrorRate)
+	// if random < float64(h.Service.ErrorRate) {
+	// 	err = fmt.Errorf("server randomly failed with a chance of %v", h.Service.ErrorRate)
 	// }
 	// return
 }
