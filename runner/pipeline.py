@@ -35,12 +35,14 @@ def _get_basename_no_ext(path: str) -> str:
 
 def _gen_yaml(topology_path: str) -> Tuple[str, str, str]:
     logging.info('generating Kubernetes manifests from %s', topology_path)
+    client_node_selector = 'cloud.google.com/gke-nodepool={}'.format(
+        consts.CLIENT_NODE_POOL_NAME)
     sh.run(
         [
             'go', 'run', _MAIN_GO_PATH, 'performance', 'kubernetes',
             topology_path, resources.SERVICE_GRAPH_GEN_YAML_PATH,
             resources.PROMETHEUS_VALUES_GEN_YAML_PATH,
-            resources.CLIENT_GEN_YAML_PATH
+            resources.CLIENT_GEN_YAML_PATH, client_node_selector
         ],
         check=True)
     return (resources.SERVICE_GRAPH_GEN_YAML_PATH,

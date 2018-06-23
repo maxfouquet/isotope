@@ -9,6 +9,7 @@ CLUSTER_VERSION = '1.9.7-gke.3'
 
 def setup(cluster_name: str) -> None:
     _create_cluster(cluster_name)
+    _create_client_node_pool()
     _create_cluster_role_binding()
     _create_persistent_volume()
     _initialize_helm()
@@ -26,6 +27,16 @@ def _create_cluster(name: str) -> None:
         check=True)
     sh.run_gcloud(
         ['container', 'clusters', 'get-credentials', name], check=True)
+
+
+def _create_client_node_pool() -> None:
+    sh.run_gcloud(
+        [
+            'container', 'node-pools', 'create', consts.CLIENT_NODE_POOL_NAME,
+            '--machine-type', consts.CLIENT_NODE_POOL_MACHINE_TYPE,
+            '--num-nodes=1', '--disk-size=10'
+        ],
+        check=True)
 
 
 def _create_cluster_role_binding() -> None:

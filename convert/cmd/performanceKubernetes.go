@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"fmt"
 	"io/ioutil"
+	"strings"
 
 	"github.com/Tahler/isotope/convert/pkg/graph"
 	"github.com/Tahler/isotope/convert/pkg/kubernetes"
@@ -18,6 +20,10 @@ var performanceKubernetesCmd = &cobra.Command{
 		serviceGraphOutPath := args[1]
 		prometheusValuesPath := args[2]
 		clientOutPath := args[3]
+		// Split by '=' (i.e. cloud.google.com/gke-nodepool=client-pool)
+		clientNodeSelectorStr := args[4]
+		clientNodeSelector, err := extractClientNodeSelector(clientNodeSelectorStr)
+		exitIfError(err)
 
 		yamlContents, err := ioutil.ReadFile(inPath)
 		exitIfError(err)
@@ -35,7 +41,7 @@ var performanceKubernetesCmd = &cobra.Command{
 		promValuesYAML, err := kubernetes.LabelsToPrometheusValuesYAML(labels)
 
 		clientManifest, err := kubernetes.ServiceGraphToFortioClientManifest(
-			serviceGraph)
+			serviceGraph, clientNodeSelector)
 		exitIfError(err)
 
 		exitIfError(writeManifest(serviceGraphOutPath, serviceGraphManifest))
@@ -62,4 +68,14 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// performanceKubernetesCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+func extractClientNodeSelector(s string) (map[string]string, error) {
+	nodeSelector := make(map[string]string, 1)
+	parts := strings.Split(s, "=")
+	if len(parts) != 2 {
+		return nodeSelector, fmt.Errorf("%s is not a valid node selector", s)
+	}
+	nodeSelector[parts[0]] = parts[1]
+	return nodeSelector, nil
 }
