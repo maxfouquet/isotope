@@ -7,10 +7,8 @@ import (
 	"path"
 
 	"github.com/Tahler/isotope/convert/pkg/consts"
-	"github.com/Tahler/isotope/convert/pkg/graph/svc"
 	"github.com/Tahler/isotope/service/pkg/srv"
 	"github.com/Tahler/isotope/service/pkg/srv/prometheus"
-	"github.com/ghodss/yaml"
 	"istio.io/fortio/log"
 )
 
@@ -27,20 +25,16 @@ var (
 func main() {
 	log.SetLogLevel(log.Debug)
 
-	serviceGraph, err := srv.ServiceGraphFromYAMLFile(serviceGraphYAMLFilePath)
-	if err != nil {
-		log.Fatalf("%s", err)
-	}
-
-	name, ok := os.LookupEnv(consts.ServiceNameEnvKey)
+	serviceName, ok := os.LookupEnv(consts.ServiceNameEnvKey)
 	if !ok {
 		log.Fatalf(`env var "%s" is not set`, consts.ServiceNameEnvKey)
 	}
 
-	service, err := srv.ExtractService(serviceGraph, name)
-	logService(service)
-
-	defaultHandler := srv.Handler{Service: service}
+	defaultHandler, err := srv.HandlerFromServiceGraphYAML(
+		serviceGraphYAMLFilePath, serviceName)
+	if err != nil {
+		log.Fatalf("%s", err)
+	}
 
 	err = serveWithPrometheus(defaultHandler)
 	if err != nil {
@@ -62,15 +56,4 @@ func serveWithPrometheus(defaultHandler http.Handler) (err error) {
 		return
 	}
 	return
-}
-
-func logService(service svc.Service) error {
-	if log.Log(log.Info) {
-		serviceYAML, err := yaml.Marshal(service)
-		if err != nil {
-			return err
-		}
-		log.Infof("acting as service %s:\n%s", service.Name, serviceYAML)
-	}
-	return nil
 }
