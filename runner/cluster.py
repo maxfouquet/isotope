@@ -5,9 +5,10 @@ from . import consts, resources, sh
 
 
 def setup(name: str, zone: str, version: str, machine_type: str,
-          disk_size_gb: int, num_nodes: int) -> None:
+          disk_size_gb: int, num_nodes: int, client_machine_type: str,
+          client_disk_size_gb: int) -> None:
     _create_cluster(name, zone, version, machine_type, disk_size_gb, num_nodes)
-    _create_client_node_pool()
+    _create_client_node_pool(client_machine_type, client_disk_size_gb)
     _create_cluster_role_binding()
     _create_persistent_volume()
     _initialize_helm()
@@ -31,12 +32,12 @@ def _create_cluster(name: str, zone: str, version: str, machine_type: str,
         ['container', 'clusters', 'get-credentials', name], check=True)
 
 
-def _create_client_node_pool() -> None:
+def _create_client_node_pool(machine_type: str, disk_size_gb: int) -> None:
     sh.run_gcloud(
         [
             'container', 'node-pools', 'create', consts.CLIENT_NODE_POOL_NAME,
-            '--machine-type', consts.CLIENT_NODE_POOL_MACHINE_TYPE,
-            '--num-nodes=1', '--disk-size=10'
+            '--machine-type', machine_type, '--num-nodes=1', '--disk-size',
+            str(disk_size_gb)
         ],
         check=True)
 
