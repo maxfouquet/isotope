@@ -28,7 +28,7 @@ def run(args: List[str], check=False,
             stderr=subprocess.PIPE)
     except subprocess.CalledProcessError as e:
         _decode(e)
-        logging.error('%s\n%s', e, e.stderr)
+        logging.error('%s\n%s\n%s', e, e.stdout, e.stderr)
         raise e
 
     _decode(proc)
