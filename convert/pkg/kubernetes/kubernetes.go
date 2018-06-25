@@ -36,7 +36,6 @@ var (
 // manifests.
 func ServiceGraphToKubernetesManifests(
 	serviceGraph graph.ServiceGraph,
-	labels map[string]string,
 	serviceImage string) (yamlDoc []byte, err error) {
 	numServices := len(serviceGraph.Services)
 	numManifests := numManifestsPerService*numServices + numConfigMaps
@@ -54,7 +53,7 @@ func ServiceGraphToKubernetesManifests(
 	namespace := makeServiceGraphNamespace()
 	err = appendManifest(namespace)
 
-	configMap, err := makeConfigMap(serviceGraph, labels)
+	configMap, err := makeConfigMap(serviceGraph)
 	if err != nil {
 		return
 	}
@@ -107,18 +106,12 @@ func makeServiceGraphNamespace() (namespace apiv1.Namespace) {
 	return
 }
 
-func makeConfigMap(graph graph.ServiceGraph, labels map[string]string) (
-	configMap apiv1.ConfigMap, err error) {
-
+func makeConfigMap(
+	graph graph.ServiceGraph) (configMap apiv1.ConfigMap, err error) {
 	graphYAMLBytes, err := yaml.Marshal(graph)
 	if err != nil {
 		return
 	}
-	labelsYAMLBytes, err := yaml.Marshal(labels)
-	if err != nil {
-		return
-	}
-
 	configMap.APIVersion = "v1"
 	configMap.Kind = "ConfigMap"
 	configMap.ObjectMeta.Name = serviceGraphConfigName
@@ -127,7 +120,6 @@ func makeConfigMap(graph graph.ServiceGraph, labels map[string]string) (
 	timestamp(&configMap.ObjectMeta)
 	configMap.Data = map[string]string{
 		consts.ServiceGraphConfigMapKey: string(graphYAMLBytes),
-		consts.LabelsConfigMapKey:       string(labelsYAMLBytes),
 	}
 	return
 }
@@ -209,10 +201,6 @@ func makeDeployment(
 									{
 										Key:  consts.ServiceGraphConfigMapKey,
 										Path: consts.ServiceGraphYAMLFileName,
-									},
-									{
-										Key:  consts.LabelsConfigMapKey,
-										Path: consts.LabelsYAMLFileName,
 									},
 								},
 							},

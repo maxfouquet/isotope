@@ -28,7 +28,7 @@ def main() -> None:
         # TODO: Test cross product of Istio levels and topologies.
         pipeline.run(topology_path, config.server_image, config.client_image,
                      client_args, config.istio_hub, config.istio_tag,
-                     config.labels_arg())
+                     config.labels())
 
 
 def parse_args() -> argparse.Namespace:

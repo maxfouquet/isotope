@@ -1,9 +1,9 @@
 import logging
 import os
 import time
-from typing import Tuple
+from typing import Dict, Tuple
 
-from . import cluster, consts, istio, resources, sh, wait
+from . import cluster, consts, dicts, istio, md5, prometheus, resources, sh, wait
 
 _REPO_ROOT = os.path.join(os.getcwd(),
                           os.path.dirname(os.path.dirname(__file__)))
@@ -12,23 +12,40 @@ _MAIN_GO_PATH = os.path.join(_REPO_ROOT, 'convert', 'main.go')
 
 def run(topology_path: str, service_image: str, client_image: str,
         client_args: str, hub: str, tag: str,
-        prometheus_labels_arg: str) -> None:
-    service_graph_path, prometheus_values_path, client_path = _gen_yaml(
-        topology_path, service_image, client_image, client_args,
-        prometheus_labels_arg)
+        static_labels: Dict[str, str]) -> None:
+    service_graph_path, client_path = _gen_yaml(topology_path, service_image,
+                                                client_image, client_args)
+
+    topology_name = _get_basename_no_ext(topology_path)
+    _write_prometheus_values_for_topology(topology_path, topology_name,
+                                          static_labels)
 
     logging.info('updating Prometheus configuration')
     sh.run_helm(
         [
             'upgrade', 'prometheus', 'coreos/prometheus', '--values',
-            prometheus_values_path
+            resources.PROMETHEUS_VALUES_GEN_YAML_PATH
         ],
         check=True)
 
     with istio.latest(hub, tag):
-        topology_name = _get_basename_no_ext(topology_path)
         _test_service_graph(service_graph_path, client_path,
                             '{}.log'.format(topology_name))
+
+
+def _write_prometheus_values_for_topology(path: str, name: str,
+                                          labels: Dict[str, str]) -> None:
+    labels = dicts.combine(labels, {
+        'topology_name': name,
+        'topology_hash': md5.hex(path),
+    })
+    _write_prometheus_values(labels)
+
+
+def _write_prometheus_values(labels: Dict[str, str]) -> None:
+    values_yaml = prometheus.values_yaml(labels)
+    with open(resources.PROMETHEUS_VALUES_GEN_YAML_PATH, 'w') as f:
+        f.write(values_yaml)
 
 
 def _get_basename_no_ext(path: str) -> str:
@@ -37,8 +54,7 @@ def _get_basename_no_ext(path: str) -> str:
 
 
 def _gen_yaml(topology_path: str, service_image: str, client_image: str,
-              client_args: str,
-              prometheus_labels_arg: str) -> Tuple[str, str, str]:
+              client_args: str) -> Tuple[str, str]:
     logging.info('generating Kubernetes manifests from %s', topology_path)
     client_node_selector = 'cloud.google.com/gke-nodepool={}'.format(
         consts.CLIENT_NODE_POOL_NAME)
@@ -46,15 +62,11 @@ def _gen_yaml(topology_path: str, service_image: str, client_image: str,
         [
             'go', 'run', _MAIN_GO_PATH, 'kubernetes', '--service-image',
             service_image, '--client-image', client_image, '--client-args',
-            client_args, '--static-labels', prometheus_labels_arg,
-            topology_path, resources.SERVICE_GRAPH_GEN_YAML_PATH,
-            resources.SERVICE_GRAPH_GEN_YAML_PATH,
-            resources.PROMETHEUS_VALUES_GEN_YAML_PATH,
+            client_args, topology_path, resources.SERVICE_GRAPH_GEN_YAML_PATH,
             resources.CLIENT_GEN_YAML_PATH, client_node_selector
         ],
         check=True)
     return (resources.SERVICE_GRAPH_GEN_YAML_PATH,
-            resources.PROMETHEUS_VALUES_GEN_YAML_PATH,
             resources.CLIENT_GEN_YAML_PATH)
 
 

@@ -20,13 +20,6 @@ const (
 	// holding the ServiceGraph's YAML to be mounted in
 	// "${ConfigPath}/${ServiceGraphYAMLFileName}".
 	ServiceGraphConfigMapKey = "service-graph"
-	// LabelsYAMLFileName is the name of the file which contains the YAML
-	// representing the key-value pairs for all Prometheus metrics.
-	LabelsYAMLFileName = "labels.yaml"
-	// LabelsConfigMapKey is the key of the Kubernetes config map entry
-	// holding the labels's YAML to be mounted in
-	// "${ConfigPath}/${LabelsYAMLFileName}".
-	LabelsConfigMapKey = "labels"
 
 	// ServiceNameEnvKey is the key of the environment variable whose value is
 	// the name of the service.

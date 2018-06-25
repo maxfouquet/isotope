@@ -15,14 +15,13 @@ import (
 var kubernetesCmd = &cobra.Command{
 	Use:   "kubernetes",
 	Short: "Convert service graph YAML to manifests for performance testing",
-	Args:  cobra.ExactArgs(5),
+	Args:  cobra.ExactArgs(4),
 	Run: func(cmd *cobra.Command, args []string) {
 		inPath := args[0]
 		serviceGraphOutPath := args[1]
-		prometheusValuesPath := args[2]
-		clientOutPath := args[3]
+		clientOutPath := args[2]
 		// Split by '=' (i.e. cloud.google.com/gke-nodepool=client-pool)
-		clientNodeSelectorStr := args[4]
+		clientNodeSelectorStr := args[3]
 		clientNodeSelector, err := extractClientNodeSelector(clientNodeSelectorStr)
 		exitIfError(err)
 
@@ -32,26 +31,11 @@ var kubernetesCmd = &cobra.Command{
 		var serviceGraph graph.ServiceGraph
 		exitIfError(yaml.Unmarshal(yamlContents, &serviceGraph))
 
-		dynamicLabels, err := kubernetes.LabelsFor(inPath)
-		exitIfError(err)
-
-		staticLabelAssignments, err :=
-			cmd.PersistentFlags().GetStringSlice("labels")
-		exitIfError(err)
-
-		staticLabels, err := splitAssignmentsIntoMap(staticLabelAssignments)
-		exitIfError(err)
-
-		labels := combineLabels(dynamicLabels, staticLabels)
-
 		serviceImage, err := cmd.PersistentFlags().GetString("service-image")
 		exitIfError(err)
 
 		serviceGraphManifest, err := kubernetes.ServiceGraphToKubernetesManifests(
-			serviceGraph, labels, serviceImage)
-		exitIfError(err)
-
-		promValuesYAML, err := kubernetes.LabelsToPrometheusValuesYAML(labels)
+			serviceGraph, serviceImage)
 		exitIfError(err)
 
 		clientImage, err := cmd.PersistentFlags().GetString("client-image")
@@ -65,8 +49,6 @@ var kubernetesCmd = &cobra.Command{
 		exitIfError(err)
 
 		exitIfError(writeManifest(serviceGraphOutPath, serviceGraphManifest))
-
-		exitIfError(writeManifest(prometheusValuesPath, promValuesYAML))
 
 		exitIfError(writeManifest(clientOutPath, clientManifest))
 	},
@@ -82,10 +64,6 @@ func init() {
 		"client-args",
 		[]string{},
 		"the args to send to the load testing client, separated by comma")
-	kubernetesCmd.PersistentFlags().String(
-		"static-labels",
-		"",
-		"prometheus labels of the form key1=value1,key2=value2,...")
 }
 
 func writeManifest(path string, manifest []byte) error {
@@ -111,28 +89,4 @@ func extractClientNodeSelector(s string) (map[string]string, error) {
 	}
 	nodeSelector[k] = v
 	return nodeSelector, nil
-}
-
-func splitAssignmentsIntoMap(assignments []string) (map[string]string, error) {
-	m := make(map[string]string, len(assignments))
-	for _, assignment := range assignments {
-		k, v, err := splitByEquals(assignment)
-		if err != nil {
-			return m, err
-		}
-		m[k] = v
-	}
-	return m, nil
-}
-
-func combineLabels(
-	a map[string]string, b map[string]string) map[string]string {
-	c := make(map[string]string, len(a)+len(b))
-	for k, v := range a {
-		c[k] = v
-	}
-	for k, v := range b {
-		c[k] = v
-	}
-	return c
 }

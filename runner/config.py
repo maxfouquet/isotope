@@ -41,11 +41,6 @@ class RunnerConfig:
             'client_image': self.client_image,
         }
 
-    def labels_arg(self) -> str:
-        assignments = ['{}={}'.format(k, v) for k, v in self.labels()]
-        arg = ','.join(assignments)
-        return arg
-
 
 def from_dict(d: Dict[str, Any]) -> RunnerConfig:
     topology_paths = d.get('topology_paths', [])
