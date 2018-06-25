@@ -10,7 +10,7 @@ _REPO_ROOT = os.path.join(os.getcwd(),
 _MAIN_GO_PATH = os.path.join(_REPO_ROOT, 'convert', 'main.go')
 
 
-def run(topology_path: str) -> None:
+def run(topology_path: str, hub: str, tag: str) -> None:
     service_graph_path, prometheus_values_path, client_path = (
         _gen_yaml(topology_path))
 
@@ -22,7 +22,7 @@ def run(topology_path: str) -> None:
         ],
         check=True)
 
-    with istio.latest(consts.HUB, consts.TAG):
+    with istio.latest(hub, tag):
         topology_name = _get_basename_no_ext(topology_path)
         _test_service_graph(service_graph_path, client_path,
                             '{}.log'.format(topology_name))

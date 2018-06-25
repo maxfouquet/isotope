@@ -1,3 +1,7 @@
 topology_paths = [
   "example-topologies/0-canonical.yaml",
 ]
+
+[istio]
+hub = "docker.io/tahler"
+tag = "tjberry"
