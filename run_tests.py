@@ -17,7 +17,8 @@ def main() -> None:
     config = cfg.from_toml_file(args.config_path)
 
     if args.create_cluster:
-        cluster.setup(CLUSTER_NAME)
+        cluster.setup(config.cluster_name, config.cluster_zone,
+                      config.cluster_version)
 
     for topology_path in config.topology_paths:
         # TODO: Test cross product of Istio levels and topologies.

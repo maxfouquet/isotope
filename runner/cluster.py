@@ -3,12 +3,9 @@ import os
 
 from . import consts, resources, sh
 
-ZONE = 'us-west1-a'
-CLUSTER_VERSION = '1.9.7-gke.3'
 
-
-def setup(cluster_name: str) -> None:
-    _create_cluster(cluster_name)
+def setup(name: str, zone: str, version: str) -> None:
+    _create_cluster(name, zone, version)
     _create_client_node_pool()
     _create_cluster_role_binding()
     _create_persistent_volume()
@@ -17,12 +14,12 @@ def setup(cluster_name: str) -> None:
     _helm_add_prometheus()
 
 
-def _create_cluster(name: str) -> None:
+def _create_cluster(name: str, zone: str, version: str) -> None:
     logging.info('creating cluster "%s"', name)
     sh.run_gcloud(
         [
-            'container', 'clusters', 'create', name, '--zone', ZONE,
-            '--cluster-version', CLUSTER_VERSION
+            'container', 'clusters', 'create', name, '--zone', zone,
+            '--cluster-version', version
         ],
         check=True)
     sh.run_gcloud(
