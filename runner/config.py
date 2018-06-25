@@ -9,7 +9,8 @@ class RunnerConfig:
                  cluster_version: str, server_machine_type: str,
                  server_disk_size_gb: int, server_num_nodes: int,
                  server_image: str, client_machine_type: str,
-                 client_disk_size_gb: int, client_image: str) -> None:
+                 client_disk_size_gb: int, client_image: str,
+                 client_args: List[str]) -> None:
         self.topology_paths = topology_paths
         self.istio_hub = istio_hub
         self.istio_tag = istio_tag
@@ -23,6 +24,7 @@ class RunnerConfig:
         self.client_machine_type = client_machine_type
         self.client_disk_size_gb = client_disk_size_gb
         self.client_image = client_image
+        self.client_args = client_args
 
 
 def from_dict(d: Dict[str, Any]) -> RunnerConfig:
@@ -47,6 +49,7 @@ def from_dict(d: Dict[str, Any]) -> RunnerConfig:
     client_machine_type = client['machine_type']
     client_disk_size_gb = client['disk_size_gb']
     client_image = client['image']
+    client_args = client['args']
 
     return RunnerConfig(
         topology_paths=topology_paths,
@@ -61,7 +64,8 @@ def from_dict(d: Dict[str, Any]) -> RunnerConfig:
         server_num_nodes=server_num_nodes,
         client_machine_type=client_machine_type,
         client_disk_size_gb=client_disk_size_gb,
-        client_image=client_image)
+        client_image=client_image,
+        client_args=client_args)
 
 
 def from_toml_file(path: str) -> RunnerConfig:

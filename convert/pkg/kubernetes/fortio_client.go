@@ -19,7 +19,8 @@ import (
 func ServiceGraphToFortioClientManifest(
 	serviceGraph graph.ServiceGraph,
 	nodeSelector map[string]string,
-	clientImage string) (manifest []byte, err error) {
+	clientImage string,
+	clientArgs []string) (manifest []byte, err error) {
 	entrypoints := make([]svc.Service, 0, 1)
 	for _, svc := range serviceGraph.Services {
 		if svc.IsEntrypoint {
@@ -39,7 +40,8 @@ func ServiceGraphToFortioClientManifest(
 		return
 	}
 	entrypoint := entrypoints[0]
-	job := entrypointToFortioClientJob(entrypoint, nodeSelector, clientImage)
+	job := entrypointToFortioClientJob(
+		entrypoint, nodeSelector, clientImage, clientArgs)
 	manifestStr, err := yaml.Marshal(job)
 	if err != nil {
 		return
@@ -51,10 +53,17 @@ func ServiceGraphToFortioClientManifest(
 var fortioClientLabels = map[string]string{"app": "client"}
 
 func entrypointToFortioClientJob(
-	entrypoint svc.Service, nodeSelector map[string]string, clientImage string) (
-	job batchv1.Job) {
+	entrypoint svc.Service,
+	nodeSelector map[string]string,
+	clientImage string,
+	clientArgs []string) (job batchv1.Job) {
+
 	url := fmt.Sprintf("http://%s.%s.svc.cluster.local:%v",
 		entrypoint.Name, ServiceGraphNamespace, consts.ServicePort)
+
+	args := make([]string, 0, len(clientArgs)+1)
+	args = append(args, clientArgs...)
+	args = append(args, url)
 
 	job.APIVersion = "batch/v1"
 	job.Kind = "Job"
@@ -70,14 +79,7 @@ func entrypointToFortioClientJob(
 				{
 					Name:  "fortio-client",
 					Image: clientImage,
-					Args: []string{
-						"load",
-						"-json=-",
-						"-c=32",  // 32 concurrent connections.
-						"-qps=0", // Max queries per second.
-						"-t=5m",  // Run for 5 minutes.
-						url,
-					},
+					Args:  args,
 				},
 			},
 			RestartPolicy: apiv1.RestartPolicyNever,

@@ -21,3 +21,11 @@ image = "tahler/perf-test-service:latest"
 machine_type = "n1-highcpu-16"
 disk_size_gb = 16
 image = "istio/fortio:1.0.0"
+# The last argument, the URL to send traffic to, is automatically inserted.
+args = [
+  "load",
+  "-json=-",
+  "-c=32", # 32 concurrent connections
+  "-qps=0", # max QPS
+  "-t=5m", # run for 5 minutes
+]
