@@ -10,3 +10,8 @@ tag = "tjberry"
 name = "isotope-cluster-197"
 zone = "us-west1-a"
 version = "1.9.7-gke.3"
+
+[server]
+machine_type = "n1-standard-1"
+disk_size_gb = 16
+num_nodes = 3

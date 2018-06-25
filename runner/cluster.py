@@ -4,8 +4,9 @@ import os
 from . import consts, resources, sh
 
 
-def setup(name: str, zone: str, version: str) -> None:
-    _create_cluster(name, zone, version)
+def setup(name: str, zone: str, version: str, machine_type: str,
+          disk_size_gb: int, num_nodes: int) -> None:
+    _create_cluster(name, zone, version, machine_type, disk_size_gb, num_nodes)
     _create_client_node_pool()
     _create_cluster_role_binding()
     _create_persistent_volume()
@@ -14,12 +15,16 @@ def setup(name: str, zone: str, version: str) -> None:
     _helm_add_prometheus()
 
 
-def _create_cluster(name: str, zone: str, version: str) -> None:
+def _create_cluster(name: str, zone: str, version: str, machine_type: str,
+                    disk_size_gb: int, num_nodes: int) -> None:
     logging.info('creating cluster "%s"', name)
     sh.run_gcloud(
         [
             'container', 'clusters', 'create', name, '--zone', zone,
-            '--cluster-version', version
+            '--cluster-version', version, '--machine-type', machine_type,
+            '--disk-size',
+            str(disk_size_gb), '--num-nodes',
+            str(num_nodes)
         ],
         check=True)
     sh.run_gcloud(

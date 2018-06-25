@@ -18,7 +18,8 @@ def main() -> None:
 
     if args.create_cluster:
         cluster.setup(config.cluster_name, config.cluster_zone,
-                      config.cluster_version)
+                      config.cluster_version, config.server_machine_type,
+                      config.server_disk_size_gb, config.server_num_nodes)
 
     for topology_path in config.topology_paths:
         # TODO: Test cross product of Istio levels and topologies.
