@@ -10,9 +10,9 @@ _REPO_ROOT = os.path.join(os.getcwd(),
 _MAIN_GO_PATH = os.path.join(_REPO_ROOT, 'convert', 'main.go')
 
 
-def run(topology_path: str, hub: str, tag: str) -> None:
-    service_graph_path, prometheus_values_path, client_path = (
-        _gen_yaml(topology_path))
+def run(topology_path: str, service_image: str, hub: str, tag: str) -> None:
+    service_graph_path, prometheus_values_path, client_path = _gen_yaml(
+        topology_path, service_image)
 
     logging.info('updating Prometheus configuration')
     sh.run_helm(
@@ -33,13 +33,14 @@ def _get_basename_no_ext(path: str) -> str:
     return os.path.splitext(basename)[0]
 
 
-def _gen_yaml(topology_path: str) -> Tuple[str, str, str]:
+def _gen_yaml(topology_path: str, service_image: str) -> Tuple[str, str, str]:
     logging.info('generating Kubernetes manifests from %s', topology_path)
     client_node_selector = 'cloud.google.com/gke-nodepool={}'.format(
         consts.CLIENT_NODE_POOL_NAME)
     sh.run(
         [
-            'go', 'run', _MAIN_GO_PATH, 'kubernetes', topology_path,
+            'go', 'run', _MAIN_GO_PATH, 'kubernetes', '--service-image',
+            service_image, topology_path,
             resources.SERVICE_GRAPH_GEN_YAML_PATH,
             resources.PROMETHEUS_VALUES_GEN_YAML_PATH,
             resources.CLIENT_GEN_YAML_PATH, client_node_selector

@@ -3,8 +3,6 @@ package consts
 const (
 	// ServiceContainerName is the name to assign the container when it is run.
 	ServiceContainerName = "perf-test-service"
-	// ServiceImageName is the name / path of the image to pull.
-	ServiceImageName = "tahler/perf-test-service"
 
 	// ServicePort is the port the service will run on.
 	ServicePort = 8080

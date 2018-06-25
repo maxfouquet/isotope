@@ -23,7 +23,8 @@ def main() -> None:
 
     for topology_path in config.topology_paths:
         # TODO: Test cross product of Istio levels and topologies.
-        pipeline.run(topology_path, config.istio_hub, config.istio_tag)
+        pipeline.run(topology_path, config.server_image, config.istio_hub,
+                     config.istio_tag)
 
 
 def parse_args() -> argparse.Namespace:

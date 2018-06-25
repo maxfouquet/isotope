@@ -7,7 +7,8 @@ class RunnerConfig:
     def __init__(self, topology_paths: List[str], istio_hub: str,
                  istio_tag: str, cluster_name: str, cluster_zone: str,
                  cluster_version: str, server_machine_type: str,
-                 server_disk_size_gb: int, server_num_nodes: int) -> None:
+                 server_disk_size_gb: int, server_num_nodes: int,
+                 server_image: str) -> None:
         self.topology_paths = topology_paths
         self.istio_hub = istio_hub
         self.istio_tag = istio_tag
@@ -17,6 +18,7 @@ class RunnerConfig:
         self.server_machine_type = server_machine_type
         self.server_disk_size_gb = server_disk_size_gb
         self.server_num_nodes = server_num_nodes
+        self.server_image = server_image
 
 
 def from_dict(d: Dict[str, Any]) -> RunnerConfig:
@@ -35,6 +37,7 @@ def from_dict(d: Dict[str, Any]) -> RunnerConfig:
     server_machine_type = server['machine_type']
     server_disk_size_gb = server['disk_size_gb']
     server_num_nodes = server['num_nodes']
+    server_image = server['image']
 
     return RunnerConfig(
         topology_paths=topology_paths,
@@ -45,6 +48,7 @@ def from_dict(d: Dict[str, Any]) -> RunnerConfig:
         cluster_version=cluster_version,
         server_machine_type=server_machine_type,
         server_disk_size_gb=server_disk_size_gb,
+        server_image=server_image,
         server_num_nodes=server_num_nodes)
 
 

@@ -35,8 +35,9 @@ var (
 // ServiceGraphToKubernetesManifests converts a ServiceGraph to Kubernetes
 // manifests.
 func ServiceGraphToKubernetesManifests(
-	serviceGraph graph.ServiceGraph, labels map[string]string) (
-	yamlDoc []byte, err error) {
+	serviceGraph graph.ServiceGraph,
+	labels map[string]string,
+	serviceImage string) (yamlDoc []byte, err error) {
 	numServices := len(serviceGraph.Services)
 	numManifests := numManifestsPerService*numServices + numConfigMaps
 	manifests := make([]string, 0, numManifests)
@@ -63,7 +64,7 @@ func ServiceGraphToKubernetesManifests(
 	}
 
 	for _, service := range serviceGraph.Services {
-		k8sDeployment, err := makeDeployment(service)
+		k8sDeployment, err := makeDeployment(service, serviceImage)
 		if err != nil {
 			return nil, err
 		}
@@ -144,7 +145,8 @@ func makeService(service svc.Service) (k8sService apiv1.Service, err error) {
 }
 
 func makeDeployment(
-	service svc.Service) (k8sDeployment appsv1.Deployment, err error) {
+	service svc.Service, serviceImage string) (
+	k8sDeployment appsv1.Deployment, err error) {
 	k8sDeployment.APIVersion = "apps/v1"
 	k8sDeployment.Kind = "Deployment"
 	k8sDeployment.ObjectMeta.Name = service.Name
@@ -169,7 +171,7 @@ func makeDeployment(
 				Containers: []apiv1.Container{
 					{
 						Name:  consts.ServiceContainerName,
-						Image: consts.ServiceImageName,
+						Image: serviceImage,
 						Env: []apiv1.EnvVar{
 							{Name: consts.ServiceNameEnvKey, Value: service.Name},
 						},
