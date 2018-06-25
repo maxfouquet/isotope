@@ -1,0 +1,3 @@
+topology_paths = [
+  "example-topologies/0-canonical.yaml",
+]
