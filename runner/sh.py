@@ -20,7 +20,11 @@ def run(args: List[str], check=False,
     logging.debug('%s', args)
     try:
         proc = subprocess.run(
-            args, check=check, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            args,
+            check=check,
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
     except subprocess.CalledProcessError as e:
         logging.error('%s\n%s', e, e.stderr)
         raise e
