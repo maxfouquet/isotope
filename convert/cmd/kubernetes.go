@@ -44,8 +44,11 @@ var kubernetesCmd = &cobra.Command{
 
 		promValuesYAML, err := kubernetes.LabelsToPrometheusValuesYAML(labels)
 
+		clientImage, err := cmd.PersistentFlags().GetString("client-image")
+		exitIfError(err)
+
 		clientManifest, err := kubernetes.ServiceGraphToFortioClientManifest(
-			serviceGraph, clientNodeSelector)
+			serviceGraph, clientNodeSelector, clientImage)
 		exitIfError(err)
 
 		exitIfError(writeManifest(serviceGraphOutPath, serviceGraphManifest))
@@ -60,6 +63,8 @@ func init() {
 	rootCmd.AddCommand(kubernetesCmd)
 	kubernetesCmd.PersistentFlags().String(
 		"service-image", "", "the image to deploy for all services in the graph")
+	kubernetesCmd.PersistentFlags().String(
+		"client-image", "", "the image to use for the load testing client job")
 }
 
 func writeManifest(path string, manifest []byte) error {

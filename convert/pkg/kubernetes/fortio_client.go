@@ -17,8 +17,9 @@ import (
 // ServiceGraphToFortioClientManifest extracts the entrypoint into the service
 // graph and renders a Kubernetes Job manifest to run `Fortio load` on it.
 func ServiceGraphToFortioClientManifest(
-	serviceGraph graph.ServiceGraph, nodeSelector map[string]string) (
-	manifest []byte, err error) {
+	serviceGraph graph.ServiceGraph,
+	nodeSelector map[string]string,
+	clientImage string) (manifest []byte, err error) {
 	entrypoints := make([]svc.Service, 0, 1)
 	for _, svc := range serviceGraph.Services {
 		if svc.IsEntrypoint {
@@ -38,7 +39,7 @@ func ServiceGraphToFortioClientManifest(
 		return
 	}
 	entrypoint := entrypoints[0]
-	job := entrypointToFortioClientJob(entrypoint, nodeSelector)
+	job := entrypointToFortioClientJob(entrypoint, nodeSelector, clientImage)
 	manifestStr, err := yaml.Marshal(job)
 	if err != nil {
 		return
@@ -47,12 +48,11 @@ func ServiceGraphToFortioClientManifest(
 	return
 }
 
-const fortioImage = "istio/fortio:0.11.0"
-
 var fortioClientLabels = map[string]string{"app": "client"}
 
 func entrypointToFortioClientJob(
-	entrypoint svc.Service, nodeSelector map[string]string) (job batchv1.Job) {
+	entrypoint svc.Service, nodeSelector map[string]string, clientImage string) (
+	job batchv1.Job) {
 	url := fmt.Sprintf("http://%s.%s.svc.cluster.local:%v",
 		entrypoint.Name, ServiceGraphNamespace, consts.ServicePort)
 
@@ -69,7 +69,7 @@ func entrypointToFortioClientJob(
 			Containers: []apiv1.Container{
 				{
 					Name:  "fortio-client",
-					Image: fortioImage,
+					Image: clientImage,
 					Args: []string{
 						"load",
 						"-json=-",

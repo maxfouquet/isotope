@@ -20,3 +20,4 @@ image = "tahler/perf-test-service:latest"
 [client]
 machine_type = "n1-highcpu-16"
 disk_size_gb = 16
+image = "istio/fortio:1.0.0"
