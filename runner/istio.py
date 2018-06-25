@@ -2,11 +2,11 @@ import contextlib
 import logging
 import os
 import tempfile
-from typing import Dict, Generator
+from typing import Generator
 
 import yaml
 
-from . import consts, sh
+from . import consts, dicts, sh
 
 _HELM_ISTIO_NAME = 'istio'
 
@@ -52,11 +52,12 @@ def _clone(path: str) -> None:
 def _push_images(go_path: str, repo_path: str, hub: str, tag: str) -> None:
     logging.info('pushing images to %s with tag %s', hub, tag)
     with _work_dir(repo_path):
-        env = _set_env({
-            'GOPATH': go_path,
-            'HUB': hub,
-            'TAG': tag,
-        })
+        env = dicts.combine(
+            dict(os.environ), {
+                'GOPATH': go_path,
+                'HUB': hub,
+                'TAG': tag,
+            })
         sh.run(['make', 'docker.push'], env=env, check=True)
 
 
@@ -79,12 +80,6 @@ def _install_helm_chart(chart_path: str,
             '--namespace', namespace
         ],
         check=True)
-
-
-def _set_env(overrides: Dict[str, str]) -> Dict[str, str]:
-    copy = os.environ.copy()
-    copy.update(overrides)
-    return copy
 
 
 @contextlib.contextmanager
