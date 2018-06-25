@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"fmt"
 	"io/ioutil"
+	"strings"
 
 	"github.com/Tahler/isotope/convert/pkg/graph"
 	"github.com/Tahler/isotope/convert/pkg/kubernetes"
@@ -11,31 +13,60 @@ import (
 
 // kubernetesCmd represents the kubernetes command
 var kubernetesCmd = &cobra.Command{
-	Use:   "kubernetes [YAML file] [output file]",
-	Short: "Convert a service graph YAML file to Kubernetes manifest YAML",
-	Args:  cobra.ExactArgs(2),
+	Use:   "kubernetes",
+	Short: "Convert service graph YAML to manifests for performance testing",
+	Args:  cobra.ExactArgs(5),
 	Run: func(cmd *cobra.Command, args []string) {
-		inFileName := args[0]
-		yamlContents, err := ioutil.ReadFile(inFileName)
+		inPath := args[0]
+		serviceGraphOutPath := args[1]
+		prometheusValuesPath := args[2]
+		clientOutPath := args[3]
+		// Split by '=' (i.e. cloud.google.com/gke-nodepool=client-pool)
+		clientNodeSelectorStr := args[4]
+		clientNodeSelector, err := extractClientNodeSelector(clientNodeSelectorStr)
+		exitIfError(err)
+
+		yamlContents, err := ioutil.ReadFile(inPath)
 		exitIfError(err)
 
 		var serviceGraph graph.ServiceGraph
-		err = yaml.Unmarshal(yamlContents, &serviceGraph)
+		exitIfError(yaml.Unmarshal(yamlContents, &serviceGraph))
+
+		labels, err := kubernetes.LabelsFor(inPath)
 		exitIfError(err)
 
-		labels, err := kubernetes.LabelsFor(inFileName)
-		exitIfError(err)
-
-		manifest, err := kubernetes.ServiceGraphToKubernetesManifests(
+		serviceGraphManifest, err := kubernetes.ServiceGraphToKubernetesManifests(
 			serviceGraph, labels)
 		exitIfError(err)
 
-		outFileName := args[1]
-		err = ioutil.WriteFile(outFileName, []byte(manifest), 0644)
+		promValuesYAML, err := kubernetes.LabelsToPrometheusValuesYAML(labels)
+
+		clientManifest, err := kubernetes.ServiceGraphToFortioClientManifest(
+			serviceGraph, clientNodeSelector)
 		exitIfError(err)
+
+		exitIfError(writeManifest(serviceGraphOutPath, serviceGraphManifest))
+
+		exitIfError(writeManifest(prometheusValuesPath, promValuesYAML))
+
+		exitIfError(writeManifest(clientOutPath, clientManifest))
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(kubernetesCmd)
+}
+
+func writeManifest(path string, manifest []byte) error {
+	return ioutil.WriteFile(path, manifest, 0644)
+}
+
+func extractClientNodeSelector(s string) (map[string]string, error) {
+	nodeSelector := make(map[string]string, 1)
+	parts := strings.Split(s, "=")
+	if len(parts) != 2 {
+		return nodeSelector, fmt.Errorf("%s is not a valid node selector", s)
+	}
+	nodeSelector[parts[0]] = parts[1]
+	return nodeSelector, nil
 }

@@ -39,8 +39,8 @@ def _gen_yaml(topology_path: str) -> Tuple[str, str, str]:
         consts.CLIENT_NODE_POOL_NAME)
     sh.run(
         [
-            'go', 'run', _MAIN_GO_PATH, 'performance', 'kubernetes',
-            topology_path, resources.SERVICE_GRAPH_GEN_YAML_PATH,
+            'go', 'run', _MAIN_GO_PATH, 'kubernetes', topology_path,
+            resources.SERVICE_GRAPH_GEN_YAML_PATH,
             resources.PROMETHEUS_VALUES_GEN_YAML_PATH,
             resources.CLIENT_GEN_YAML_PATH, client_node_selector
         ],
