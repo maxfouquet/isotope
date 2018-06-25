@@ -68,6 +68,7 @@ def _service_graph_is_ready() -> bool:
 
 
 def until_client_job_is_complete() -> None:
+    logging.info('waiting for client job to finish')
     until(_client_job_is_complete)
 
 
