@@ -76,7 +76,7 @@ func LabelsToPrometheusValuesYAML(labels map[string]string) (
 	return
 }
 
-// LabelsFor returns the static labels for the topology at topologyPath.
+// LabelsFor returns the labels for the topology at topologyPath.
 func LabelsFor(topologyPath string) (labels map[string]string, err error) {
 	topologyName := getFileNameNoExt(topologyPath)
 	topologyHash, err := getHash(topologyPath)

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, Iterable, List, Tuple
 
 import toml
 
@@ -25,6 +25,26 @@ class RunnerConfig:
         self.client_disk_size_gb = client_disk_size_gb
         self.client_image = client_image
         self.client_args = client_args
+
+    def labels(self) -> Dict[str, str]:
+        return {
+            'istio_hub': self.istio_hub,
+            'istio_tag': self.istio_tag,
+            'cluster_version': self.cluster_version,
+            'cluster_zone': self.cluster_zone,
+            'server_machine_type': self.server_machine_type,
+            'server_disk_size_gb': str(self.server_disk_size_gb),
+            'server_num_nodes': str(self.server_num_nodes),
+            'server_image': self.server_image,
+            'client_machine_type': self.client_machine_type,
+            'client_disk_size_gb': str(self.client_disk_size_gb),
+            'client_image': self.client_image,
+        }
+
+    def labels_arg(self) -> str:
+        assignments = ['{}={}'.format(k, v) for k, v in self.labels()]
+        arg = ','.join(assignments)
+        return arg
 
 
 def from_dict(d: Dict[str, Any]) -> RunnerConfig:

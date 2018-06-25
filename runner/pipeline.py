@@ -11,9 +11,11 @@ _MAIN_GO_PATH = os.path.join(_REPO_ROOT, 'convert', 'main.go')
 
 
 def run(topology_path: str, service_image: str, client_image: str,
-        client_args: str, hub: str, tag: str) -> None:
+        client_args: str, hub: str, tag: str,
+        prometheus_labels_arg: str) -> None:
     service_graph_path, prometheus_values_path, client_path = _gen_yaml(
-        topology_path, service_image, client_image, client_args)
+        topology_path, service_image, client_image, client_args,
+        prometheus_labels_arg)
 
     logging.info('updating Prometheus configuration')
     sh.run_helm(
@@ -35,7 +37,8 @@ def _get_basename_no_ext(path: str) -> str:
 
 
 def _gen_yaml(topology_path: str, service_image: str, client_image: str,
-              client_args: str) -> Tuple[str, str, str]:
+              client_args: str,
+              prometheus_labels_arg: str) -> Tuple[str, str, str]:
     logging.info('generating Kubernetes manifests from %s', topology_path)
     client_node_selector = 'cloud.google.com/gke-nodepool={}'.format(
         consts.CLIENT_NODE_POOL_NAME)
@@ -43,7 +46,9 @@ def _gen_yaml(topology_path: str, service_image: str, client_image: str,
         [
             'go', 'run', _MAIN_GO_PATH, 'kubernetes', '--service-image',
             service_image, '--client-image', client_image, '--client-args',
-            client_args, topology_path, resources.SERVICE_GRAPH_GEN_YAML_PATH,
+            client_args, '--static-labels', prometheus_labels_arg,
+            topology_path, resources.SERVICE_GRAPH_GEN_YAML_PATH,
+            resources.SERVICE_GRAPH_GEN_YAML_PATH,
             resources.PROMETHEUS_VALUES_GEN_YAML_PATH,
             resources.CLIENT_GEN_YAML_PATH, client_node_selector
         ],

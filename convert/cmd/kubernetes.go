@@ -32,8 +32,17 @@ var kubernetesCmd = &cobra.Command{
 		var serviceGraph graph.ServiceGraph
 		exitIfError(yaml.Unmarshal(yamlContents, &serviceGraph))
 
-		labels, err := kubernetes.LabelsFor(inPath)
+		dynamicLabels, err := kubernetes.LabelsFor(inPath)
 		exitIfError(err)
+
+		staticLabelAssignments, err :=
+			cmd.PersistentFlags().GetStringSlice("labels")
+		exitIfError(err)
+
+		staticLabels, err := splitAssignmentsIntoMap(staticLabelAssignments)
+		exitIfError(err)
+
+		labels := combineLabels(dynamicLabels, staticLabels)
 
 		serviceImage, err := cmd.PersistentFlags().GetString("service-image")
 		exitIfError(err)
@@ -43,11 +52,12 @@ var kubernetesCmd = &cobra.Command{
 		exitIfError(err)
 
 		promValuesYAML, err := kubernetes.LabelsToPrometheusValuesYAML(labels)
+		exitIfError(err)
 
 		clientImage, err := cmd.PersistentFlags().GetString("client-image")
 		exitIfError(err)
 
-		clientArgs, err := cmd.PersistentFlags().GetStringArray("client-args")
+		clientArgs, err := cmd.PersistentFlags().GetStringSlice("client-args")
 		exitIfError(err)
 
 		clientManifest, err := kubernetes.ServiceGraphToFortioClientManifest(
@@ -72,18 +82,57 @@ func init() {
 		"client-args",
 		[]string{},
 		"the args to send to the load testing client, separated by comma")
+	kubernetesCmd.PersistentFlags().String(
+		"static-labels",
+		"",
+		"prometheus labels of the form key1=value1,key2=value2,...")
 }
 
 func writeManifest(path string, manifest []byte) error {
 	return ioutil.WriteFile(path, manifest, 0644)
 }
 
-func extractClientNodeSelector(s string) (map[string]string, error) {
-	nodeSelector := make(map[string]string, 1)
+func splitByEquals(s string) (k string, v string, err error) {
 	parts := strings.Split(s, "=")
 	if len(parts) != 2 {
-		return nodeSelector, fmt.Errorf("%s is not a valid node selector", s)
+		err = fmt.Errorf("%s is not a valid node selector", s)
+		return
 	}
-	nodeSelector[parts[0]] = parts[1]
+	k = parts[0]
+	v = parts[1]
+	return
+}
+
+func extractClientNodeSelector(s string) (map[string]string, error) {
+	nodeSelector := make(map[string]string, 1)
+	k, v, err := splitByEquals(s)
+	if err != nil {
+		return nodeSelector, err
+	}
+	nodeSelector[k] = v
 	return nodeSelector, nil
+}
+
+func splitAssignmentsIntoMap(assignments []string) (map[string]string, error) {
+	m := make(map[string]string, len(assignments))
+	for _, assignment := range assignments {
+		k, v, err := splitByEquals(assignment)
+		if err != nil {
+			return m, err
+		}
+		m[k] = v
+	}
+	return m, nil
+}
+
+func combineLabels(
+	a map[string]string, b map[string]string) map[string]string {
+	c := make(map[string]string, len(a)+len(b))
+	for k, v := range a {
+		c[k] = v
+	}
+	for k, v := range b {
+		c[k] = v
+	}
+	return c
 }
