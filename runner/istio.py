@@ -6,7 +6,7 @@ from typing import Generator
 
 import yaml
 
-from . import consts, dicts, sh
+from . import consts, dicts, sh, wait
 
 _HELM_ISTIO_NAME = 'istio'
 
@@ -17,6 +17,9 @@ def latest(hub: str, tag: str,
     _install_latest(hub, tag, should_build)
     yield
     sh.run_helm(['delete', '--purge', _HELM_ISTIO_NAME])
+    # TODO: Why doesn't `helm delete --purge istio` do this?
+    sh.run_kubectl(['delete', 'namespace', consts.ISTIO_NAMESPACE])
+    wait.until_namespace_is_deleted(consts.SERVICE_GRAPH_NAMESPACE)
 
 
 def _install_latest(hub: str, tag: str, should_build: bool) -> None:

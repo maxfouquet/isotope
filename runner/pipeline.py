@@ -33,9 +33,6 @@ def run(topology_path: str, environment: config.Environment,
     else:
         with istio.latest(hub, tag, should_build_istio):
             test()
-        # TODO: Why doesn't `helm delete --purge istio` do this?
-        sh.run_kubectl(['delete', 'namespace', consts.ISTIO_NAMESPACE])
-        wait.until_namespace_is_deleted(consts.SERVICE_GRAPH_NAMESPACE)
 
 
 def _update_prometheus_configuration(
