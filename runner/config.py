@@ -1,10 +1,17 @@
+import enum
 from typing import Any, Dict, Iterable, List, Tuple
 
 import toml
 
 
+class Environment(enum.Enum):
+    NONE = 0
+    ISTIO = 1
+
+
 class RunnerConfig:
-    def __init__(self, topology_paths: List[str], istio_hub: str,
+    def __init__(self, topology_paths: List[str],
+                 environments: List[Environment], istio_hub: str,
                  istio_tag: str, istio_build: bool, cluster_name: str,
                  cluster_zone: str, cluster_version: str,
                  server_machine_type: str, server_disk_size_gb: int,
@@ -12,6 +19,7 @@ class RunnerConfig:
                  client_machine_type: str, client_disk_size_gb: int,
                  client_image: str, client_args: List[str]) -> None:
         self.topology_paths = topology_paths
+        self.environments = environments
         self.istio_hub = istio_hub
         self.istio_tag = istio_tag
         self.should_build_istio = istio_build
@@ -45,6 +53,8 @@ class RunnerConfig:
 
 def from_dict(d: Dict[str, Any]) -> RunnerConfig:
     topology_paths = d.get('topology_paths', [])
+    environment_strs = d.get('environments', [])
+    environments = [Environment[s] for s in environment_strs]
 
     istio = d['istio']
     istio_hub = istio['hub']
@@ -70,6 +80,7 @@ def from_dict(d: Dict[str, Any]) -> RunnerConfig:
 
     return RunnerConfig(
         topology_paths=topology_paths,
+        environments=environments,
         istio_hub=istio_hub,
         istio_tag=istio_tag,
         istio_build=istio_build,

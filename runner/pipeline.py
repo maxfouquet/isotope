@@ -3,22 +3,24 @@ import os
 import time
 from typing import Dict, Tuple
 
-from . import cluster, consts, dicts, istio, md5, prometheus, resources, sh, wait
+from . import cluster, config, consts, dicts, istio, md5, prometheus, \
+              resources, sh, wait
 
 _REPO_ROOT = os.path.join(os.getcwd(),
                           os.path.dirname(os.path.dirname(__file__)))
 _MAIN_GO_PATH = os.path.join(_REPO_ROOT, 'convert', 'main.go')
 
 
-def run(topology_path: str, service_image: str, client_image: str,
-        client_args: str, hub: str, tag: str, should_build_istio: bool,
+def run(topology_path: str, environment: config.Environment,
+        service_image: str, client_image: str, client_args: str, hub: str,
+        tag: str, should_build_istio: bool,
         static_labels: Dict[str, str]) -> None:
     service_graph_path, client_path = _gen_yaml(topology_path, service_image,
                                                 client_image, client_args)
 
     topology_name = _get_basename_no_ext(topology_path)
-    _write_prometheus_values_for_topology(topology_path, topology_name,
-                                          static_labels)
+    _write_prometheus_values_for_topology(topology_path, environment,
+                                          topology_name, static_labels)
 
     logging.info('updating Prometheus configuration')
     sh.run_helm(
@@ -28,20 +30,31 @@ def run(topology_path: str, service_image: str, client_image: str,
         ],
         check=True)
 
-    with istio.latest(hub, tag, should_build_istio):
+    def test():
+        env_name = environment.name.lower()
+        logging.info('starting test with environment "%s"', env_name)
         _test_service_graph(service_graph_path, client_path,
-                            '{}.log'.format(topology_name))
-    # TODO: Why doesn't `helm delete --purge istio` do this?
-    sh.run_kubectl(['delete', 'namespace', consts.ISTIO_NAMESPACE])
-    wait.until_namespace_is_deleted(consts.SERVICE_GRAPH_NAMESPACE)
+                            '{}_{}.log'.format(topology_name, env_name))
+
+    if environment == config.Environment.NONE:
+        test()
+    else:
+        with istio.latest(hub, tag, should_build_istio):
+            test()
+        # TODO: Why doesn't `helm delete --purge istio` do this?
+        sh.run_kubectl(['delete', 'namespace', consts.ISTIO_NAMESPACE])
+        wait.until_namespace_is_deleted(consts.SERVICE_GRAPH_NAMESPACE)
 
 
-def _write_prometheus_values_for_topology(path: str, name: str,
-                                          labels: Dict[str, str]) -> None:
-    labels = dicts.combine(labels, {
-        'topology_name': name,
-        'topology_hash': md5.hex(path),
-    })
+def _write_prometheus_values_for_topology(
+        path: str, environment: config.Environment, name: str,
+        labels: Dict[str, str]) -> None:
+    labels = dicts.combine(
+        labels, {
+            'environment': environment.name,
+            'topology_name': name,
+            'topology_hash': md5.hex(path),
+        })
     _write_prometheus_values(labels)
 
 

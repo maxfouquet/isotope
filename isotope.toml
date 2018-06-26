@@ -2,6 +2,11 @@ topology_paths = [
   "example-topologies/0-canonical.yaml",
 ]
 
+environments = [
+  "NONE",
+  "ISTIO",
+]
+
 [istio]
 build = false
 hub = "docker.io/tahler"

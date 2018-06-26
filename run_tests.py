@@ -25,10 +25,11 @@ def main() -> None:
     client_args = ','.join(config.client_args)
 
     for topology_path in config.topology_paths:
-        # TODO: Test cross product of Istio levels and topologies.
-        pipeline.run(topology_path, config.server_image, config.client_image,
-                     client_args, config.istio_hub, config.istio_tag,
-                     config.should_build_istio, config.labels())
+        for environment in config.environments:
+            pipeline.run(topology_path, environment, config.server_image,
+                         config.client_image, client_args, config.istio_hub,
+                         config.istio_tag, config.should_build_istio,
+                         config.labels())
 
 
 def parse_args() -> argparse.Namespace:
