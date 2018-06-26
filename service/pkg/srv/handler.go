@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/Tahler/isotope/convert/pkg/graph/svc"
 	"github.com/Tahler/isotope/convert/pkg/graph/svctype"
@@ -26,11 +27,17 @@ type Handler struct {
 
 func (h Handler) ServeHTTP(
 	writer http.ResponseWriter, request *http.Request) {
+	startTime := time.Now()
 
-	prometheus.RecordRequest()
+	prometheus.RecordRequestReceived()
 
 	respond := func(status int, paths []string, isLocalErr bool) {
 		stampHeader(h.Service.Name, writer.Header(), paths, isLocalErr)
+
+		stopTime := time.Now()
+		duration := stopTime.Sub(startTime)
+		// TODO: Record size of response payload.
+		prometheus.RecordResponseSent(duration, 0, status)
 
 		writer.WriteHeader(status)
 		err := request.Write(writer)
