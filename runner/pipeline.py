@@ -19,16 +19,8 @@ def run(topology_path: str, environment: config.Environment,
                                                 client_image, client_args)
 
     topology_name = _get_basename_no_ext(topology_path)
-    _write_prometheus_values_for_topology(topology_path, environment,
-                                          topology_name, static_labels)
-
-    logging.info('updating Prometheus configuration')
-    sh.run_helm(
-        [
-            'upgrade', 'prometheus', 'coreos/prometheus', '--values',
-            resources.PROMETHEUS_VALUES_GEN_YAML_PATH
-        ],
-        check=True)
+    _update_prometheus_configuration(topology_path, environment, topology_name,
+                                     static_labels)
 
     def test():
         env_name = environment.name.lower()
@@ -44,6 +36,21 @@ def run(topology_path: str, environment: config.Environment,
         # TODO: Why doesn't `helm delete --purge istio` do this?
         sh.run_kubectl(['delete', 'namespace', consts.ISTIO_NAMESPACE])
         wait.until_namespace_is_deleted(consts.SERVICE_GRAPH_NAMESPACE)
+
+
+def _update_prometheus_configuration(
+        topology_path: str, environment: config.Environment,
+        topology_name: str, static_labels: Dict[str, str]) -> None:
+    _write_prometheus_values_for_topology(topology_path, environment,
+                                          topology_name, static_labels)
+
+    logging.info('updating Prometheus configuration')
+    sh.run_helm(
+        [
+            'upgrade', 'prometheus', 'coreos/prometheus', '--values',
+            resources.PROMETHEUS_VALUES_GEN_YAML_PATH
+        ],
+        check=True)
 
 
 def _write_prometheus_values_for_topology(
