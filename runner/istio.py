@@ -12,13 +12,14 @@ _HELM_ISTIO_NAME = 'istio'
 
 
 @contextlib.contextmanager
-def latest(hub: str, tag: str) -> Generator[None, None, None]:
-    _install_latest(hub, tag)
+def latest(hub: str, tag: str,
+           should_build: bool) -> Generator[None, None, None]:
+    _install_latest(hub, tag, should_build)
     yield
     sh.run_helm(['delete', '--purge', _HELM_ISTIO_NAME])
 
 
-def _install_latest(hub: str, tag: str) -> None:
+def _install_latest(hub: str, tag: str, should_build: bool) -> None:
     """Installs Istio from master, using hub:tag for the images.
 
     Requires Helm to be present.
@@ -29,7 +30,8 @@ def _install_latest(hub: str, tag: str) -> None:
     with tempfile.TemporaryDirectory() as tmp_go_path:
         repo_path = os.path.join(tmp_go_path, 'src', 'istio.io', 'istio')
         _clone(repo_path)
-        _push_images(tmp_go_path, repo_path, hub, tag)
+        if should_build:
+            _build_and_push_images(tmp_go_path, repo_path, hub, tag)
 
         chart_path = os.path.join(repo_path, 'install', 'kubernetes', 'helm',
                                   'istio')
@@ -49,7 +51,8 @@ def _clone(path: str) -> None:
         check=True)
 
 
-def _push_images(go_path: str, repo_path: str, hub: str, tag: str) -> None:
+def _build_and_push_images(go_path: str, repo_path: str, hub: str,
+                           tag: str) -> None:
     logging.info('pushing images to %s with tag %s', hub, tag)
     with _work_dir(repo_path):
         env = dicts.combine(

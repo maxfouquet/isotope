@@ -11,7 +11,7 @@ _MAIN_GO_PATH = os.path.join(_REPO_ROOT, 'convert', 'main.go')
 
 
 def run(topology_path: str, service_image: str, client_image: str,
-        client_args: str, hub: str, tag: str,
+        client_args: str, hub: str, tag: str, should_build_istio: bool,
         static_labels: Dict[str, str]) -> None:
     service_graph_path, client_path = _gen_yaml(topology_path, service_image,
                                                 client_image, client_args)
@@ -28,7 +28,7 @@ def run(topology_path: str, service_image: str, client_image: str,
         ],
         check=True)
 
-    with istio.latest(hub, tag):
+    with istio.latest(hub, tag, should_build_istio):
         _test_service_graph(service_graph_path, client_path,
                             '{}.log'.format(topology_name))
     # TODO: Why doesn't `helm delete --purge istio` do this?

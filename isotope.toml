@@ -3,6 +3,7 @@ topology_paths = [
 ]
 
 [istio]
+build = false
 hub = "docker.io/tahler"
 tag = "tjberry"
 

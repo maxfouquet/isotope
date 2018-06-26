@@ -5,15 +5,16 @@ import toml
 
 class RunnerConfig:
     def __init__(self, topology_paths: List[str], istio_hub: str,
-                 istio_tag: str, cluster_name: str, cluster_zone: str,
-                 cluster_version: str, server_machine_type: str,
-                 server_disk_size_gb: int, server_num_nodes: int,
-                 server_image: str, client_machine_type: str,
-                 client_disk_size_gb: int, client_image: str,
-                 client_args: List[str]) -> None:
+                 istio_tag: str, istio_build: bool, cluster_name: str,
+                 cluster_zone: str, cluster_version: str,
+                 server_machine_type: str, server_disk_size_gb: int,
+                 server_num_nodes: int, server_image: str,
+                 client_machine_type: str, client_disk_size_gb: int,
+                 client_image: str, client_args: List[str]) -> None:
         self.topology_paths = topology_paths
         self.istio_hub = istio_hub
         self.istio_tag = istio_tag
+        self.should_build_istio = istio_build
         self.cluster_name = cluster_name
         self.cluster_zone = cluster_zone
         self.cluster_version = cluster_version
@@ -48,6 +49,7 @@ def from_dict(d: Dict[str, Any]) -> RunnerConfig:
     istio = d['istio']
     istio_hub = istio['hub']
     istio_tag = istio['tag']
+    istio_build = istio['build']
 
     cluster = d['cluster']
     cluster_name = cluster['name']
@@ -70,6 +72,7 @@ def from_dict(d: Dict[str, Any]) -> RunnerConfig:
         topology_paths=topology_paths,
         istio_hub=istio_hub,
         istio_tag=istio_tag,
+        istio_build=istio_build,
         cluster_name=cluster_name,
         cluster_zone=cluster_zone,
         cluster_version=cluster_version,
