@@ -31,6 +31,9 @@ def run(topology_path: str, service_image: str, client_image: str,
     with istio.latest(hub, tag):
         _test_service_graph(service_graph_path, client_path,
                             '{}.log'.format(topology_name))
+    # TODO: Why doesn't `helm delete --purge istio` do this?
+    sh.run_kubectl(['delete', 'namespace', consts.ISTIO_NAMESPACE])
+    wait.until_namespace_is_deleted(consts.SERVICE_GRAPH_NAMESPACE)
 
 
 def _write_prometheus_values_for_topology(path: str, name: str,
