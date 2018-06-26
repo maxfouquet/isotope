@@ -1,7 +1,8 @@
+import contextlib
 import logging
 import os
 import time
-from typing import Dict, Tuple
+from typing import Dict, Generator, Tuple
 
 from . import cluster, config, consts, dicts, istio, md5, prometheus, \
               resources, sh, wait
@@ -22,17 +23,21 @@ def run(topology_path: str, environment: config.Environment,
     _update_prometheus_configuration(topology_path, environment, topology_name,
                                      static_labels)
 
-    def test():
+    if environment == config.Environment.NONE:
+        environment_setup = _no_op
+    else:
+        environment_setup = lambda: istio.latest(hub, tag, should_build_istio)
+
+    with environment_setup():
         env_name = environment.name.lower()
         logging.info('starting test with environment "%s"', env_name)
         _test_service_graph(service_graph_path, client_path,
                             '{}_{}.log'.format(topology_name, env_name))
 
-    if environment == config.Environment.NONE:
-        test()
-    else:
-        with istio.latest(hub, tag, should_build_istio):
-            test()
+
+@contextlib.contextmanager
+def _no_op() -> Generator[None, None, None]:
+    yield
 
 
 def _update_prometheus_configuration(
