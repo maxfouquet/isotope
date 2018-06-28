@@ -8,6 +8,8 @@ import (
 )
 
 func TestScript_UnmarshalJSON(t *testing.T) {
+	DefaultRequestCommand = RequestCommand{}
+
 	tests := []struct {
 		input  []byte
 		script Script
