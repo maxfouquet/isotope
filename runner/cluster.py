@@ -33,6 +33,7 @@ def _create_cluster(name: str, zone: str, version: str, machine_type: str,
 
 
 def _create_client_node_pool(machine_type: str, disk_size_gb: int) -> None:
+    logging.info('creating client node-pool')
     sh.run_gcloud(
         [
             'container', 'node-pools', 'create', consts.CLIENT_NODE_POOL_NAME,
