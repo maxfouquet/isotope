@@ -13,6 +13,7 @@ hub = "docker.io/tahler"
 tag = "tjberry"
 
 [cluster]
+create = false
 name = "isotope-cluster-197"
 zone = "us-west1-a"
 version = "1.9.7-gke.3"

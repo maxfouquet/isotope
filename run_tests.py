@@ -16,7 +16,7 @@ def main() -> None:
 
     config = cfg.from_toml_file(args.config_path)
 
-    if args.create_cluster:
+    if config.should_create_cluster:
         cluster.setup(config.cluster_name, config.cluster_zone,
                       config.cluster_version, config.server_machine_type,
                       config.server_disk_size_gb, config.server_num_nodes,
@@ -35,7 +35,6 @@ def main() -> None:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument('config_path', type=str)
-    parser.add_argument('--create_cluster', default=False, action='store_true')
     parser.add_argument(
         '--log_level',
         type=str,
