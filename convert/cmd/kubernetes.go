@@ -15,14 +15,19 @@ import (
 var kubernetesCmd = &cobra.Command{
 	Use:   "kubernetes",
 	Short: "Convert service graph YAML to manifests for performance testing",
-	Args:  cobra.ExactArgs(4),
+	Args:  cobra.ExactArgs(5),
 	Run: func(cmd *cobra.Command, args []string) {
 		inPath := args[0]
 		serviceGraphOutPath := args[1]
 		clientOutPath := args[2]
-		// Split by '=' (i.e. cloud.google.com/gke-nodepool=client-pool)
-		clientNodeSelectorStr := args[3]
-		clientNodeSelector, err := extractClientNodeSelector(clientNodeSelectorStr)
+
+		defaultNodeSelectorStr := args[3]
+		defaultNodeSelector, err := extractNodeSelector(
+			defaultNodeSelectorStr)
+		exitIfError(err)
+
+		clientNodeSelectorStr := args[4]
+		clientNodeSelector, err := extractNodeSelector(clientNodeSelectorStr)
 		exitIfError(err)
 
 		yamlContents, err := ioutil.ReadFile(inPath)
@@ -35,7 +40,7 @@ var kubernetesCmd = &cobra.Command{
 		exitIfError(err)
 
 		serviceGraphManifest, err := kubernetes.ServiceGraphToKubernetesManifests(
-			serviceGraph, serviceImage)
+			serviceGraph, defaultNodeSelector, serviceImage)
 		exitIfError(err)
 
 		clientImage, err := cmd.PersistentFlags().GetString("client-image")
@@ -81,7 +86,7 @@ func splitByEquals(s string) (k string, v string, err error) {
 	return
 }
 
-func extractClientNodeSelector(s string) (map[string]string, error) {
+func extractNodeSelector(s string) (map[string]string, error) {
 	nodeSelector := make(map[string]string, 1)
 	k, v, err := splitByEquals(s)
 	if err != nil {

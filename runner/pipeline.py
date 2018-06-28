@@ -81,18 +81,24 @@ def _get_basename_no_ext(path: str) -> str:
 def _gen_yaml(topology_path: str, service_image: str, client_image: str,
               client_args: str) -> Tuple[str, str]:
     logging.info('generating Kubernetes manifests from %s', topology_path)
-    client_node_selector = 'cloud.google.com/gke-nodepool={}'.format(
-        consts.CLIENT_NODE_POOL_NAME)
+    default_node_selector = _get_gke_node_selector(
+        consts.DEFAULT_NODE_POOL_NAME)
+    client_node_selector = _get_gke_node_selector(consts.CLIENT_NODE_POOL_NAME)
     sh.run(
         [
             'go', 'run', _MAIN_GO_PATH, 'kubernetes', '--service-image',
             service_image, '--client-image', client_image, '--client-args',
             client_args, topology_path, resources.SERVICE_GRAPH_GEN_YAML_PATH,
-            resources.CLIENT_GEN_YAML_PATH, client_node_selector
+            resources.CLIENT_GEN_YAML_PATH, default_node_selector,
+            client_node_selector
         ],
         check=True)
     return (resources.SERVICE_GRAPH_GEN_YAML_PATH,
             resources.CLIENT_GEN_YAML_PATH)
+
+
+def _get_gke_node_selector(node_pool_name: str) -> str:
+    return 'cloud.google.com/gke-nodepool={}'.format(node_pool_name)
 
 
 def _test_service_graph(service_graph_path: str, client_path: str,
