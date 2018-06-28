@@ -55,7 +55,6 @@ func TestServiceGraph_UnmarshalJSON(t *testing.T) {
 var (
 	jsonWithOneService = []byte(`
 		{
-			"apiVersion": "v1alpha1",
 			"services": [{"name": "a"}]
 		}
 	`)
@@ -67,7 +66,6 @@ var (
 	}}
 	jsonWithDefaultsAndManyServices = []byte(`
 		{
-			"apiVersion": "v1alpha1",
 			"defaults": {
 				"errorRate": 0.1,
 				"requestSize": 516,
