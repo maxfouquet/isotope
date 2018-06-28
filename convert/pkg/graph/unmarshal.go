@@ -50,8 +50,11 @@ func parseJSONServiceGraphWithDefaults(
 // defaultDefaults is a stuttery but validly semantic name for the default
 // values when parsing JSON defaults.
 var (
-	defaultDefaults = defaults{Type: svctype.ServiceHTTP}
-	defaultMutex    sync.Mutex
+	defaultDefaults = defaults{
+		Type:        svctype.ServiceHTTP,
+		NumReplicas: 1,
+	}
+	defaultMutex sync.Mutex
 )
 
 type serviceGraphJSONMetadata struct {
@@ -60,6 +63,7 @@ type serviceGraphJSONMetadata struct {
 
 type defaults struct {
 	Type         svctype.ServiceType `json:"type"`
+	NumReplicas  int32               `json:"numReplicas"`
 	ErrorRate    pct.Percentage      `json:"errorRate"`
 	ResponseSize size.ByteSize       `json:"responseSize"`
 	Script       script.Script       `json:"script"`
@@ -72,6 +76,7 @@ func withGlobalDefaults(defaults defaults, f func()) {
 	origDefaultService := svc.DefaultService
 	svc.DefaultService = svc.Service{
 		Type:         defaults.Type,
+		NumReplicas:  defaults.NumReplicas,
 		ErrorRate:    defaults.ErrorRate,
 		ResponseSize: defaults.ResponseSize,
 		Script:       defaults.Script,

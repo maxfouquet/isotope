@@ -39,7 +39,7 @@ func TestServiceGraph_UnmarshalJSON(t *testing.T) {
 
 			var graph ServiceGraph
 			err := json.Unmarshal(test.input, &graph)
-			if test.err == nil {
+			if err == nil {
 				if !reflect.DeepEqual(test.graph, graph) {
 					t.Errorf("expected %v; actual %v", test.graph, graph)
 				}
@@ -60,14 +60,16 @@ var (
 	`)
 	graphWithOneService = ServiceGraph{[]svc.Service{
 		{
-			Name: "a",
-			Type: svctype.ServiceHTTP,
+			Name:        "a",
+			Type:        svctype.ServiceHTTP,
+			NumReplicas: 1,
 		},
 	}}
 	jsonWithDefaultsAndManyServices = []byte(`
 		{
 			"defaults": {
 				"errorRate": 0.1,
+				"numReplicas": 2,
 				"requestSize": 516,
 				"responseSize": 128,
 				"script": [
@@ -76,7 +78,8 @@ var (
 			},
 			"services": [
 				{
-					"name": "a"
+					"name": "a",
+					"numReplicas": 5
 				},
 				{
 					"name": "b",
@@ -93,6 +96,7 @@ var (
 				{
 					"name": "c",
 					"type": "grpc",
+					"numReplicas": 1,
 					"errorRate": "20%",
 					"responseSize": "1K",
 					"script": [
@@ -110,6 +114,7 @@ var (
 		{
 			Name:         "a",
 			Type:         svctype.ServiceHTTP,
+			NumReplicas:  5,
 			ErrorRate:    0.1,
 			ResponseSize: 128,
 			Script: script.Script([]script.Command{
@@ -119,6 +124,7 @@ var (
 		{
 			Name:         "b",
 			Type:         svctype.ServiceHTTP,
+			NumReplicas:  2,
 			ErrorRate:    0.1,
 			ResponseSize: 128,
 			Script: script.Script([]script.Command{
@@ -129,6 +135,7 @@ var (
 		{
 			Name:         "c",
 			Type:         svctype.ServiceGRPC,
+			NumReplicas:  1,
 			ErrorRate:    0.2,
 			ResponseSize: 1024,
 			Script: script.Script([]script.Command{

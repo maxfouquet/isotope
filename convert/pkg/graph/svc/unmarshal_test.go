@@ -17,19 +17,20 @@ func TestService_UnmarshalJSON(t *testing.T) {
 		{
 			[]byte(`{"name": "A"}`),
 			Service{
-				Name: "A",
-				Type: svctype.ServiceHTTP,
+				Name:        "A",
+				Type:        svctype.ServiceHTTP,
+				NumReplicas: 1,
 			},
 			nil,
 		},
 		{
 			[]byte(`{}`),
-			Service{Type: svctype.ServiceHTTP},
+			Service{Type: svctype.ServiceHTTP, NumReplicas: 1},
 			ErrEmptyName,
 		},
 		{
 			[]byte(`{"name": ""}`),
-			Service{Type: svctype.ServiceHTTP},
+			Service{Type: svctype.ServiceHTTP, NumReplicas: 1},
 			ErrEmptyName,
 		},
 	}

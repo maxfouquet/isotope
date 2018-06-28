@@ -146,6 +146,7 @@ func makeDeployment(
 	k8sDeployment.ObjectMeta.Labels = serviceGraphAppLabels
 	timestamp(&k8sDeployment.ObjectMeta)
 	k8sDeployment.Spec = appsv1.DeploymentSpec{
+		Replicas: &service.NumReplicas,
 		Selector: &metav1.LabelSelector{
 			MatchLabels: map[string]string{
 				"name": service.Name,

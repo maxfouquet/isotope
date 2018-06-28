@@ -15,10 +15,11 @@ func TestService_MarshalJSON(t *testing.T) {
 	}{
 		{
 			Service{
-				Name: "a",
-				Type: svctype.ServiceHTTP,
+				Name:        "a",
+				Type:        svctype.ServiceHTTP,
+				NumReplicas: 1,
 			},
-			[]byte(`{"name":"a","type":"http"}`),
+			[]byte(`{"name":"a","type":"http","numReplicas":1}`),
 			nil,
 		},
 	}

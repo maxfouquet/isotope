@@ -15,6 +15,9 @@ type Service struct {
 	// Type describes what protocol the service supports (e.g. HTTP, gRPC).
 	Type svctype.ServiceType `json:"type,omitempty"`
 
+	// NumReplicas is the number of replicas backing this service.
+	NumReplicas int32 `json:"numReplicas,omitempty"`
+
 	// IsEntrypoint indicates that this service is an entrypoint into the service
 	// graph, representing a public service.
 	IsEntrypoint bool `json:"isEntrypoint,omitempty"`
