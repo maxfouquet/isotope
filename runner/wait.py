@@ -1,5 +1,7 @@
+import collections
 import datetime
 import logging
+import subprocess
 import time
 from typing import Callable
 
@@ -22,17 +24,26 @@ def until_deployments_are_ready(
             'jsonpath={.items[*].metadata.name}'
         ],
         check=True)
-    deployments = proc.stdout.split(' ')
+    deployments = collections.deque(proc.stdout.split(' '))
     logging.info('waiting for deployments in %s (%s) to rollout', namespace,
                  deployments)
-    for deployment in deployments:
+    while len(deployments) > 0:
+        deployment = deployments.popleft()
         # kubectl blocks until ready.
-        sh.run_kubectl(
-            [
-                '--namespace', namespace, 'rollout', 'status', 'deployment',
-                deployment
-            ],
-            check=True)
+        try:
+            sh.run_kubectl(
+                [
+                    '--namespace', namespace, 'rollout', 'status',
+                    'deployment', deployment
+                ],
+                check=True)
+        except subprocess.CalledProcessError as e:
+            msg = 'failed to check rollout status of {}'.format(deployment)
+            if 'watch closed' in e.stderr:
+                logging.debug('%s; retrying later', msg)
+                deployments.append(deployment)
+            else:
+                logging.error(msg)
 
 
 def until_prometheus_has_scraped() -> None:
