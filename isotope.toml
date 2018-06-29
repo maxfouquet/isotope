@@ -1,5 +1,5 @@
 topology_paths = [
-  "example-topologies/4-tree-1000-services.yaml",
+  "example-topologies/5-tree-111-services.yaml",
 ]
 
 environments = [
@@ -8,7 +8,7 @@ environments = [
 ]
 
 [istio]
-build = false
+build = true
 hub = "docker.io/tahler"
 tag = "tjberry"
 
@@ -17,14 +17,14 @@ tag = "tjberry"
 # running Prometheus. In total, the cluster will have 1 Prometheus node, 1
 # client node, and N service-graph nodes (total of N + 2 nodes).
 create = false
-name = "isotope-cluster-197"
-zone = "us-west1-a"
+name = "isotope-large-cluster"
+zone = "us-central1-a"
 version = "1.9.7-gke.3"
 
 [server]
-machine_type = "n1-standard-1"
+machine_type = "n1-standard-8"
 disk_size_gb = 16
-num_nodes = 3
+num_nodes = 12
 image = "tahler/perf-test-service:latest"
 
 [client]

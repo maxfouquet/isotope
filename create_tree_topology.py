@@ -10,10 +10,10 @@ import yaml
 
 REQUEST_SIZE = 128
 RESPONSE_SIZE = 128
-NUM_REPLICAS = 2
+NUM_REPLICAS = 1
 
 # Total number of services.
-NUM_SERVICES = 1000
+NUM_SERVICES = 111
 # Maximum amount of dependent or child services each service has.
 NUM_BRANCHES = 10
 
