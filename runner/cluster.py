@@ -31,6 +31,7 @@ def _create_cluster(name: str, zone: str, version: str, machine_type: str,
             str(num_nodes)
         ],
         check=True)
+    sh.run_gcloud(['config', 'set', 'container/cluster', name], check=True)
     sh.run_gcloud(
         ['container', 'clusters', 'get-credentials', name], check=True)
 
