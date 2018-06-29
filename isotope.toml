@@ -1,5 +1,5 @@
 topology_paths = [
-  "example-topologies/0-canonical.yaml",
+  "example-topologies/5-tree-1000-services.yaml",
 ]
 
 environments = [
