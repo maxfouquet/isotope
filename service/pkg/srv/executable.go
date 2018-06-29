@@ -67,7 +67,7 @@ func executeRequestCommand(
 }
 
 func readAllAndClose(r io.ReadCloser) {
-	ioutil.ReadAll(r)
+	io.Copy(ioutil.Discard, r)
 	r.Close()
 }
 
