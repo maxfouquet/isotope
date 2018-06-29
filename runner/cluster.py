@@ -4,10 +4,13 @@ import os
 from . import consts, resources, sh
 
 
-def setup(name: str, zone: str, version: str, machine_type: str,
-          disk_size_gb: int, num_nodes: int, client_machine_type: str,
-          client_disk_size_gb: int) -> None:
-    _create_cluster(name, zone, version, machine_type, disk_size_gb, num_nodes)
+def setup(name: str, zone: str, version: str, service_graph_machine_type: str,
+          service_graph_disk_size_gb: int, service_graph_num_nodes: int,
+          client_machine_type: str, client_disk_size_gb: int) -> None:
+    _create_cluster(name, zone, version, 'n1-standard-1', 16, 1)
+    _create_service_graph_node_pool(service_graph_num_nodes,
+                                    service_graph_machine_type,
+                                    service_graph_disk_size_gb)
     _create_client_node_pool(client_machine_type, client_disk_size_gb)
     _create_cluster_role_binding()
     _create_persistent_volume()
@@ -32,12 +35,26 @@ def _create_cluster(name: str, zone: str, version: str, machine_type: str,
         ['container', 'clusters', 'get-credentials', name], check=True)
 
 
+def _create_service_graph_node_pool(num_nodes: int, machine_type: str,
+                                    disk_size_gb: int) -> None:
+    logging.info('creating service graph node-pool')
+    _create_node_pool(consts.SERVICE_GRAPH_NODE_POOL_NAME, num_nodes,
+                      machine_type, disk_size_gb)
+
+
 def _create_client_node_pool(machine_type: str, disk_size_gb: int) -> None:
     logging.info('creating client node-pool')
+    _create_node_pool(consts.CLIENT_NODE_POOL_NAME, 1, machine_type,
+                      disk_size_gb)
+
+
+def _create_node_pool(name: str, num_nodes: int, machine_type: str,
+                      disk_size_gb: int) -> None:
     sh.run_gcloud(
         [
-            'container', 'node-pools', 'create', consts.CLIENT_NODE_POOL_NAME,
-            '--machine-type', machine_type, '--num-nodes=1', '--disk-size',
+            'container', 'node-pools', 'create', name, '--machine-type',
+            machine_type, '--num-nodes',
+            str(num_nodes), '--disk-size',
             str(disk_size_gb)
         ],
         check=True)
@@ -93,3 +110,4 @@ def _helm_add_prometheus() -> None:
             resources.PROMETHEUS_STORAGE_VALUES_YAML_PATH
         ],
         check=True)
+    # TODO: wait for prom

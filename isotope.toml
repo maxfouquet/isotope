@@ -13,6 +13,9 @@ hub = "docker.io/tahler"
 tag = "tjberry"
 
 [cluster]
+# Cluster will be created with one n1-standard-1 node in the default node-pool
+# running Prometheus. In total, the cluster will have 1 Prometheus node, 1
+# client node, and N service-graph nodes (total of N + 2 nodes).
 create = false
 name = "isotope-cluster-197"
 zone = "us-west1-a"
