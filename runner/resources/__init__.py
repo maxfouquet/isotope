@@ -3,7 +3,7 @@ import logging
 import os
 from typing import Generator, Optional, Type
 
-from .. import consts, sh, wait
+from .. import consts, context, sh, wait
 
 _RESOURCES_DIR = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -25,7 +25,8 @@ SERVICE_GRAPH_GEN_YAML_PATH = os.path.join(_RESOURCES_DIR,
 @contextlib.contextmanager
 def manifest(path: str) -> Generator[None, None, None]:
     _create_from_manifest(path)
-    yield
+    with context.confirm_clean_up_on_exception():
+        yield
     _delete_from_manifest(path)
 
 
