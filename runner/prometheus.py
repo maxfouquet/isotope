@@ -47,7 +47,7 @@ TEMPLATE = jinja2.Template(
               - ReadWriteOnce
               resources:
                 requests:
-                storage: 10G
+                  storage: 10G
     """))
 
 
