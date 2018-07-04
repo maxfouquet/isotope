@@ -53,6 +53,9 @@ func ServiceGraphToKubernetesManifests(
 
 	namespace := makeServiceGraphNamespace()
 	err = appendManifest(namespace)
+	if err != nil {
+		return
+	}
 
 	configMap, err := makeConfigMap(serviceGraph)
 	if err != nil {
