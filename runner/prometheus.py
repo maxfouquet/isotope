@@ -7,7 +7,7 @@ import jinja2
 TEMPLATE = jinja2.Template(
     textwrap.dedent("""\
         serviceMonitors:
-        - name: service-graph-monitor
+        - name: isotope-monitor
           selector:
             matchLabels:
               app: service-graph
@@ -16,6 +16,20 @@ TEMPLATE = jinja2.Template(
             - service-graph
           endpoints:
           - targetPort: 8080
+            metricRelabelings:
+            {%- for key, value in labels.items() %}
+            - targetLabel: "{{ key }}"
+              replacement: "{{ value }}"
+            {%- endfor %}
+        - name: client-monitor
+          selector:
+            matchLabels:
+              app: client
+          namespaceSelector:
+            matchNames:
+            - default
+          endpoints:
+          - targetPort: 42422
             metricRelabelings:
             {%- for key, value in labels.items() %}
             - targetLabel: "{{ key }}"

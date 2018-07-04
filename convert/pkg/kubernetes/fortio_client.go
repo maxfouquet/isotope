@@ -9,7 +9,7 @@ import (
 	"github.com/Tahler/isotope/convert/pkg/graph"
 	"github.com/Tahler/isotope/convert/pkg/graph/svc"
 	"github.com/ghodss/yaml"
-	batchv1 "k8s.io/api/batch/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -40,9 +40,9 @@ func ServiceGraphToFortioClientManifest(
 		return
 	}
 	entrypoint := entrypoints[0]
-	job := entrypointToFortioClientJob(
-		entrypoint, nodeSelector, clientImage, clientArgs)
-	manifest, err = yaml.Marshal(job)
+	deployment := entrypointToFortioClientDeployment(
+		nodeSelector, clientImage, clientArgs)
+	manifest, err = yaml.Marshal(deployment)
 	if err != nil {
 		return
 	}
@@ -51,42 +51,40 @@ func ServiceGraphToFortioClientManifest(
 
 var fortioClientLabels = map[string]string{"app": "client"}
 
-func entrypointToFortioClientJob(
-	entrypoint svc.Service,
+func entrypointToFortioClientDeployment(
 	nodeSelector map[string]string,
 	clientImage string,
-	clientArgs []string) (job batchv1.Job) {
+	clientArgs []string) (deployment appsv1.Deployment) {
 
-	url := fmt.Sprintf("http://%s.%s.svc.cluster.local:%v",
-		entrypoint.Name, ServiceGraphNamespace, consts.ServicePort)
-
-	args := make([]string, 0, len(clientArgs)+1)
-	args = append(args, clientArgs...)
-	args = append(args, url)
-
-	job.APIVersion = "batch/v1"
-	job.Kind = "Job"
-	job.ObjectMeta.Name = "client"
-	timestamp(&job.ObjectMeta)
-	job.Spec.Template = apiv1.PodTemplateSpec{
-		ObjectMeta: metav1.ObjectMeta{
-			Labels: combineLabels(serviceGraphAppLabels, fortioClientLabels),
+	deployment.APIVersion = "apps/v1"
+	deployment.Kind = "Deployment"
+	deployment.ObjectMeta.Name = "client"
+	deployment.ObjectMeta.Labels = fortioClientLabels
+	timestamp(&deployment.ObjectMeta)
+	deployment.Spec = appsv1.DeploymentSpec{
+		Selector: &metav1.LabelSelector{
+			MatchLabels: fortioClientLabels,
 		},
-		Spec: apiv1.PodSpec{
-			NodeSelector: nodeSelector,
-			Containers: []apiv1.Container{
-				{
-					Name:  "fortio-client",
-					Image: clientImage,
-					Args:  args,
-					Ports: []apiv1.ContainerPort{
-						{
-							ContainerPort: consts.ServicePort,
+		Template: apiv1.PodTemplateSpec{
+			ObjectMeta: metav1.ObjectMeta{
+				Labels: fortioClientLabels,
+			},
+			Spec: apiv1.PodSpec{
+				NodeSelector: nodeSelector,
+				Containers: []apiv1.Container{
+					{
+						Name:  "fortio-client",
+						Image: clientImage,
+						Args:  []string{"server"},
+						Ports: []apiv1.ContainerPort{
+							{
+								ContainerPort: consts.ServicePort,
+								ContainerPort: 42422,
+							},
 						},
 					},
 				},
 			},
-			RestartPolicy: apiv1.RestartPolicyNever,
 		},
 	}
 	timestamp(&job.Spec.Template.ObjectMeta)
