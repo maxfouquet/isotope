@@ -42,11 +42,10 @@ func ServiceGraphToFortioClientManifest(
 	entrypoint := entrypoints[0]
 	job := entrypointToFortioClientJob(
 		entrypoint, nodeSelector, clientImage, clientArgs)
-	manifestStr, err := yaml.Marshal(job)
+	manifest, err = yaml.Marshal(job)
 	if err != nil {
 		return
 	}
-	manifest = []byte(manifestStr)
 	return
 }
 
@@ -80,6 +79,11 @@ func entrypointToFortioClientJob(
 					Name:  "fortio-client",
 					Image: clientImage,
 					Args:  args,
+					Ports: []apiv1.ContainerPort{
+						{
+							ContainerPort: consts.ServicePort,
+						},
+					},
 				},
 			},
 			RestartPolicy: apiv1.RestartPolicyNever,
