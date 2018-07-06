@@ -23,6 +23,20 @@ def test_values_should_return_correct_yaml():
               replacement: "tjberry"
             - targetLabel: "custom"
               replacement: "stuff"
+        - name: client-monitor
+          selector:
+            matchLabels:
+              app: client
+          namespaceSelector:
+            matchNames:
+            - default
+          endpoints:
+          - targetPort: 42422
+            metricRelabelings:
+            - targetLabel: "user"
+              replacement: "tjberry"
+            - targetLabel: "custom"
+              replacement: "stuff"
         - name: istio-mixer-monitor
           selector:
             matchLabels:
@@ -49,7 +63,7 @@ def test_values_should_return_correct_yaml():
               - ReadWriteOnce
               resources:
                 requests:
-                storage: 10G
+                  storage: 10G
     """)
     expected = yaml.load(expected_yaml)
 

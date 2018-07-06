@@ -21,6 +21,20 @@ TEMPLATE = jinja2.Template(
             - targetLabel: "{{ key }}"
               replacement: "{{ value }}"
             {%- endfor %}
+        - name: client-monitor
+          selector:
+            matchLabels:
+              app: client
+          namespaceSelector:
+            matchNames:
+            - default
+          endpoints:
+          - targetPort: 42422
+            metricRelabelings:
+            {%- for key, value in labels.items() %}
+            - targetLabel: "{{ key }}"
+              replacement: "{{ value }}"
+            {%- endfor %}
         - name: istio-mixer-monitor
           selector:
             matchLabels:
