@@ -6,5 +6,7 @@ SERVICE_GRAPH_NAMESPACE = 'service-graph'
 DEFAULT_NODE_POOL_NAME = 'default-pool'
 SERVICE_GRAPH_NODE_POOL_NAME = 'service-graph-pool'
 CLIENT_NODE_POOL_NAME = 'client-pool'
-CLIENT_JOB_NAME = 'client'
+CLIENT_NAME = 'client'
+CLIENT_PORT = 8080
 SERVICE_GRAPH_SERVICE_SELECTOR = 'role=service'
+SERVICE_PORT = 8080

@@ -22,14 +22,13 @@ def main() -> None:
                       config.server_disk_size_gb, config.server_num_nodes,
                       config.client_machine_type, config.client_disk_size_gb)
 
-    client_args = ','.join(config.client_args)
-
     for topology_path in config.topology_paths:
         for environment in config.environments:
             pipeline.run(topology_path, environment, config.server_image,
-                         config.client_image, client_args, config.istio_hub,
+                         config.client_image, config.istio_hub,
                          config.istio_tag, config.should_build_istio,
-                         config.labels())
+                         config.client_qps, config.client_duration,
+                         config.client_num_conc_conns, config.labels())
 
 
 def parse_args() -> argparse.Namespace:

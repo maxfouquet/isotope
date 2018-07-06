@@ -76,18 +76,3 @@ def _service_graph_is_ready() -> bool:
     out = proc.stdout
     all_services_ready = out != '' and 'False' not in out
     return all_services_ready
-
-
-def until_client_job_is_complete() -> None:
-    logging.info('waiting for client job to finish')
-    until(_client_job_is_complete)
-
-
-def _client_job_is_complete() -> bool:
-    proc = sh.run_kubectl(
-        [
-            'get', 'job', consts.CLIENT_JOB_NAME, '-o',
-            'jsonpath={.status.conditions[?(@.type=="Complete")].status}'
-        ],
-        check=True)
-    return 'True' in proc.stdout

@@ -24,4 +24,7 @@ const (
 	// ServiceNameEnvKey is the key of the environment variable whose value is
 	// the name of the service.
 	ServiceNameEnvKey = "SERVICE_NAME"
+
+	// FortioMetricsPort is the port on which /metrics is available.
+	FortioMetricsPort = 42422
 )

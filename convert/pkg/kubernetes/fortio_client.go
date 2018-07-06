@@ -2,93 +2,71 @@
 package kubernetes
 
 import (
-	"errors"
-	"fmt"
-
 	"github.com/Tahler/isotope/convert/pkg/consts"
-	"github.com/Tahler/isotope/convert/pkg/graph"
-	"github.com/Tahler/isotope/convert/pkg/graph/svc"
-	"github.com/ghodss/yaml"
-	batchv1 "k8s.io/api/batch/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
-
-// ServiceGraphToFortioClientManifest extracts the entrypoint into the service
-// graph and renders a Kubernetes Job manifest to run `Fortio load` on it.
-func ServiceGraphToFortioClientManifest(
-	serviceGraph graph.ServiceGraph,
-	nodeSelector map[string]string,
-	clientImage string,
-	clientArgs []string) (manifest []byte, err error) {
-	entrypoints := make([]svc.Service, 0, 1)
-	for _, svc := range serviceGraph.Services {
-		if svc.IsEntrypoint {
-			entrypoints = append(entrypoints, svc)
-		}
-	}
-	numEntrypoints := len(entrypoints)
-	if numEntrypoints > 1 {
-		err = fmt.Errorf(
-			"cannot create client for service graph with multiple entrypoints: %v",
-			entrypoints)
-		return
-	}
-	if numEntrypoints < 1 {
-		err = errors.New(
-			"cannot create client for service graph with no entrypoints")
-		return
-	}
-	entrypoint := entrypoints[0]
-	job := entrypointToFortioClientJob(
-		entrypoint, nodeSelector, clientImage, clientArgs)
-	manifest, err = yaml.Marshal(job)
-	if err != nil {
-		return
-	}
-	return
-}
 
 var fortioClientLabels = map[string]string{"app": "client"}
 
-func entrypointToFortioClientJob(
-	entrypoint svc.Service,
+func makeFortioDeployment(
 	nodeSelector map[string]string,
-	clientImage string,
-	clientArgs []string) (job batchv1.Job) {
-
-	url := fmt.Sprintf("http://%s.%s.svc.cluster.local:%v",
-		entrypoint.Name, ServiceGraphNamespace, consts.ServicePort)
-
-	args := make([]string, 0, len(clientArgs)+1)
-	args = append(args, clientArgs...)
-	args = append(args, url)
-
-	job.APIVersion = "batch/v1"
-	job.Kind = "Job"
-	job.ObjectMeta.Name = "client"
-	timestamp(&job.ObjectMeta)
-	job.Spec.Template = apiv1.PodTemplateSpec{
-		ObjectMeta: metav1.ObjectMeta{
-			Labels: combineLabels(serviceGraphAppLabels, fortioClientLabels),
+	clientImage string) (deployment appsv1.Deployment) {
+	deployment.APIVersion = "apps/v1"
+	deployment.Kind = "Deployment"
+	deployment.ObjectMeta.Name = "client"
+	deployment.ObjectMeta.Labels = fortioClientLabels
+	timestamp(&deployment.ObjectMeta)
+	deployment.Spec = appsv1.DeploymentSpec{
+		Selector: &metav1.LabelSelector{
+			MatchLabels: fortioClientLabels,
 		},
-		Spec: apiv1.PodSpec{
-			NodeSelector: nodeSelector,
-			Containers: []apiv1.Container{
-				{
-					Name:  "fortio-client",
-					Image: clientImage,
-					Args:  args,
-					Ports: []apiv1.ContainerPort{
-						{
-							ContainerPort: consts.ServicePort,
+		Template: apiv1.PodTemplateSpec{
+			ObjectMeta: metav1.ObjectMeta{
+				Labels: fortioClientLabels,
+			},
+			Spec: apiv1.PodSpec{
+				NodeSelector: nodeSelector,
+				Containers: []apiv1.Container{
+					{
+						Name:  "fortio-client",
+						Image: clientImage,
+						Args:  []string{"server"},
+						Ports: []apiv1.ContainerPort{
+							{
+								ContainerPort: consts.ServicePort,
+							},
+							{
+								ContainerPort: consts.FortioMetricsPort,
+							},
 						},
 					},
 				},
 			},
-			RestartPolicy: apiv1.RestartPolicyNever,
 		},
 	}
-	timestamp(&job.Spec.Template.ObjectMeta)
+	timestamp(&deployment.Spec.Template.ObjectMeta)
+	return
+}
+
+func makeFortioService() (service apiv1.Service) {
+	service.APIVersion = "v1"
+	service.Kind = "Service"
+	service.ObjectMeta.Name = "client"
+	service.ObjectMeta.Labels = fortioClientLabels
+	timestamp(&service.ObjectMeta)
+	service.Spec = apiv1.ServiceSpec{
+		Selector: fortioClientLabels,
+		Type:     "LoadBalancer",
+		ExternalTrafficPolicy: "Cluster",
+		Ports: []apiv1.ServicePort{
+			{
+				Port:       consts.ServicePort,
+				TargetPort: intstr.FromInt(consts.ServicePort),
+			},
+		},
+	}
 	return
 }

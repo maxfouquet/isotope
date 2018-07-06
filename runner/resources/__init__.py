@@ -15,7 +15,6 @@ PROMETHEUS_STORAGE_VALUES_YAML_PATH = os.path.join(
 PERSISTENT_VOLUME_YAML_PATH = os.path.join(_RESOURCES_DIR,
                                            'persistent-volume.yaml')
 
-CLIENT_GEN_YAML_PATH = os.path.join(_RESOURCES_DIR, 'client.gen.yaml')
 PROMETHEUS_VALUES_GEN_YAML_PATH = os.path.join(_RESOURCES_DIR,
                                                'values-prometheus.gen.yaml')
 SERVICE_GRAPH_GEN_YAML_PATH = os.path.join(_RESOURCES_DIR,

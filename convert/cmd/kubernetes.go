@@ -15,19 +15,24 @@ import (
 var kubernetesCmd = &cobra.Command{
 	Use:   "kubernetes",
 	Short: "Convert service graph YAML to manifests for performance testing",
-	Args:  cobra.ExactArgs(5),
+	Args:  cobra.ExactArgs(4),
 	Run: func(cmd *cobra.Command, args []string) {
 		inPath := args[0]
-		serviceGraphOutPath := args[1]
-		clientOutPath := args[2]
+		outPath := args[1]
 
-		defaultNodeSelectorStr := args[3]
-		defaultNodeSelector, err := extractNodeSelector(
-			defaultNodeSelectorStr)
+		serviceNodeSelectorStr := args[2]
+		serviceNodeSelector, err := extractNodeSelector(
+			serviceNodeSelectorStr)
 		exitIfError(err)
 
-		clientNodeSelectorStr := args[4]
+		clientNodeSelectorStr := args[3]
 		clientNodeSelector, err := extractNodeSelector(clientNodeSelectorStr)
+		exitIfError(err)
+
+		serviceImage, err := cmd.PersistentFlags().GetString("service-image")
+		exitIfError(err)
+
+		clientImage, err := cmd.PersistentFlags().GetString("client-image")
 		exitIfError(err)
 
 		yamlContents, err := ioutil.ReadFile(inPath)
@@ -36,26 +41,12 @@ var kubernetesCmd = &cobra.Command{
 		var serviceGraph graph.ServiceGraph
 		exitIfError(yaml.Unmarshal(yamlContents, &serviceGraph))
 
-		serviceImage, err := cmd.PersistentFlags().GetString("service-image")
+		manifests, err := kubernetes.ServiceGraphToKubernetesManifests(
+			serviceGraph, serviceNodeSelector, serviceImage,
+			clientNodeSelector, clientImage)
 		exitIfError(err)
 
-		serviceGraphManifest, err := kubernetes.ServiceGraphToKubernetesManifests(
-			serviceGraph, defaultNodeSelector, serviceImage)
-		exitIfError(err)
-
-		clientImage, err := cmd.PersistentFlags().GetString("client-image")
-		exitIfError(err)
-
-		clientArgs, err := cmd.PersistentFlags().GetStringSlice("client-args")
-		exitIfError(err)
-
-		clientManifest, err := kubernetes.ServiceGraphToFortioClientManifest(
-			serviceGraph, clientNodeSelector, clientImage, clientArgs)
-		exitIfError(err)
-
-		exitIfError(writeManifest(serviceGraphOutPath, serviceGraphManifest))
-
-		exitIfError(writeManifest(clientOutPath, clientManifest))
+		exitIfError(writeManifest(outPath, manifests))
 	},
 }
 
@@ -65,10 +56,6 @@ func init() {
 		"service-image", "", "the image to deploy for all services in the graph")
 	kubernetesCmd.PersistentFlags().String(
 		"client-image", "", "the image to use for the load testing client job")
-	kubernetesCmd.PersistentFlags().StringSlice(
-		"client-args",
-		[]string{},
-		"the args to send to the load testing client, separated by comma")
 }
 
 func writeManifest(path string, manifest []byte) error {

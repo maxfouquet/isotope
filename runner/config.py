@@ -1,5 +1,5 @@
 import enum
-from typing import Any, Dict, Iterable, List, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import toml
 
@@ -17,7 +17,8 @@ class RunnerConfig:
                  server_machine_type: str, server_disk_size_gb: int,
                  server_num_nodes: int, server_image: str,
                  client_machine_type: str, client_disk_size_gb: int,
-                 client_image: str, client_args: List[str]) -> None:
+                 client_image: str, client_qps: Optional[int],
+                 client_duration: str, client_num_conc_conns: int) -> None:
         self.topology_paths = topology_paths
         self.environments = environments
         self.istio_hub = istio_hub
@@ -34,7 +35,9 @@ class RunnerConfig:
         self.client_machine_type = client_machine_type
         self.client_disk_size_gb = client_disk_size_gb
         self.client_image = client_image
-        self.client_args = client_args
+        self.client_qps = client_qps
+        self.client_duration = client_duration
+        self.client_num_conc_conns = client_num_conc_conns
 
     def labels(self) -> Dict[str, str]:
         return {
@@ -49,6 +52,10 @@ class RunnerConfig:
             'client_machine_type': self.client_machine_type,
             'client_disk_size_gb': str(self.client_disk_size_gb),
             'client_image': self.client_image,
+            'client_qps': str(self.client_qps),
+            'client_duration': self.client_duration,
+            'client_num_concurrent_connections':
+            str(self.client_num_conc_conns),
         }
 
 
@@ -78,7 +85,14 @@ def from_dict(d: Dict[str, Any]) -> RunnerConfig:
     client_machine_type = client['machine_type']
     client_disk_size_gb = client['disk_size_gb']
     client_image = client['image']
-    client_args = client['args']
+    client_qps = client['qps']
+    if client_qps == 'max':
+        client_qps = None
+    else:
+        # Must coerce into integer, otherwise not a valid QPS.
+        client_qps = int(client_qps)
+    client_duration = client['duration']
+    client_num_conc_conns = client['num_concurrent_connections']
 
     return RunnerConfig(
         topology_paths=topology_paths,
@@ -97,7 +111,9 @@ def from_dict(d: Dict[str, Any]) -> RunnerConfig:
         client_machine_type=client_machine_type,
         client_disk_size_gb=client_disk_size_gb,
         client_image=client_image,
-        client_args=client_args)
+        client_qps=client_qps,
+        client_duration=client_duration,
+        client_num_conc_conns=client_num_conc_conns)
 
 
 def from_toml_file(path: str) -> RunnerConfig:

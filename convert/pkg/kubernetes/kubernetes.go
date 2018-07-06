@@ -36,8 +36,10 @@ var (
 // manifests.
 func ServiceGraphToKubernetesManifests(
 	serviceGraph graph.ServiceGraph,
-	nodeSelector map[string]string,
-	serviceImage string) (yamlDoc []byte, err error) {
+	serviceNodeSelector map[string]string,
+	serviceImage string,
+	clientNodeSelector map[string]string,
+	clientImage string) (yamlDoc []byte, err error) {
 	numServices := len(serviceGraph.Services)
 	numManifests := numManifestsPerService*numServices + numConfigMaps
 	manifests := make([]string, 0, numManifests)
@@ -67,24 +69,37 @@ func ServiceGraphToKubernetesManifests(
 	}
 
 	for _, service := range serviceGraph.Services {
-		k8sDeployment, err := makeDeployment(
-			service, nodeSelector, serviceImage)
-		if err != nil {
-			return nil, err
+		k8sDeployment, innerErr := makeDeployment(
+			service, serviceNodeSelector, serviceImage)
+		if innerErr != nil {
+			return nil, innerErr
 		}
-		err = appendManifest(k8sDeployment)
-		if err != nil {
-			return nil, err
+		innerErr = appendManifest(k8sDeployment)
+		if innerErr != nil {
+			return nil, innerErr
 		}
 
-		k8sService, err := makeService(service)
-		if err != nil {
-			return nil, err
+		k8sService, innerErr := makeService(service)
+		if innerErr != nil {
+			return nil, innerErr
 		}
-		err = appendManifest(k8sService)
-		if err != nil {
-			return nil, err
+		innerErr = appendManifest(k8sService)
+		if innerErr != nil {
+			return nil, innerErr
 		}
+	}
+
+	fortioDeployment := makeFortioDeployment(
+		clientNodeSelector, clientImage)
+	err = appendManifest(fortioDeployment)
+	if err != nil {
+		return
+	}
+
+	fortioService := makeFortioService()
+	err = appendManifest(fortioService)
+	if err != nil {
+		return
 	}
 
 	yamlDocString := strings.Join(manifests, "---\n")
