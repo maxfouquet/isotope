@@ -23,6 +23,7 @@ SERVICE_GRAPH_GEN_YAML_PATH = os.path.join(_RESOURCES_DIR,
 
 @contextlib.contextmanager
 def manifest(path: str) -> Generator[None, None, None]:
+    """Runs `kubectl create -f path` on entry and opposing delete on exit."""
     _create_from_manifest(path)
     with context.confirm_clean_up_on_exception():
         yield
