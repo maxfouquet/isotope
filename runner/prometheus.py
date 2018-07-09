@@ -66,5 +66,6 @@ TEMPLATE = jinja2.Template(
 
 
 def values_yaml(labels: Dict[str, str]) -> str:
+    """Returns Prometheus Helm values with relabellings to include labels."""
     logging.info('generating Prometheus configuration')
     return TEMPLATE.render(labels=labels)
