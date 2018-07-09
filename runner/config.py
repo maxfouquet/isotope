@@ -5,11 +5,18 @@ import toml
 
 
 class Environment(enum.Enum):
+    """Enumerates the possible environments for a service graph."""
+
+    # No pre-existing environment for the service graph.
     NONE = 0
+
+    # All default Istio components, including sidecars.
     ISTIO = 1
 
 
 class RunnerConfig:
+    """Represents the intermediary between a config file"""
+
     def __init__(self, topology_paths: List[str],
                  environments: List[Environment], istio_hub: str,
                  istio_tag: str, istio_build: bool, cluster_name: str,
@@ -40,6 +47,7 @@ class RunnerConfig:
         self.client_num_conc_conns = client_num_conc_conns
 
     def labels(self) -> Dict[str, str]:
+        """Returns the static labels for Prometheus for this configuration."""
         return {
             'istio_hub': self.istio_hub,
             'istio_tag': self.istio_tag,
