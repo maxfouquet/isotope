@@ -7,6 +7,18 @@ from . import consts, resources, sh, wait
 def setup(name: str, zone: str, version: str, service_graph_machine_type: str,
           service_graph_disk_size_gb: int, service_graph_num_nodes: int,
           client_machine_type: str, client_disk_size_gb: int) -> None:
+    """Creates and sets up a GKE cluster.
+
+    Args:
+        name: name of the GKE cluster
+        zone: GCE zone (e.g. "us-central1-a")
+        version: GKE version (e.g. "1.9.7-gke.3")
+        service_graph_machine_type: GCE type of service machines
+        service_graph_disk_size_gb: disk size of service machines in gigabytes
+        service_graph_num_nodes: number of machines in the service graph pool
+        client_machine_type: GCE type of client machine
+        client_disk_size_gb: disk size of client machine in gigabytes
+    """
     _create_cluster(name, zone, version, 'n1-standard-1', 16, 1)
     _create_cluster_role_binding()
 
