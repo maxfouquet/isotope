@@ -50,6 +50,11 @@ def until_deployments_are_ready(
     _until_rollouts_complete('deployment', namespace)
 
 
+def until_stateful_sets_are_ready(
+        namespace: str = consts.DEFAULT_NAMESPACE) -> None:
+    _until_rollouts_complete('statefulsets', namespace)
+
+
 def until_prometheus_has_scraped() -> None:
     logging.info('allowing Prometheus time to scrape final metrics')
     time.sleep(PROMETHEUS_SCRAPE_INTERVAL.seconds)
