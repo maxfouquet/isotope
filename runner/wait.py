@@ -26,7 +26,7 @@ def until_deployments_are_ready(
         check=True)
     deployments = collections.deque(proc.stdout.split(' '))
     logging.info('waiting for deployments in %s (%s) to rollout', namespace,
-                 deployments)
+                 ', '.join(deployments))
     while len(deployments) > 0:
         deployment = deployments.popleft()
         # kubectl blocks until ready.
