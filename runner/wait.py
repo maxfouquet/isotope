@@ -16,34 +16,38 @@ def until(predicate: Callable[[], bool]) -> None:
         time.sleep(RETRY_INTERVAL.seconds)
 
 
-def until_deployments_are_ready(
-        namespace: str = consts.DEFAULT_NAMESPACE) -> None:
+def _until_rollouts_complete(resource_type: str, namespace: str) -> None:
     proc = sh.run_kubectl(
         [
-            '--namespace', namespace, 'get', 'deployments', '-o',
+            '--namespace', namespace, 'get', resource_type, '-o',
             'jsonpath={.items[*].metadata.name}'
         ],
         check=True)
-    deployments = collections.deque(proc.stdout.split(' '))
-    logging.info('waiting for deployments in %s (%s) to rollout', namespace,
-                 ', '.join(deployments))
-    while len(deployments) > 0:
-        deployment = deployments.popleft()
-        # kubectl blocks until ready.
+    resources = collections.deque(proc.stdout.split(' '))
+    logging.info('waiting for %ss in %s (%s) to rollout', resource_type,
+                 namespace, ', '.join(resources))
+    while len(resources) > 0:
+        resource = resources.popleft()
         try:
+            # kubectl blocks until ready.
             sh.run_kubectl(
                 [
                     '--namespace', namespace, 'rollout', 'status',
-                    'deployment', deployment
+                    resource_type, resource
                 ],
                 check=True)
         except subprocess.CalledProcessError as e:
-            msg = 'failed to check rollout status of {}'.format(deployment)
+            msg = 'failed to check rollout status of {}'.format(resource)
             if 'watch closed' in e.stderr:
                 logging.debug('%s; retrying later', msg)
-                deployments.append(deployment)
+                resources.append(resource)
             else:
                 logging.error(msg)
+
+
+def until_deployments_are_ready(
+        namespace: str = consts.DEFAULT_NAMESPACE) -> None:
+    _until_rollouts_complete('deployment', namespace)
 
 
 def until_prometheus_has_scraped() -> None:
