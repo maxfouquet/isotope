@@ -12,6 +12,7 @@ RETRY_INTERVAL = datetime.timedelta(seconds=5)
 
 
 def until(predicate: Callable[[], bool]) -> None:
+    """Calls predicate every RETRY_INTERVAL until it returns True."""
     while not predicate():
         time.sleep(RETRY_INTERVAL.seconds)
 
@@ -47,11 +48,13 @@ def _until_rollouts_complete(resource_type: str, namespace: str) -> None:
 
 def until_deployments_are_ready(
         namespace: str = consts.DEFAULT_NAMESPACE) -> None:
+    """Blocks until namespace's deployments' rollout statuses are complete."""
     _until_rollouts_complete('deployment', namespace)
 
 
 def until_stateful_sets_are_ready(
         namespace: str = consts.DEFAULT_NAMESPACE) -> None:
+    """Blocks until namespace's statefulsets' rollout statuses are complete."""
     _until_rollouts_complete('statefulsets', namespace)
 
 
@@ -62,6 +65,7 @@ def until_prometheus_has_scraped() -> None:
 
 def until_namespace_is_deleted(
         namespace: str = consts.DEFAULT_NAMESPACE) -> None:
+    """Blocks until `kubectl get namespace` returns an error."""
     until(lambda: _namespace_is_deleted(namespace))
 
 
@@ -71,6 +75,7 @@ def _namespace_is_deleted(namespace: str = consts.DEFAULT_NAMESPACE) -> bool:
 
 
 def until_service_graph_is_ready() -> None:
+    """Blocks until each node in the service graph reports readiness."""
     until(_service_graph_is_ready)
 
 
