@@ -1,7 +1,7 @@
 import logging
 import os
 
-from . import consts, resources, sh
+from . import consts, resources, sh, wait
 
 
 def setup(name: str, zone: str, version: str, service_graph_machine_type: str,
@@ -113,4 +113,4 @@ def _helm_add_prometheus() -> None:
             resources.PROMETHEUS_STORAGE_VALUES_YAML_PATH
         ],
         check=True)
-    # TODO: wait for prom
+    wait.until_stateful_sets_are_ready(consts.MONITORING_NAMESPACE)
