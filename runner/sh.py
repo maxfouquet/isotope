@@ -17,6 +17,16 @@ def run_helm(args: List[str], check=False) -> subprocess.CompletedProcess:
 
 def run(args: List[str], check=False,
         env: Dict[str, str] = None) -> subprocess.CompletedProcess:
+    """Delegates to subprocess.run, capturing stdout and stderr.
+
+    Args:
+        args: the list of args, with the command as the first item
+        check: if True, raises an exception if the command returns non-zero
+        env: the environment variables to set during the command's runtime
+
+    Returns:
+        A completed process, with stdout and stderr decoded as UTF-8 strings.
+    """
     logging.debug('%s', args)
 
     try:
