@@ -4,6 +4,7 @@ from . import consts
 
 
 def extract_url(topology_path: str) -> str:
+    """Returns the in-cluster URL to access the service graph's entrypoint."""
     with open(topology_path, 'r') as f:
         topology = yaml.load(f)
 
