@@ -74,7 +74,15 @@ def _gen_helm_values(path: str, hub: str, tag: str) -> str:
         os.makedirs(parent_dir)
 
     with open(path, 'w') as f:
-        return yaml.dump({'global': {'hub': hub, 'tag': tag}}, f)
+        return yaml.dump(
+            {
+                'global': {
+                    'hub': hub,
+                    'tag': tag,
+                }
+            },
+            f,
+            default_flow_style=False)
 
 
 def _install_helm_chart(chart_path: str,
