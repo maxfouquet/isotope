@@ -4,30 +4,33 @@ topology_paths = [
 
 environments = [
   "NONE",
+  "ISTIO",
 ]
 
-[istio]
-build = false
-hub = "docker.io/tahler"
-tag = "tjberry"
-
 [cluster]
+# Cluster will be created with one n1-standard-1 node in the default node-pool
+# running Prometheus. In total, the cluster will have 1 Prometheus node, 1
+# client node, and N service-graph nodes (total of N + 2 nodes).
 create = false
 name = "isotope-cluster-1"
 zone = "us-central1-a"
 version = "1.9.7-gke.3"
 
+[istio]
+build = false
+hub = "docker.io/istionightly"
+tag = "nightly-master"
+
 [server]
 machine_type = "n1-standard-1"
 disk_size_gb = 16
 num_nodes = 1
-image = "tahler/perf-test-service:latest"
+image = "tahler/mock-service:latest"
 
 [client]
-machine_type = "n1-highcpu-4"
+machine_type = "n1-highcpu-32"
 disk_size_gb = 16
 image = "tahler/fortio:prometheus"
-# The last argument, the URL to send traffic to, is automatically inserted.
 qps = "max"
-duration = "3s"
-num_concurrent_connections = 16
+duration = "1m"
+num_concurrent_connections = 64
