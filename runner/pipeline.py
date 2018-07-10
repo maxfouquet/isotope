@@ -176,9 +176,7 @@ def _run_load_test(result_output_path: str, test_target_url: str,
     url = ('http://{}:{}/fortio?json=on&qps={}&t={}&c={}&load=Start&url={}'
            ).format(svc_addr, consts.CLIENT_PORT, qps, test_duration,
                     test_num_concurrent_connections, test_target_url)
-
-    response = requests.get(url)
-    result = response.text
+    result = _http_get_json(url)
     _write_to_file(result_output_path, result)
 
 
@@ -199,6 +197,18 @@ def _get_svc_ip(name: str) -> str:
             time.sleep(wait.RETRY_INTERVAL.seconds)
     logging.debug('service/%s IP is %s', name, ip)
     return ip
+
+
+def _http_get_json(url: str) -> str:
+    """Sends an HTTP GET request to url, returning its JSON response."""
+    response = None
+    while response is None:
+        try:
+            response = requests.get(url)
+        except (requests.ConnectionError, requests.HTTPError) as e:
+            logging.error('%s; retrying request to %s', e, url)
+            response = None
+    return response.text
 
 
 def _write_job_logs(path: str, job_name: str) -> None:
