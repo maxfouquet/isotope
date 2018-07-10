@@ -17,10 +17,7 @@ def latest(hub: str, tag: str,
     _install_latest(hub, tag, should_build)
     with context.confirm_clean_up_on_exception():
         yield
-    sh.run_helm(['delete', '--purge', _HELM_ISTIO_NAME])
-    # TODO: Why doesn't `helm delete --purge istio` do this?
-    sh.run_kubectl(['delete', 'namespace', consts.ISTIO_NAMESPACE])
-    wait.until_namespace_is_deleted(consts.SERVICE_GRAPH_NAMESPACE)
+    _clean_up()
 
 
 def _install_latest(hub: str, tag: str, should_build: bool) -> None:
@@ -97,3 +94,11 @@ def _work_dir(path: str) -> Generator[None, None, None]:
     os.chdir(path)
     yield
     os.chdir(prev_path)
+
+
+def _clean_up() -> None:
+    """Deletes the Istio Helm chart and any leftover resources."""
+    sh.run_helm(['delete', '--purge', _HELM_ISTIO_NAME])
+    # TODO: Why doesn't `helm delete --purge istio` do this?
+    sh.run_kubectl(['delete', 'namespace', consts.ISTIO_NAMESPACE])
+    wait.until_namespace_is_deleted(consts.SERVICE_GRAPH_NAMESPACE)
