@@ -35,7 +35,6 @@ def run(topology_path: str, environment: config.Environment,
                 for the client to make
         static_labels: labels to add to each Prometheus monitor
     """
-    entrypoint_url = entrypoint.extract_url(topology_path)
 
     manifest_path = _gen_yaml(topology_path, service_image, client_image)
 
@@ -46,16 +45,41 @@ def run(topology_path: str, environment: config.Environment,
     if environment == config.Environment.NONE:
         environment_setup = _no_op
     else:
-        environment_setup = lambda: istio.latest(hub, tag, should_build_istio)
+        entrypoint_name = entrypoint.extract_name(topology_path)
+        environment_setup = lambda: \
+            istio.latest(entrypoint_name, hub, tag, should_build_istio)
 
     with environment_setup():
         env_name = environment.name.lower()
+
+        if environment == config.Environment.NONE:
+            target_url = entrypoint.extract_url(topology_path)
+        else:
+            target_url = _get_istio_gateway_url()
+
         logging.info('starting test with environment "%s"', env_name)
         result_output_path = '{}_{}.json'.format(topology_name, env_name)
 
-        _test_service_graph(manifest_path, result_output_path, entrypoint_url,
+        _test_service_graph(manifest_path, result_output_path, target_url,
                             test_qps, test_duration,
                             test_num_concurrent_connections)
+
+
+def _get_istio_gateway_url() -> str:
+    ip = None
+    while ip is None:
+        output = sh.run_kubectl(
+            [
+                '--namespace', consts.ISTIO_NAMESPACE, 'get', 'service',
+                'istio-ingressgateway', '-o',
+                'jsonpath={.status.loadBalancer.ingress[0].ip}'
+            ],
+            check=True).stdout
+        if output == '':
+            time.sleep(wait.RETRY_INTERVAL.seconds)
+        else:
+            ip = output
+    return 'http://{}:{}'.format(ip, consts.ISTIO_INGRESS_GATEWAY_PORT)
 
 
 @contextlib.contextmanager

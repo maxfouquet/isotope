@@ -19,6 +19,8 @@ PROMETHEUS_VALUES_GEN_YAML_PATH = os.path.join(_RESOURCES_DIR,
                                                'values-prometheus.gen.yaml')
 SERVICE_GRAPH_GEN_YAML_PATH = os.path.join(_RESOURCES_DIR,
                                            'service-graph.gen.yaml')
+ISTIO_INGRESS_YAML_PATH = os.path.join(_RESOURCES_DIR,
+                                       'istio-ingress.gen.yaml')
 
 
 @contextlib.contextmanager

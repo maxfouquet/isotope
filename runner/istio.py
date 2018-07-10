@@ -2,25 +2,26 @@ import contextlib
 import logging
 import os
 import tempfile
-from typing import Generator
+from typing import Any, Dict, Generator
 
 import yaml
 
-from . import consts, context, dicts, sh, wait
+from . import consts, context, dicts, resources, sh, wait
 
 _HELM_ISTIO_NAME = 'istio'
 
 
 @contextlib.contextmanager
-def latest(hub: str, tag: str,
+def latest(entrypoint_service_name: str, hub: str, tag: str,
            should_build: bool) -> Generator[None, None, None]:
-    _install_latest(hub, tag, should_build)
+    _install_latest(entrypoint_service_name, hub, tag, should_build)
     with context.confirm_clean_up_on_exception():
         yield
     _clean_up()
 
 
-def _install_latest(hub: str, tag: str, should_build: bool) -> None:
+def _install_latest(entrypoint_service_name: str, hub: str, tag: str,
+                    should_build: bool) -> None:
     """Installs Istio from master, using hub:tag for the images.
 
     Requires Helm to be present.
@@ -42,6 +43,8 @@ def _install_latest(hub: str, tag: str, should_build: bool) -> None:
         logging.info('installing Helm chart for Istio')
         _install_helm_chart(chart_path, values_path, _HELM_ISTIO_NAME,
                             consts.ISTIO_NAMESPACE)
+
+        _create_ingress_rules(entrypoint_service_name)
 
 
 def _clone(path: str) -> None:
@@ -94,6 +97,78 @@ def _work_dir(path: str) -> Generator[None, None, None]:
     os.chdir(path)
     yield
     os.chdir(prev_path)
+
+
+def _create_ingress_rules(entrypoint_service_name: str) -> None:
+    logging.info('creating istio ingress rules')
+    ingress_yaml = _get_ingress_yaml(entrypoint_service_name)
+    path = resources.ISTIO_INGRESS_YAML_PATH
+    with open(path, 'w') as f:
+        f.write(ingress_yaml)
+    sh.run_kubectl(['create', '-f', path])
+
+
+def _get_ingress_yaml(entrypoint_service_name: str) -> str:
+    gateway = _get_gateway_dict()
+    virtual_service = _get_virtual_service_dict(entrypoint_service_name)
+    return yaml.dump_all([gateway, virtual_service], default_flow_style=False)
+
+
+def _get_gateway_dict() -> Dict[str, Any]:
+    return {
+        'apiVersion': 'networking.istio.io/v1alpha3',
+        'kind': 'Gateway',
+        'metadata': {
+            'name': 'entrypoint-gateway',
+        },
+        'spec': {
+            'selector': {
+                'istio': 'ingressgateway',
+            },
+            'servers': [{
+                'hosts': ['*'],
+                'port': {
+                    'name': 'http',
+                    'number': consts.ISTIO_INGRESS_GATEWAY_PORT,
+                    'protocol': 'HTTP',
+                },
+            }],
+        },
+    }
+
+
+def _get_virtual_service_dict(entrypoint_service_name: str) -> Dict[str, Any]:
+    return {
+        'apiVersion': 'networking.istio.io/v1alpha3',
+        'kind': 'VirtualService',
+        'metadata': {
+            'name': 'entrypoint',
+        },
+        'spec': {
+            'hosts': ['*'],
+            'gateways': ['entrypoint-gateway'],
+            'http': [{
+                'match': [{
+                    'uri': {
+                        'prefix': '/',
+                    },
+                # TODO: is /metrics needed?
+                # }, {
+                #     'uri': {
+                #         'prefix': '/metrics',
+                #     },
+                }],
+                'route': [{
+                    'destination': {
+                        'port': {
+                            'number': consts.SERVICE_PORT,
+                        },
+                        'host': entrypoint_service_name,
+                    },
+                }],
+            }],
+        },
+    }
 
 
 def _clean_up() -> None:
