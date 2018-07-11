@@ -208,15 +208,6 @@ def _http_get_json(url: str) -> str:
     return response.text
 
 
-def _write_job_logs(path: str, job_name: str) -> None:
-    logging.info('retrieving logs for %s', job_name)
-    # TODO: get logs for each pod in job
-    # TODO: get logs for the successful pod in job
-    proc = sh.run_kubectl(['logs', 'job/{}'.format(job_name)], check=True)
-    logs = proc.stdout
-    _write_to_file(path, logs)
-
-
 def _write_to_file(path: str, contents: str) -> None:
     logging.debug('writing contents to %s', path)
     with open(path, 'w') as f:
