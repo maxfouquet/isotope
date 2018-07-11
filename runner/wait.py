@@ -55,7 +55,7 @@ def until_deployments_are_ready(
 def until_stateful_sets_are_ready(
         namespace: str = consts.DEFAULT_NAMESPACE) -> None:
     """Blocks until namespace's statefulsets' rollout statuses are complete."""
-    _until_rollouts_complete('statefulsets', namespace)
+    _until_rollouts_complete('statefulset', namespace)
 
 
 def until_prometheus_has_scraped() -> None:
