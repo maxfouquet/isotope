@@ -29,8 +29,9 @@ def main() -> None:
                                               entrypoint_service_name, config)
             pipeline.run(
                 topology_path, mesh_environment, config.should_tear_down,
-                config.server_image, config.client_image, config.istio_hub,
-                config.istio_tag, config.should_build_istio, config.client_qps,
+                config.should_tear_down_on_error, config.server_image,
+                config.client_image, config.istio_hub, config.istio_tag,
+                config.should_build_istio, config.client_qps,
                 config.client_duration, config.client_num_conc_conns,
                 config.labels())
 

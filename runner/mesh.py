@@ -17,9 +17,16 @@ class Environment:
 
     @contextlib.contextmanager
     def context(self,
-                should_tear_down: bool = True) -> Generator[str, None, None]:
-        self.set_up()
-        yield self.get_ingress_url()
+                should_tear_down: bool = True,
+                should_tear_down_on_error: bool = True
+                ) -> Generator[str, None, None]:
+        try:
+            self.set_up()
+            yield self.get_ingress_url()
+        except Exception as e:
+            if should_tear_down_on_error:
+                self.tear_down()
+            raise e
         if should_tear_down:
             self.tear_down()
 

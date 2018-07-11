@@ -24,11 +24,19 @@ ISTIO_INGRESS_YAML_PATH = os.path.join(_RESOURCES_DIR,
 
 
 @contextlib.contextmanager
-def manifest(path: str,
-             should_tear_down: bool = True) -> Generator[None, None, None]:
+def manifest(
+        path: str,
+        should_tear_down: bool = True,
+        should_tear_down_on_error: bool = True) -> Generator[None, None, None]:
     """Runs `kubectl create -f path` on entry and opposing delete on exit."""
-    _create_from_manifest(path)
-    yield
+    try:
+        _create_from_manifest(path)
+        yield
+    except Exception as e:
+        logging.error('%s', e)
+        if should_tear_down_on_error:
+            _delete_from_manifest(path)
+        raise e
     if should_tear_down:
         _delete_from_manifest(path)
 

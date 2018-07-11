@@ -8,6 +8,7 @@ environments = [
 ]
 
 tear_down = true
+tear_down_on_error = true
 
 [cluster]
 # Cluster will be created with one n1-standard-1 node in the default node-pool
