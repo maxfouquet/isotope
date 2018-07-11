@@ -1,31 +1,20 @@
-import enum
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import toml
 
 
-class Environment(enum.Enum):
-    """Enumerates the possible environments for a service graph."""
-
-    # No pre-existing environment for the service graph.
-    NONE = 0
-
-    # All default Istio components, including sidecars.
-    ISTIO = 1
-
-
 class RunnerConfig:
     """Represents the intermediary between a config file"""
 
-    def __init__(self, topology_paths: List[str],
-                 environments: List[Environment], istio_hub: str,
-                 istio_tag: str, istio_build: bool, cluster_name: str,
-                 cluster_zone: str, cluster_version: str, cluster_create: bool,
-                 server_machine_type: str, server_disk_size_gb: int,
-                 server_num_nodes: int, server_image: str,
-                 client_machine_type: str, client_disk_size_gb: int,
-                 client_image: str, client_qps: Optional[int],
-                 client_duration: str, client_num_conc_conns: int) -> None:
+    def __init__(self, topology_paths: List[str], environments: List[str],
+                 istio_hub: str, istio_tag: str, istio_build: bool,
+                 cluster_name: str, cluster_zone: str, cluster_version: str,
+                 cluster_create: bool, server_machine_type: str,
+                 server_disk_size_gb: int, server_num_nodes: int,
+                 server_image: str, client_machine_type: str,
+                 client_disk_size_gb: int, client_image: str,
+                 client_qps: Optional[int], client_duration: str,
+                 client_num_conc_conns: int) -> None:
         self.topology_paths = topology_paths
         self.environments = environments
         self.istio_hub = istio_hub
@@ -69,8 +58,7 @@ class RunnerConfig:
 
 def from_dict(d: Dict[str, Any]) -> RunnerConfig:
     topology_paths = d.get('topology_paths', [])
-    environment_strs = d.get('environments', [])
-    environments = [Environment[s] for s in environment_strs]
+    environments = d.get('environments', [])
 
     istio = d['istio']
     istio_hub = istio['hub']

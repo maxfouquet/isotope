@@ -2,25 +2,17 @@ import contextlib
 import logging
 import os
 import tempfile
+import time
 from typing import Any, Dict, Generator
 
 import yaml
 
-from . import consts, context, dicts, resources, sh, wait
+from . import consts, dicts, resources, sh, wait
 
 _HELM_ISTIO_NAME = 'istio'
 
 
-@contextlib.contextmanager
-def latest(entrypoint_service_name: str, hub: str, tag: str,
-           should_build: bool) -> Generator[None, None, None]:
-    _install_latest(entrypoint_service_name, hub, tag, should_build)
-    with context.confirm_clean_up_on_exception():
-        yield
-    _clean_up()
-
-
-def _install_latest(entrypoint_service_name: str, hub: str, tag: str,
+def set_up(entrypoint_service_name: str, hub: str, tag: str,
                     should_build: bool) -> None:
     """Installs Istio from master, using hub:tag for the images.
 
@@ -45,6 +37,22 @@ def _install_latest(entrypoint_service_name: str, hub: str, tag: str,
                             consts.ISTIO_NAMESPACE)
 
         _create_ingress_rules(entrypoint_service_name)
+
+def get_ingress_gateway_url() -> str:
+    ip = None
+    while ip is None:
+        output = sh.run_kubectl(
+            [
+                '--namespace', consts.ISTIO_NAMESPACE, 'get', 'service',
+                'istio-ingressgateway', '-o',
+                'jsonpath={.status.loadBalancer.ingress[0].ip}'
+            ],
+            check=True).stdout
+        if output == '':
+            time.sleep(wait.RETRY_INTERVAL.seconds)
+        else:
+            ip = output
+    return 'http://{}:{}'.format(ip, consts.ISTIO_INGRESS_GATEWAY_PORT)
 
 
 def _clone(path: str) -> None:
@@ -179,7 +187,7 @@ def _get_virtual_service_dict(entrypoint_service_name: str) -> Dict[str, Any]:
     }
 
 
-def _clean_up() -> None:
+def tear_down() -> None:
     """Deletes the Istio Helm chart and any leftover resources."""
     sh.run_helm(['delete', '--purge', _HELM_ISTIO_NAME])
     # TODO: Why doesn't `helm delete --purge istio` do this?

@@ -3,7 +3,7 @@ import logging
 import os
 from typing import Generator, Optional, Type
 
-from .. import consts, context, sh, wait
+from .. import consts, sh, wait
 
 _RESOURCES_DIR = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))

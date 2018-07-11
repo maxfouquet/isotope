@@ -6,7 +6,7 @@ from typing import Dict, Generator, Optional, Tuple
 
 import requests
 
-from . import cluster, config, consts, dicts, entrypoint, istio, md5, \
+from . import cluster, consts, dicts, entrypoint, istio, md5, mesh, \
               prometheus, resources, sh, wait
 
 _REPO_ROOT = os.path.join(os.getcwd(),
@@ -14,16 +14,16 @@ _REPO_ROOT = os.path.join(os.getcwd(),
 _MAIN_GO_PATH = os.path.join(_REPO_ROOT, 'convert', 'main.go')
 
 
-def run(topology_path: str, environment: config.Environment,
-        service_image: str, client_image: str, hub: str, tag: str,
-        should_build_istio: bool, test_qps: Optional[int], test_duration: str,
+def run(topology_path: str, env: mesh.Environment, service_image: str,
+        client_image: str, hub: str, tag: str, should_build_istio: bool,
+        test_qps: Optional[int], test_duration: str,
         test_num_concurrent_connections: int,
         static_labels: Dict[str, str]) -> None:
     """Runs a load test on the topology in topology_path with the environment.
 
     Args:
         topology_path: the path to the file containing the topology
-        environment: the pre-existing setup for the topology (i.e. Istio)
+        env: the pre-existing mesh environment for the topology (i.e. Istio)
         service_image: the Docker image to represent each node in the topology
         client_image: the Docker image which can run a load test (i.e. Fortio)
         hub: the Docker hub for Istio images
@@ -39,58 +39,22 @@ def run(topology_path: str, environment: config.Environment,
     manifest_path = _gen_yaml(topology_path, service_image, client_image)
 
     topology_name = _get_basename_no_ext(topology_path)
-    _update_prometheus_configuration(topology_path, environment, topology_name,
+    _update_prometheus_configuration(topology_path, env.name, topology_name,
                                      static_labels)
 
-    if environment == config.Environment.NONE:
-        environment_setup = _no_op
-    else:
-        entrypoint_name = entrypoint.extract_name(topology_path)
-        environment_setup = lambda: \
-            istio.latest(entrypoint_name, hub, tag, should_build_istio)
+    with env.context() as ingress_url:
+        logging.info('starting test with environment "%s"', env.name)
+        result_output_path = '{}_{}.json'.format(topology_name, env.name)
 
-    with environment_setup():
-        env_name = environment.name.lower()
-
-        if environment == config.Environment.NONE:
-            target_url = entrypoint.extract_url(topology_path)
-        else:
-            target_url = _get_istio_gateway_url()
-
-        logging.info('starting test with environment "%s"', env_name)
-        result_output_path = '{}_{}.json'.format(topology_name, env_name)
-
-        _test_service_graph(manifest_path, result_output_path, target_url,
+        _test_service_graph(manifest_path, result_output_path, ingress_url,
                             test_qps, test_duration,
                             test_num_concurrent_connections)
 
 
-def _get_istio_gateway_url() -> str:
-    ip = None
-    while ip is None:
-        output = sh.run_kubectl(
-            [
-                '--namespace', consts.ISTIO_NAMESPACE, 'get', 'service',
-                'istio-ingressgateway', '-o',
-                'jsonpath={.status.loadBalancer.ingress[0].ip}'
-            ],
-            check=True).stdout
-        if output == '':
-            time.sleep(wait.RETRY_INTERVAL.seconds)
-        else:
-            ip = output
-    return 'http://{}:{}'.format(ip, consts.ISTIO_INGRESS_GATEWAY_PORT)
-
-
-@contextlib.contextmanager
-def _no_op() -> Generator[None, None, None]:
-    yield
-
-
-def _update_prometheus_configuration(
-        topology_path: str, environment: config.Environment,
-        topology_name: str, static_labels: Dict[str, str]) -> None:
-    _write_prometheus_values_for_topology(topology_path, environment,
+def _update_prometheus_configuration(topology_path: str, env_name: str,
+                                     topology_name: str,
+                                     static_labels: Dict[str, str]) -> None:
+    _write_prometheus_values_for_topology(topology_path, env_name,
                                           topology_name, static_labels)
 
     logging.info('updating Prometheus configuration')
@@ -102,12 +66,11 @@ def _update_prometheus_configuration(
         check=True)
 
 
-def _write_prometheus_values_for_topology(
-        path: str, environment: config.Environment, name: str,
-        labels: Dict[str, str]) -> None:
+def _write_prometheus_values_for_topology(path: str, env_name: str, name: str,
+                                          labels: Dict[str, str]) -> None:
     labels = dicts.combine(
         labels, {
-            'environment': environment.name,
+            'environment': env_name,
             'topology_name': name,
             'topology_hash': md5.hex(path),
         })
