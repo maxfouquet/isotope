@@ -171,25 +171,15 @@ def _get_virtual_service_dict(
             'hosts': ['*'],
             'gateways': ['entrypoint-gateway'],
             'http': [{
-                'match': [{
-                    'uri': {
-                        'prefix': '/',
-                    },
-                # TODO: is /metrics needed?
-                # }, {
-                #     'uri': {
-                #         'prefix': '/metrics',
-                #     },
-                }],
                 'route': [{
                     'destination': {
-                        'port': {
-                            'number': consts.SERVICE_PORT,
-                        },
                         'host':
                         '{}.{}.svc.cluster.local'.format(
                             entrypoint_service_name,
                             entrypoint_service_namespace),
+                        'port': {
+                            'number': consts.SERVICE_PORT,
+                        },
                     },
                 }],
             }],
