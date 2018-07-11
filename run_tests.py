@@ -3,7 +3,8 @@
 import argparse
 import logging
 
-from runner import cluster, config as cfg, entrypoint, mesh, resources, pipeline
+from runner import cluster, config as cfg, consts, entrypoint, mesh, \
+                   resources, pipeline
 
 CLUSTER_NAME = 'isotope-cluster'
 
@@ -25,8 +26,9 @@ def main() -> None:
     for topology_path in config.topology_paths:
         for env_name in config.environments:
             entrypoint_service_name = entrypoint.extract_name(topology_path)
-            mesh_environment = mesh.for_state(env_name,
-                                              entrypoint_service_name, config)
+            mesh_environment = mesh.for_state(
+                env_name, entrypoint_service_name,
+                consts.SERVICE_GRAPH_NAMESPACE, config)
             pipeline.run(
                 topology_path, mesh_environment, config.should_tear_down,
                 config.should_tear_down_on_error, config.server_image,

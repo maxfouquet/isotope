@@ -45,10 +45,11 @@ def none(entrypoint_service_name: str, entrypoint_service_port: int,
         get_ingress_url=get_ingress_url)
 
 
-def istio(entrypoint_service_name: str, hub: str, tag: str,
-          should_build: bool) -> Environment:
+def istio(entrypoint_service_name: str, entrypoint_service_namespace: str,
+          hub: str, tag: str, should_build: bool) -> Environment:
     def set_up() -> None:
-        istio_lib.set_up(entrypoint_service_name, hub, tag, should_build)
+        istio_lib.set_up(entrypoint_service_name, entrypoint_service_namespace,
+                         hub, tag, should_build)
 
     return Environment(
         name='istio',
@@ -58,6 +59,7 @@ def istio(entrypoint_service_name: str, hub: str, tag: str,
 
 
 def for_state(name: str, entrypoint_service_name: str,
+              entrypoint_service_namespace: str,
               config: config.RunnerConfig) -> Environment:
     if name == 'NONE':
         env = none(entrypoint_service_name, consts.SERVICE_PORT,
@@ -65,6 +67,7 @@ def for_state(name: str, entrypoint_service_name: str,
     elif name == 'ISTIO':
         env = istio(
             entrypoint_service_name,
+            entrypoint_service_namespace,
             config.istio_hub,
             config.istio_tag,
             should_build=config.should_build_istio)

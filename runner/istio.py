@@ -12,8 +12,8 @@ from . import consts, dicts, resources, sh, wait
 _HELM_ISTIO_NAME = 'istio'
 
 
-def set_up(entrypoint_service_name: str, hub: str, tag: str,
-                    should_build: bool) -> None:
+def set_up(entrypoint_service_name: str, entrypoint_service_namespace: str,
+           hub: str, tag: str, should_build: bool) -> None:
     """Installs Istio from master, using hub:tag for the images.
 
     Requires Helm to be present.
@@ -36,7 +36,8 @@ def set_up(entrypoint_service_name: str, hub: str, tag: str,
         _install_helm_chart(chart_path, values_path, _HELM_ISTIO_NAME,
                             consts.ISTIO_NAMESPACE)
 
-        _create_ingress_rules(entrypoint_service_name)
+        _create_ingress_rules(entrypoint_service_name,
+                              entrypoint_service_namespace)
 
 def get_ingress_gateway_url() -> str:
     ip = None
@@ -115,18 +116,22 @@ def _work_dir(path: str) -> Generator[None, None, None]:
     os.chdir(prev_path)
 
 
-def _create_ingress_rules(entrypoint_service_name: str) -> None:
+def _create_ingress_rules(entrypoint_service_name: str,
+                          entrypoint_service_namespace: str) -> None:
     logging.info('creating istio ingress rules')
-    ingress_yaml = _get_ingress_yaml(entrypoint_service_name)
+    ingress_yaml = _get_ingress_yaml(entrypoint_service_name,
+                                     entrypoint_service_namespace)
     path = resources.ISTIO_INGRESS_YAML_PATH
     with open(path, 'w') as f:
         f.write(ingress_yaml)
     sh.run_kubectl(['create', '-f', path])
 
 
-def _get_ingress_yaml(entrypoint_service_name: str) -> str:
+def _get_ingress_yaml(entrypoint_service_name: str,
+                      entrypoint_service_namespace: str) -> str:
     gateway = _get_gateway_dict()
-    virtual_service = _get_virtual_service_dict(entrypoint_service_name)
+    virtual_service = _get_virtual_service_dict(entrypoint_service_name,
+                                                entrypoint_service_namespace)
     return yaml.dump_all([gateway, virtual_service], default_flow_style=False)
 
 
@@ -153,7 +158,9 @@ def _get_gateway_dict() -> Dict[str, Any]:
     }
 
 
-def _get_virtual_service_dict(entrypoint_service_name: str) -> Dict[str, Any]:
+def _get_virtual_service_dict(
+        entrypoint_service_name: str,
+        entrypoint_service_namespace: str) -> Dict[str, Any]:
     return {
         'apiVersion': 'networking.istio.io/v1alpha3',
         'kind': 'VirtualService',
@@ -179,7 +186,10 @@ def _get_virtual_service_dict(entrypoint_service_name: str) -> Dict[str, Any]:
                         'port': {
                             'number': consts.SERVICE_PORT,
                         },
-                        'host': entrypoint_service_name,
+                        'host':
+                        '{}.{}.svc.cluster.local'.format(
+                            entrypoint_service_name,
+                            entrypoint_service_namespace),
                     },
                 }],
             }],
