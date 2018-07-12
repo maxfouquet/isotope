@@ -9,13 +9,13 @@ class RunnerConfig:
     def __init__(self, topology_paths: List[str], environments: List[str],
                  should_tear_down: bool, should_tear_down_on_error: bool,
                  istio_hub: str, istio_tag: str, istio_build: bool,
-                 cluster_name: str, cluster_zone: str, cluster_version: str,
-                 cluster_create: bool, server_machine_type: str,
-                 server_disk_size_gb: int, server_num_nodes: int,
-                 server_image: str, client_machine_type: str,
-                 client_disk_size_gb: int, client_image: str,
-                 client_qps: Optional[int], client_duration: str,
-                 client_num_conc_conns: int) -> None:
+                 cluster_project_id: str, cluster_name: str, cluster_zone: str,
+                 cluster_version: str, cluster_create: bool,
+                 server_machine_type: str, server_disk_size_gb: int,
+                 server_num_nodes: int, server_image: str,
+                 client_machine_type: str, client_disk_size_gb: int,
+                 client_image: str, client_qps: Optional[int],
+                 client_duration: str, client_num_conc_conns: int) -> None:
         self.topology_paths = topology_paths
         self.environments = environments
         self.should_tear_down = should_tear_down
@@ -23,6 +23,7 @@ class RunnerConfig:
         self.istio_hub = istio_hub
         self.istio_tag = istio_tag
         self.should_build_istio = istio_build
+        self.cluster_project_id = cluster_project_id
         self.cluster_name = cluster_name
         self.cluster_zone = cluster_zone
         self.cluster_version = cluster_version
@@ -72,6 +73,7 @@ def from_dict(d: Dict[str, Any]) -> RunnerConfig:
     istio_build = istio['build']
 
     cluster = d['cluster']
+    cluster_project_id = cluster['project_id']
     cluster_name = cluster['name']
     cluster_zone = cluster['zone']
     cluster_version = cluster['version']
@@ -104,6 +106,7 @@ def from_dict(d: Dict[str, Any]) -> RunnerConfig:
         istio_hub=istio_hub,
         istio_tag=istio_tag,
         istio_build=istio_build,
+        cluster_project_id=cluster_project_id,
         cluster_name=cluster_name,
         cluster_zone=cluster_zone,
         cluster_version=cluster_version,

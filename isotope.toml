@@ -11,6 +11,7 @@ tear_down = true
 tear_down_on_error = true
 
 [cluster]
+project_id = "istio-200620"
 # Cluster will be created with one n1-standard-1 node in the default node-pool
 # running Prometheus. In total, the cluster will have 1 Prometheus node, 1
 # client node, and N service-graph nodes (total of N + 2 nodes).

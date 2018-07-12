@@ -18,10 +18,11 @@ def main() -> None:
     config = cfg.from_toml_file(args.config_path)
 
     if config.should_create_cluster:
-        cluster.setup(config.cluster_name, config.cluster_zone,
-                      config.cluster_version, config.server_machine_type,
-                      config.server_disk_size_gb, config.server_num_nodes,
-                      config.client_machine_type, config.client_disk_size_gb)
+        cluster.setup(config.cluster_project_id, config.cluster_name,
+                      config.cluster_zone, config.cluster_version,
+                      config.server_machine_type, config.server_disk_size_gb,
+                      config.server_num_nodes, config.client_machine_type,
+                      config.client_disk_size_gb)
 
     for topology_path in config.topology_paths:
         for env_name in config.environments:
@@ -31,7 +32,8 @@ def main() -> None:
                 consts.SERVICE_GRAPH_NAMESPACE, config)
             pipeline.run(
                 topology_path, mesh_environment, config.should_tear_down,
-                config.should_tear_down_on_error, config.server_image,
+                config.should_tear_down_on_error, config.cluster_project_id,
+                config.cluster_name, config.cluster_zone, config.server_image,
                 config.client_image, config.istio_hub, config.istio_tag,
                 config.should_build_istio, config.client_qps,
                 config.client_duration, config.client_num_conc_conns,
