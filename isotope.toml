@@ -18,7 +18,8 @@ project_id = "istio-200620"
 create = false
 name = "isotope-cluster-1"
 zone = "us-central1-a"
-version = "1.9.7-gke.3"
+# Must be >=1.10.2 for Stackdriver support.
+version = "1.10.4-gke.2"
 
 [istio]
 build = false

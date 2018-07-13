@@ -15,9 +15,11 @@ _MAIN_GO_PATH = os.path.join(_REPO_ROOT, 'convert', 'main.go')
 
 
 def run(topology_path: str, env: mesh.Environment, should_tear_down: bool,
-        should_tear_down_on_error: bool, service_image: str, client_image: str,
-        hub: str, tag: str, should_build_istio: bool, test_qps: Optional[int],
-        test_duration: str, test_num_concurrent_connections: int,
+        should_tear_down_on_error: bool, cluster_project_id: str,
+        cluster_name: str, cluster_zone: str, service_image: str,
+        client_image: str, hub: str, tag: str, should_build_istio: bool,
+        test_qps: Optional[int], test_duration: str,
+        test_num_concurrent_connections: int,
         static_labels: Dict[str, str]) -> None:
     """Runs a load test on the topology in topology_path with the environment.
 
@@ -35,14 +37,19 @@ def run(topology_path: str, env: mesh.Environment, should_tear_down: bool,
         test_duration: the duration for the client to run
         test_num_concurrent_connections: the number of simultaneous connections
                 for the client to make
-        static_labels: labels to add to each Prometheus monitor
+        static_labels: labels to add to each Prometheus metric
     """
 
     manifest_path = _gen_yaml(topology_path, service_image, client_image)
 
     topology_name = _get_basename_no_ext(topology_path)
-    _update_prometheus_configuration(topology_path, env.name, topology_name,
-                                     static_labels)
+    labels = dicts.combine(
+        static_labels, {
+            'environment': env.name,
+            'topology_name': topology_name,
+            'topology_hash': md5.hex(topology_path),
+        })
+    prometheus.apply(cluster_project_id, cluster_name, cluster_zone, labels)
 
     with env.context(
             should_tear_down=should_tear_down,
@@ -55,38 +62,6 @@ def run(topology_path: str, env: mesh.Environment, should_tear_down: bool,
                             should_tear_down_on_error, result_output_path,
                             ingress_url, test_qps, test_duration,
                             test_num_concurrent_connections)
-
-
-def _update_prometheus_configuration(topology_path: str, env_name: str,
-                                     topology_name: str,
-                                     static_labels: Dict[str, str]) -> None:
-    _write_prometheus_values_for_topology(topology_path, env_name,
-                                          topology_name, static_labels)
-
-    logging.info('updating Prometheus configuration')
-    sh.run_helm(
-        [
-            'upgrade', 'prometheus', 'coreos/prometheus', '--values',
-            resources.PROMETHEUS_VALUES_GEN_YAML_PATH
-        ],
-        check=True)
-
-
-def _write_prometheus_values_for_topology(path: str, env_name: str, name: str,
-                                          labels: Dict[str, str]) -> None:
-    labels = dicts.combine(
-        labels, {
-            'environment': env_name,
-            'topology_name': name,
-            'topology_hash': md5.hex(path),
-        })
-    _write_prometheus_values(labels)
-
-
-def _write_prometheus_values(labels: Dict[str, str]) -> None:
-    values_yaml = prometheus.values_yaml(labels)
-    with open(resources.PROMETHEUS_VALUES_GEN_YAML_PATH, 'w') as f:
-        f.write(values_yaml)
 
 
 def _get_basename_no_ext(path: str) -> str:

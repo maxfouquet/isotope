@@ -1,71 +1,394 @@
 import logging
-import textwrap
-from typing import Dict, Iterable, Tuple
+from typing import Any, Dict, List
 
-import jinja2
+import requests
+import yaml
 
-TEMPLATE = jinja2.Template(
-    textwrap.dedent("""\
-        serviceMonitors:
-        - name: service-graph-monitor
-          selector:
-            matchLabels:
-              app: service-graph
-          namespaceSelector:
-            matchNames:
-            - service-graph
-          endpoints:
-          - targetPort: 8080
-            metricRelabelings:
-            {%- for key, value in labels.items() %}
-            - targetLabel: "{{ key }}"
-              replacement: "{{ value }}"
-            {%- endfor %}
-        - name: client-monitor
-          selector:
-            matchLabels:
-              app: client
-          namespaceSelector:
-            matchNames:
-            - default
-          endpoints:
-          - targetPort: 42422
-            metricRelabelings:
-            {%- for key, value in labels.items() %}
-            - targetLabel: "{{ key }}"
-              replacement: "{{ value }}"
-            {%- endfor %}
-        - name: istio-mixer-monitor
-          selector:
-            matchLabels:
-              istio: mixer
-          namespaceSelector:
-            matchNames:
-            - istio-system
-          endpoints:
-          - targetPort: 42422
-            metricRelabelings:
-            {%- for key, value in labels.items() %}
-            - targetLabel: "{{ key }}"
-              replacement: "{{ value }}"
-            {%- endfor %}
-        storageSpec:
-          volumeClaimTemplate:
-            spec:
-              # It's necessary to specify "" as the storageClassName
-              # so that the default storage class won't be used, see
-              # https://kubernetes.io/docs/concepts/storage/persistent-volumes/#class-1
-              storageClassName: ""
-              volumeName: prometheus-persistent-volume
-              accessModes:
-              - ReadWriteOnce
-              resources:
-                requests:
-                  storage: 10G
-    """))
+from . import dicts, md5, resources, sh, wait
+
+_STACK_DRIVER_PROMETHEUS_IMAGE = (
+    'gcr.io/stackdriver-prometheus/stackdriver-prometheus:release-0.4.2')
 
 
-def values_yaml(labels: Dict[str, str]) -> str:
-    """Returns Prometheus Helm values with relabellings to include labels."""
-    logging.info('generating Prometheus configuration')
-    return TEMPLATE.render(labels=labels)
+def apply(cluster_project_id: str,
+          cluster_name: str,
+          cluster_zone: str,
+          labels: Dict[str, str] = {},
+          should_reload_config: bool = True) -> None:
+    logging.info('applying Prometheus instance')
+
+    _write_yaml(cluster_project_id, cluster_name, cluster_zone, labels)
+
+    sh.run_kubectl(
+        [
+            'apply',
+            '-f',
+            resources.STACKDRIVER_PROMETHEUS_GEN_YAML_PATH,
+        ],
+        check=True)
+
+    wait.until_deployments_are_ready('stackdriver')
+    _reload_config()
+
+
+def _reload_config() -> None:
+    with sh.background([
+            'kubectl', '-n', 'stackdriver', 'port-forward',
+            'deployment/prometheus', '9090'
+    ]):
+        requests.post('http://localhost:9090/-/reload')
+
+
+def _write_yaml(cluster_project_id: str,
+                cluster_name: str,
+                cluster_zone: str,
+                labels: Dict[str, str] = {}) -> None:
+    yaml_str = _get_yaml(cluster_project_id, cluster_name, cluster_zone,
+                         labels)
+    with open(resources.STACKDRIVER_PROMETHEUS_GEN_YAML_PATH, 'w') as f:
+        f.write(yaml_str)
+
+
+def _get_yaml(cluster_project_id: str,
+              cluster_name: str,
+              cluster_zone: str,
+              labels: Dict[str, str] = {}) -> str:
+    """Returns the Kubernetes YAML manifests for stackdriver-prometheus."""
+    resource_dicts = _get_resource_dicts(cluster_project_id, cluster_name,
+                                         cluster_zone, labels)
+    return yaml.dump_all(resource_dicts, default_flow_style=False)
+
+
+def _get_resource_dicts(cluster_project_id: str, cluster_name: str,
+                        cluster_zone: str,
+                        labels: Dict[str, str]) -> List[Dict[str, Any]]:
+    namespace_dict = {
+        'apiVersion': 'v1',
+        'kind': 'Namespace',
+        'metadata': {
+            'name': 'stackdriver',
+        },
+    }
+    cluster_role_dict = {
+        'apiVersion':
+        'rbac.authorization.k8s.io/v1beta1',
+        'kind':
+        'ClusterRole',
+        'metadata': {
+            'name': 'prometheus',
+        },
+        'rules': [
+            {
+                'apiGroups': [''],
+                'resources': [
+                    'nodes',
+                    'nodes/proxy',
+                    'services',
+                    'endpoints',
+                    'pods',
+                ],
+                'verbs': ['get', 'list', 'watch'],
+            },
+            {
+                'apiGroups': ['extensions'],
+                'resources': ['ingresses'],
+                'verbs': ['get', 'list', 'watch'],
+            },
+            {
+                'nonResourceURLs': ['/metrics'],
+                'verbs': ['get'],
+            },
+        ],
+    }
+    service_account_dict = {
+        'apiVersion': 'v1',
+        'kind': 'ServiceAccount',
+        'metadata': {
+            'name': 'prometheus',
+            'namespace': 'stackdriver',
+        },
+    }
+    cluster_role_binding_dict = {
+        'apiVersion':
+        'rbac.authorization.k8s.io/v1beta1',
+        'kind':
+        'ClusterRoleBinding',
+        'metadata': {
+            'name': 'prometheus-stackdriver',
+        },
+        'roleRef': {
+            'apiGroup': 'rbac.authorization.k8s.io',
+            'kind': 'ClusterRole',
+            'name': 'prometheus',
+        },
+        'subjects': [{
+            'kind': 'ServiceAccount',
+            'name': 'prometheus',
+            'namespace': 'stackdriver',
+        }],
+    }
+    service_dict = {
+        'apiVersion': 'v1',
+        'kind': 'Service',
+        'metadata': {
+            'labels': {
+                'name': 'prometheus',
+            },
+            'name': 'prometheus',
+            'namespace': 'stackdriver',
+        },
+        'spec': {
+            'ports': [{
+                'name': 'prometheus',
+                'port': 9090,
+                'protocol': 'TCP',
+            }],
+            'selector': {
+                'app': 'prometheus',
+            },
+            'type': 'ClusterIP',
+        },
+    }
+    deployment_dict = {
+        'apiVersion': 'apps/v1',
+        'kind': 'Deployment',
+        'metadata': {
+            'name': 'prometheus',
+            'namespace': 'stackdriver',
+        },
+        'spec': {
+            'replicas': 1,
+            'selector': {
+                'matchLabels': {
+                    'app': 'prometheus',
+                },
+            },
+            'template': {
+                'metadata': {
+                    'annotations': {
+                        'prometheus.io/scrape': 'true',
+                    },
+                    'labels': {
+                        'app': 'prometheus',
+                    },
+                    'name': 'prometheus',
+                    'namespace': 'stackdriver',
+                },
+                'spec': {
+                    'containers': [{
+                        'name':
+                        'prometheus',
+                        'image':
+                        _STACK_DRIVER_PROMETHEUS_IMAGE,
+                        'imagePullPolicy':
+                        'Always',
+                        'args': [
+                            # Uncomment for verbose logging.
+                            # '--log.level=debug',
+                            # Needed for reloading Prometheus configuration
+                            # between tests.
+                            '--web.enable-lifecycle',
+                            '--config.file=/etc/prometheus/prometheus.yaml',
+                        ],
+                        'ports': [{
+                            'containerPort': 9090,
+                            'name': 'web',
+                        }],
+                        'resources': {
+                            'limits': {
+                                'cpu': '40m',
+                                'memory': '100Mi',
+                            },
+                            'requests': {
+                                'cpu': '20m',
+                                'memory': '50Mi',
+                            },
+                        },
+                        'volumeMounts': [{
+                            'mountPath': '/etc/prometheus',
+                            'name': 'config-volume',
+                        }],
+                    }],
+                    'serviceAccountName':
+                    'prometheus',
+                    'volumes': [{
+                        'configMap': {
+                            'name': 'prometheus',
+                        },
+                        'name': 'config-volume',
+                    }],
+                },
+            },
+        },
+    }
+    config_map_dict = _get_config_map(cluster_project_id, cluster_name,
+                                      cluster_zone, labels)
+    return [
+        namespace_dict,
+        cluster_role_dict,
+        service_account_dict,
+        cluster_role_binding_dict,
+        service_dict,
+        deployment_dict,
+        config_map_dict,
+    ]
+
+
+def _get_config_map(cluster_project_id: str, cluster_name: str,
+                    cluster_zone: str,
+                    labels: Dict[str, str]) -> Dict[str, Any]:
+    """Returns a Kubernetes ConfigMap for stackdriver-prometheus.
+
+    `labels` is appended to all data ingested into stackdriver.
+
+    Other configuration is copied from
+    https://cloud.google.com/monitoring/kubernetes-engine/prometheus.
+    """
+    config = {
+        'global': {
+            'external_labels': {
+                '_stackdriver_project_id': cluster_project_id,
+                '_kubernetes_cluster_name': cluster_name,
+                '_kubernetes_location': cluster_zone,
+                **labels,
+            },
+        },
+        'scrape_configs': [{
+            'job_name':
+            'kubernetes-nodes',
+            'kubernetes_sd_configs': [{
+                'role': 'node',
+        }],
+            'scheme':
+            'https',
+            'relabel_configs': [{
+                'replacement': 'kubernetes.default.svc:443',
+                'target_label': '__address__',
+            }, {
+                'replacement':
+                '/api/v1/nodes/${1}/proxy/metrics',
+                'source_labels': ['__meta_kubernetes_node_name'],
+                'regex':
+                '(.+)',
+                'target_label':
+                '__metrics_path__',
+                }],
+            'bearer_token_file':
+            '/var/run/secrets/kubernetes.io/serviceaccount/token',
+            'tls_config': {
+                'ca_file':
+                '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
+            },
+        }, {
+            'job_name':
+            'kubernetes-pods-containers',
+            'kubernetes_sd_configs': [{
+                'role': 'pod',
+            }],
+                'relabel_configs': [{
+                    'source_labels':
+                    ['__meta_kubernetes_pod_annotation_prometheus_io_scrape'],
+                    'regex':
+                    True,
+                    'action':
+                    'keep',
+                }, {
+                    'source_labels':
+                    ['__meta_kubernetes_pod_annotation_prometheus_io_path'],
+                    'regex':
+                    '(.+)',
+                    'target_label':
+                    '__metrics_path__',
+                'action':
+                'replace',
+                }, {
+                'replacement':
+                '$1:$2',
+                    'source_labels': [
+                        '__address__',
+                        '__meta_kubernetes_pod_annotation_prometheus_io_port'
+                    ],
+                    'regex':
+                    '([^:]+)(?::\\d+)?;(\\d+)',
+                    'target_label':
+                    '__address__',
+                'action':
+                'replace',
+            }],
+        }, {
+            'job_name':
+            'kubernetes-service-endpoints',
+                'kubernetes_sd_configs': [{
+                'role': 'endpoints',
+                }],
+                'relabel_configs': [{
+                'source_labels':
+                ['__meta_kubernetes_service_annotation_prometheus_io_scrape'],
+                    'regex':
+                    True,
+                    'action':
+                    'keep',
+                }, {
+                'source_labels':
+                ['__meta_kubernetes_service_annotation_prometheus_io_scheme'],
+                'regex':
+                '(https?)',
+                    'target_label':
+                    '__scheme__',
+                    'action':
+                    'replace',
+                }, {
+                'source_labels':
+                ['__meta_kubernetes_service_annotation_prometheus_io_path'],
+                'regex':
+                '(.+)',
+                    'target_label':
+                    '__metrics_path__',
+                    'action':
+                    'replace',
+                }, {
+                    'replacement':
+                    '$1:$2',
+                    'source_labels': [
+                        '__address__',
+                        '__meta_kubernetes_service_annotation_prometheus_io_port',
+                    ],
+                'regex':
+                '([^:]+)(?::\\d+)?;(\\d+)',
+                'target_label':
+                '__address__',
+                    'action':
+                    'replace',
+                }],
+        }],
+        'remote_write': [{
+            'queue_config': {
+                'capacity': 400,
+                'max_samples_per_send': 200,
+                'max_shards': 10000,
+            },
+            'url':
+            'https://monitoring.googleapis.com:443/',
+            'write_relabel_configs': [{
+                'replacement': '',
+                'source_labels': ['job'],
+                'target_label': 'job',
+            }, {
+                'replacement': '',
+                'source_labels': ['instance'],
+                'target_label': 'instance',
+            }],
+        }],
+    }
+    config_yaml = yaml.dump(config, default_flow_style=False)
+    return {
+        'apiVersion': 'v1',
+        'kind': 'ConfigMap',
+        'metadata': {
+            'name': 'prometheus',
+            'namespace': 'stackdriver',
+        },
+        'data': {
+            'prometheus.yaml': config_yaml,
+        },
+    }

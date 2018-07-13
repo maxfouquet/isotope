@@ -10,13 +10,9 @@ _RESOURCES_DIR = os.path.realpath(
 
 HELM_SERVICE_ACCOUNT_YAML_PATH = os.path.join(_RESOURCES_DIR,
                                               'helm-service-account.yaml')
-PROMETHEUS_STORAGE_VALUES_YAML_PATH = os.path.join(
-    _RESOURCES_DIR, 'values-prometheus-storage.yaml')
-PERSISTENT_VOLUME_YAML_PATH = os.path.join(_RESOURCES_DIR,
-                                           'persistent-volume.yaml')
 
-PROMETHEUS_VALUES_GEN_YAML_PATH = os.path.join(_RESOURCES_DIR,
-                                               'values-prometheus.gen.yaml')
+STACKDRIVER_PROMETHEUS_GEN_YAML_PATH = os.path.join(
+    _RESOURCES_DIR, 'stackdriver-prometheus.gen.yaml')
 SERVICE_GRAPH_GEN_YAML_PATH = os.path.join(_RESOURCES_DIR,
                                            'service-graph.gen.yaml')
 ISTIO_INGRESS_YAML_PATH = os.path.join(_RESOURCES_DIR,
