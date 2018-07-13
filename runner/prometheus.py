@@ -28,6 +28,9 @@ def apply(cluster_project_id: str,
         check=True)
 
     wait.until_deployments_are_ready(consts.STACKDRIVER_NAMESPACE)
+    # TODO: This is a hotfix to the reloader not responding for a short time
+    # after Prometheus is created.
+    if should_reload_config:
     _reload_config()
 
 
