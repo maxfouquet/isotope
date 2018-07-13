@@ -23,13 +23,14 @@ var hostname = os.Getenv("HOSTNAME")
 type Handler struct {
 	Service      svc.Service
 	ServiceTypes map[string]svctype.ServiceType
+	Metrics      prometheus.Metrics
 }
 
 func (h Handler) ServeHTTP(
 	writer http.ResponseWriter, request *http.Request) {
 	startTime := time.Now()
 
-	prometheus.RecordRequestReceived()
+	h.Metrics.RecordRequestReceived()
 
 	respond := func(status int, paths []string, isLocalErr bool) {
 		stampHeader(h.Service.Name, writer.Header(), paths, isLocalErr)
@@ -37,7 +38,7 @@ func (h Handler) ServeHTTP(
 		stopTime := time.Now()
 		duration := stopTime.Sub(startTime)
 		// TODO: Record size of response payload.
-		prometheus.RecordResponseSent(duration, 0, status)
+		h.Metrics.RecordResponseSent(duration, 0, status)
 
 		writer.WriteHeader(status)
 		err := request.Write(writer)
@@ -54,7 +55,7 @@ func (h Handler) ServeHTTP(
 	allPaths := make([]string, 0, len(h.Service.Script))
 	for _, step := range h.Service.Script {
 		forwardableHeader := extractForwardableHeader(request.Header)
-		paths, err := execute(step, forwardableHeader, h.ServiceTypes)
+		paths, err := execute(step, forwardableHeader, h.ServiceTypes, h.Metrics)
 		allPaths = append(allPaths, paths...)
 		if err != nil {
 			log.Errf("%s", err)

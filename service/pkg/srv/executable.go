@@ -18,14 +18,17 @@ import (
 func execute(
 	step interface{},
 	forwardableHeader http.Header,
-	serviceTypes map[string]svctype.ServiceType) (paths []string, err error) {
+	serviceTypes map[string]svctype.ServiceType,
+	metrics prometheus.Metrics) (paths []string, err error) {
 	switch cmd := step.(type) {
 	case script.SleepCommand:
 		executeSleepCommand(cmd)
 	case script.RequestCommand:
-		paths, err = executeRequestCommand(cmd, forwardableHeader, serviceTypes)
+		paths, err = executeRequestCommand(
+			cmd, forwardableHeader, serviceTypes, metrics)
 	case script.ConcurrentCommand:
-		paths, err = executeConcurrentCommand(cmd, forwardableHeader, serviceTypes)
+		paths, err = executeConcurrentCommand(
+			cmd, forwardableHeader, serviceTypes, metrics)
 	default:
 		log.Fatalf("unknown command type in script: %T", cmd)
 	}
@@ -41,7 +44,8 @@ func executeSleepCommand(cmd script.SleepCommand) {
 func executeRequestCommand(
 	cmd script.RequestCommand,
 	forwardableHeader http.Header,
-	serviceTypes map[string]svctype.ServiceType) (paths []string, err error) {
+	serviceTypes map[string]svctype.ServiceType,
+	metrics prometheus.Metrics) (paths []string, err error) {
 	destName := cmd.ServiceName
 	destType, ok := serviceTypes[destName]
 	if !ok {
@@ -52,7 +56,7 @@ func executeRequestCommand(
 	if err != nil {
 		return
 	}
-	prometheus.RecordRequestSent(destName, uint64(cmd.Size))
+	metrics.RecordRequestSent(destName, uint64(cmd.Size))
 	paths = response.Header[pathTracesHeaderKey]
 	log.Debugf("%s responded with %s", destName, response.Status)
 	if response.StatusCode == http.StatusInternalServerError {
@@ -76,7 +80,8 @@ func readAllAndClose(r io.ReadCloser) {
 func executeConcurrentCommand(
 	cmd script.ConcurrentCommand,
 	forwardableHeader http.Header,
-	serviceTypes map[string]svctype.ServiceType) (paths []string, errs error) {
+	serviceTypes map[string]svctype.ServiceType,
+	metrics prometheus.Metrics) (paths []string, errs error) {
 	numSubCmds := len(cmd)
 	wg := sync.WaitGroup{}
 	wg.Add(numSubCmds)
@@ -86,7 +91,7 @@ func executeConcurrentCommand(
 			defer wg.Done()
 
 			// TODO: Differentiate between actual error and errorRate-caused error.
-			stepPaths, err := execute(step, forwardableHeader, serviceTypes)
+			stepPaths, err := execute(step, forwardableHeader, serviceTypes, metrics)
 			pathsChan <- stepPaths
 			if err != nil {
 				errs = multierror.Append(errs, err)
