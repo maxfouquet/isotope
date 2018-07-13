@@ -3,7 +3,7 @@ import datetime
 import logging
 import subprocess
 import time
-from typing import Callable
+from typing import Callable, List
 
 from . import consts, sh
 
@@ -15,6 +15,17 @@ def until(predicate: Callable[[], bool]) -> None:
     """Calls predicate every RETRY_INTERVAL until it returns True."""
     while not predicate():
         time.sleep(RETRY_INTERVAL.seconds)
+
+
+def until_output(args: List[str]) -> str:
+    output = None
+    while output is None:
+        stdout = sh.run(args).stdout
+        if stdout:
+            output = stdout
+        else:
+            time.sleep(RETRY_INTERVAL.seconds)
+    return output
 
 
 def _until_rollouts_complete(resource_type: str, namespace: str) -> None:

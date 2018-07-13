@@ -157,19 +157,12 @@ def _run_load_test(result_output_path: str, test_target_url: str,
 
 def _get_svc_ip(name: str) -> str:
     """Blocks until a public IP address for name is created, and returns it."""
-    ip = None
-    while ip is None:
-        output = sh.run_kubectl([
-            'get', 'service', name, '-o',
-            'jsonpath={.status.loadBalancer.ingress[0].ip}'
-        ]).stdout
-        if output:
-            ip = output
-        else:
-            logging.debug(
-                'waiting for service/%s to obtain an external IP address',
-                name)
-            time.sleep(wait.RETRY_INTERVAL.seconds)
+    logging.debug('waiting for service/%s to obtain an external IP address',
+                  name)
+    ip = wait.until_output([
+        'kubectl', 'get', 'service', name, '-o',
+        'jsonpath={.status.loadBalancer.ingress[0].ip}'
+    ])
     logging.debug('service/%s IP is %s', name, ip)
     return ip
 

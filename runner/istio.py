@@ -37,20 +37,13 @@ def set_up(entrypoint_service_name: str, entrypoint_service_namespace: str,
         _create_ingress_rules(entrypoint_service_name,
                               entrypoint_service_namespace)
 
+
 def get_ingress_gateway_url() -> str:
-    ip = None
-    while ip is None:
-        output = sh.run_kubectl(
-            [
-                '--namespace', consts.ISTIO_NAMESPACE, 'get', 'service',
-                'istio-ingressgateway', '-o',
-                'jsonpath={.status.loadBalancer.ingress[0].ip}'
-            ],
-            check=True).stdout
-        if output == '':
-            time.sleep(wait.RETRY_INTERVAL.seconds)
-        else:
-            ip = output
+    ip = wait.until_output([
+        'kubectl', '--namespace', consts.ISTIO_NAMESPACE, 'get', 'service',
+        'istio-ingressgateway', '-o',
+        'jsonpath={.status.loadBalancer.ingress[0].ip}'
+    ])
     return 'http://{}:{}'.format(ip, consts.ISTIO_INGRESS_GATEWAY_PORT)
 
 
