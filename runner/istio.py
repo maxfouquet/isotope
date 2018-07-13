@@ -9,17 +9,15 @@ import yaml
 
 from . import consts, resources, sh, wait
 
-_HELM_ISTIO_NAME = 'istio'
-
 
 def set_up(entrypoint_service_name: str, entrypoint_service_namespace: str,
            hub: str, tag: str, should_build: bool) -> None:
     """Installs Istio from master, using hub:tag for the images.
 
-    Requires Helm to be present.
+    Requires Helm client to be present.
 
     This clones the repo in a temporary directory, builds and pushes the
-    images, then runs `helm install`.
+    images, then creates the resources generated via `helm template`.
     """
     with tempfile.TemporaryDirectory() as tmp_go_path:
         repo_path = os.path.join(tmp_go_path, 'src', 'istio.io', 'istio')
@@ -33,8 +31,8 @@ def set_up(entrypoint_service_name: str, entrypoint_service_namespace: str,
         _gen_helm_values(values_path, hub, tag)
 
         logging.info('installing Helm chart for Istio')
-        _install_helm_chart(chart_path, values_path, _HELM_ISTIO_NAME,
-                            consts.ISTIO_NAMESPACE)
+        sh.run_kubectl(['create', 'namespace', consts.ISTIO_NAMESPACE])
+        _install(chart_path, values_path, consts.ISTIO_NAMESPACE)
 
         _create_ingress_rules(entrypoint_service_name,
                               entrypoint_service_namespace)
@@ -69,9 +67,9 @@ def _build_and_push_images(go_path: str, repo_path: str, hub: str,
     logging.info('pushing images to %s with tag %s', hub, tag)
     with _work_dir(repo_path):
         env = {
-                'GOPATH': go_path,
-                'HUB': hub,
-                'TAG': tag,
+            'GOPATH': go_path,
+            'HUB': hub,
+            'TAG': tag,
             **dict(os.environ),
         }
         sh.run(['make', 'docker.push'], env=env, check=True)
@@ -94,16 +92,18 @@ def _gen_helm_values(path: str, hub: str, tag: str) -> str:
             default_flow_style=False)
 
 
-def _install_helm_chart(chart_path: str,
-                        values_path: str,
-                        name: str,
-                        namespace: str = consts.DEFAULT_NAMESPACE) -> None:
-    sh.run_helm(
+def _install(chart_path: str,
+             values_path: str,
+             namespace: str = consts.DEFAULT_NAMESPACE) -> None:
+    istio_yaml = sh.run(
         [
-            'install', chart_path, '--values', values_path, '--name', name,
+            'helm', 'template', chart_path, '--values', values_path,
             '--namespace', namespace
         ],
-        check=True)
+        check=True).stdout
+    with open(resources.ISTIO_GEN_YAML_PATH, 'w') as f:
+        f.write(istio_yaml)
+    sh.run_kubectl(['create', '-f', resources.ISTIO_GEN_YAML_PATH], check=True)
 
 
 @contextlib.contextmanager
@@ -188,8 +188,7 @@ def _get_virtual_service_dict(
 
 
 def tear_down() -> None:
-    """Deletes the Istio Helm chart and any leftover resources."""
-    sh.run_helm(['delete', '--purge', _HELM_ISTIO_NAME])
-    # TODO: Why doesn't `helm delete --purge istio` do this?
+    """Deletes the Istio resources and namespace."""
+    sh.run_kubectl(['delete', '-f', resources.ISTIO_GEN_YAML_PATH])
     sh.run_kubectl(['delete', 'namespace', consts.ISTIO_NAMESPACE])
     wait.until_namespace_is_deleted(consts.SERVICE_GRAPH_NAMESPACE)
