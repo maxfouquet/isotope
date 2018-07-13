@@ -14,14 +14,6 @@ def run_kubectl(args: List[str], check=False) -> subprocess.CompletedProcess:
     return run(['kubectl', *args], check=check)
 
 
-@contextlib.contextmanager
-def background(args: List[str]) -> Generator[None, None, None]:
-    """Runs args in the background for the duration of the with-statement."""
-    proc = subprocess.Popen(args, stdout=subprocess.PIPE)
-    yield
-    proc.kill()
-
-
 def run(args: List[str], check=False,
         env: Dict[str, str] = None) -> subprocess.CompletedProcess:
     """Delegates to subprocess.run, capturing stdout and stderr.

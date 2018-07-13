@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 import requests
 import yaml
 
-from . import md5, resources, sh, wait
+from . import md5, kubectl, resources, sh, wait
 
 _STACK_DRIVER_PROMETHEUS_IMAGE = (
     'gcr.io/stackdriver-prometheus/stackdriver-prometheus:release-0.4.2')
@@ -32,11 +32,9 @@ def apply(cluster_project_id: str,
 
 
 def _reload_config() -> None:
-    with sh.background([
-            'kubectl', '-n', 'stackdriver', 'port-forward',
-            'deployment/prometheus', '9090'
-    ]):
-        requests.post('http://localhost:9090/-/reload')
+    with kubectl.port_forward(
+            'prometheus', 9090, namespace='stackdriver') as local_port:
+        requests.post('http://localhost:{}/-/reload'.format(local_port))
 
 
 def _write_yaml(cluster_project_id: str,
