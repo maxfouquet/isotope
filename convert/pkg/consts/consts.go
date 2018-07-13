@@ -2,7 +2,7 @@ package consts
 
 const (
 	// ServiceContainerName is the name to assign the container when it is run.
-	ServiceContainerName = "perf-test-service"
+	ServiceContainerName = "mock-service"
 
 	// ServicePort is the port the service will run on.
 	ServicePort = 8080
