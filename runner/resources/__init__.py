@@ -8,9 +8,6 @@ from .. import consts, sh, wait
 _RESOURCES_DIR = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
-HELM_SERVICE_ACCOUNT_YAML_PATH = os.path.join(_RESOURCES_DIR,
-                                              'helm-service-account.yaml')
-
 STACKDRIVER_PROMETHEUS_GEN_YAML_PATH = os.path.join(
     _RESOURCES_DIR, 'stackdriver-prometheus.gen.yaml')
 SERVICE_GRAPH_GEN_YAML_PATH = os.path.join(_RESOURCES_DIR,

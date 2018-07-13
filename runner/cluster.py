@@ -28,8 +28,6 @@ def setup(project_id: str, name: str, zone: str, version: str,
 
     _create_stackdriver_prometheus(project_id, name, zone)
 
-    _initialize_helm()
-
     _create_service_graph_node_pool(service_graph_num_nodes,
                                     service_graph_machine_type,
                                     service_graph_disk_size_gb)
@@ -97,16 +95,3 @@ def _create_stackdriver_prometheus(cluster_project_id: str, cluster_name: str,
         cluster_name,
         cluster_zone,
         should_reload_config=False)
-
-
-def _initialize_helm() -> None:
-    logging.info('initializing Helm')
-    sh.run_kubectl(
-        ['create', '-f', resources.HELM_SERVICE_ACCOUNT_YAML_PATH], check=True)
-    sh.run_helm(['init', '--service-account', 'tiller', '--wait'], check=True)
-    sh.run_helm(
-        [
-            'repo', 'add', 'coreos',
-            'https://s3-eu-west-1.amazonaws.com/coreos-charts/stable'
-        ],
-        check=True)

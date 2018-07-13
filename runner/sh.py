@@ -14,10 +14,6 @@ def run_kubectl(args: List[str], check=False) -> subprocess.CompletedProcess:
     return run(['kubectl', *args], check=check)
 
 
-def run_helm(args: List[str], check=False) -> subprocess.CompletedProcess:
-    return run(['helm', *args], check=check)
-
-
 @contextlib.contextmanager
 def background(args: List[str]) -> Generator[None, None, None]:
     """Runs args in the background for the duration of the with-statement."""
