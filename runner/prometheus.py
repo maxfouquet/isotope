@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 import requests
 import yaml
 
-from . import dicts, md5, resources, sh, wait
+from . import md5, resources, sh, wait
 
 _STACK_DRIVER_PROMETHEUS_IMAGE = (
     'gcr.io/stackdriver-prometheus/stackdriver-prometheus:release-0.4.2')

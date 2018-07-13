@@ -7,7 +7,7 @@ from typing import Any, Dict, Generator
 
 import yaml
 
-from . import consts, dicts, resources, sh, wait
+from . import consts, resources, sh, wait
 
 _HELM_ISTIO_NAME = 'istio'
 
@@ -68,12 +68,12 @@ def _build_and_push_images(go_path: str, repo_path: str, hub: str,
                            tag: str) -> None:
     logging.info('pushing images to %s with tag %s', hub, tag)
     with _work_dir(repo_path):
-        env = dicts.combine(
-            dict(os.environ), {
+        env = {
                 'GOPATH': go_path,
                 'HUB': hub,
                 'TAG': tag,
-            })
+            **dict(os.environ),
+        }
         sh.run(['make', 'docker.push'], env=env, check=True)
 
 

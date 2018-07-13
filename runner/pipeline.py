@@ -6,8 +6,8 @@ from typing import Dict, Generator, Optional, Tuple
 
 import requests
 
-from . import cluster, consts, dicts, entrypoint, istio, md5, mesh, \
-              prometheus, resources, sh, wait
+from . import cluster, consts, entrypoint, istio, md5, mesh, prometheus, \
+              resources, sh, wait
 
 _REPO_ROOT = os.path.join(os.getcwd(),
                           os.path.dirname(os.path.dirname(__file__)))
@@ -43,12 +43,12 @@ def run(topology_path: str, env: mesh.Environment, should_tear_down: bool,
     manifest_path = _gen_yaml(topology_path, service_image, client_image)
 
     topology_name = _get_basename_no_ext(topology_path)
-    labels = dicts.combine(
-        static_labels, {
-            'environment': env.name,
-            'topology_name': topology_name,
-            'topology_hash': md5.hex(topology_path),
-        })
+    labels = {
+        'environment': env.name,
+        'topology_name': topology_name,
+        'topology_hash': md5.hex(topology_path),
+        **static_labels,
+    }
     prometheus.apply(cluster_project_id, cluster_name, cluster_zone, labels)
 
     with env.context(
@@ -107,6 +107,7 @@ def _test_service_graph(yaml_path: str, should_tear_down: bool,
                         test_qps: Optional[int], test_duration: str,
                         test_num_concurrent_connections: int) -> None:
     """Deploys the service graph at yaml_path and runs a load test on it."""
+    # TODO: extract to env.context, with entrypoint hostname as the ingress URL
     with resources.manifest(
             yaml_path,
             should_tear_down=should_tear_down,
@@ -122,7 +123,9 @@ def _test_service_graph(yaml_path: str, should_tear_down: bool,
 
         wait.until_prometheus_has_scraped()
 
-    wait.until_namespace_is_deleted(consts.SERVICE_GRAPH_NAMESPACE)
+    # TODO: Fixup: This was a bug.
+    if should_tear_down:
+        wait.until_namespace_is_deleted(consts.SERVICE_GRAPH_NAMESPACE)
 
 
 def _run_load_test(result_output_path: str, test_target_url: str,
