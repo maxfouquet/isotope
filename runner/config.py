@@ -7,7 +7,6 @@ class RunnerConfig:
     """Represents the intermediary between a config file"""
 
     def __init__(self, topology_paths: List[str], environments: List[str],
-                 should_tear_down: bool, should_tear_down_on_error: bool,
                  istio_hub: str, istio_tag: str, istio_build: bool,
                  cluster_project_id: str, cluster_name: str, cluster_zone: str,
                  cluster_version: str, cluster_create: bool,
@@ -18,8 +17,6 @@ class RunnerConfig:
                  client_duration: str, client_num_conc_conns: int) -> None:
         self.topology_paths = topology_paths
         self.environments = environments
-        self.should_tear_down = should_tear_down
-        self.should_tear_down_on_error = should_tear_down_on_error
         self.istio_hub = istio_hub
         self.istio_tag = istio_tag
         self.should_build_istio = istio_build
@@ -64,9 +61,6 @@ def from_dict(d: Dict[str, Any]) -> RunnerConfig:
     topology_paths = d.get('topology_paths', [])
     environments = d.get('environments', [])
 
-    should_tear_down = d.get('tear_down', True)
-    should_tear_down_on_error = d.get('tear_down_on_error', True)
-
     istio = d['istio']
     istio_hub = istio['hub']
     istio_tag = istio['tag']
@@ -101,8 +95,6 @@ def from_dict(d: Dict[str, Any]) -> RunnerConfig:
     return RunnerConfig(
         topology_paths=topology_paths,
         environments=environments,
-        should_tear_down=should_tear_down,
-        should_tear_down_on_error=should_tear_down_on_error,
         istio_hub=istio_hub,
         istio_tag=istio_tag,
         istio_build=istio_build,

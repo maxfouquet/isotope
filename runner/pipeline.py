@@ -14,8 +14,7 @@ _REPO_ROOT = os.path.join(os.getcwd(),
 _MAIN_GO_PATH = os.path.join(_REPO_ROOT, 'convert', 'main.go')
 
 
-def run(topology_path: str, env: mesh.Environment, should_tear_down: bool,
-        should_tear_down_on_error: bool, cluster_project_id: str,
+def run(topology_path: str, env: mesh.Environment, cluster_project_id: str,
         cluster_name: str, cluster_zone: str, service_image: str,
         client_image: str, hub: str, tag: str, should_build_istio: bool,
         test_qps: Optional[int], test_duration: str,
@@ -26,8 +25,6 @@ def run(topology_path: str, env: mesh.Environment, should_tear_down: bool,
     Args:
         topology_path: the path to the file containing the topology
         env: the pre-existing mesh environment for the topology (i.e. Istio)
-        should_tear_down: if True, calls env.tear_down() after testing
-        should_tear_down_on_error: if True, calls env.tear_down() on errors
         service_image: the Docker image to represent each node in the topology
         client_image: the Docker image which can run a load test (i.e. Fortio)
         hub: the Docker hub for Istio images
@@ -51,16 +48,12 @@ def run(topology_path: str, env: mesh.Environment, should_tear_down: bool,
     }
     prometheus.apply(cluster_project_id, cluster_name, cluster_zone, labels)
 
-    with env.context(
-            should_tear_down=should_tear_down,
-            should_tear_down_on_error=should_tear_down_on_error
-    ) as ingress_url:
+    with env.context() as ingress_url:
         logging.info('starting test with environment "%s"', env.name)
         result_output_path = '{}_{}.json'.format(topology_name, env.name)
 
-        _test_service_graph(manifest_path, should_tear_down,
-                            should_tear_down_on_error, result_output_path,
-                            ingress_url, test_qps, test_duration,
+        _test_service_graph(manifest_path, result_output_path, ingress_url,
+                            test_qps, test_duration,
                             test_num_concurrent_connections)
 
 
@@ -101,17 +94,13 @@ def _get_gke_node_selector(node_pool_name: str) -> str:
     return 'cloud.google.com/gke-nodepool={}'.format(node_pool_name)
 
 
-def _test_service_graph(yaml_path: str, should_tear_down: bool,
-                        should_tear_down_on_error: bool,
-                        test_result_output_path: str, test_target_url: str,
-                        test_qps: Optional[int], test_duration: str,
+def _test_service_graph(yaml_path: str, test_result_output_path: str,
+                        test_target_url: str, test_qps: Optional[int],
+                        test_duration: str,
                         test_num_concurrent_connections: int) -> None:
     """Deploys the service graph at yaml_path and runs a load test on it."""
     # TODO: extract to env.context, with entrypoint hostname as the ingress URL
-    with resources.manifest(
-            yaml_path,
-            should_tear_down=should_tear_down,
-            should_tear_down_on_error=should_tear_down_on_error):
+    with resources.manifest(yaml_path):
         wait.until_deployments_are_ready(consts.SERVICE_GRAPH_NAMESPACE)
         wait.until_service_graph_is_ready()
         # TODO: Why is this extra buffer necessary?
@@ -123,9 +112,7 @@ def _test_service_graph(yaml_path: str, should_tear_down: bool,
 
         wait.until_prometheus_has_scraped()
 
-    # TODO: Fixup: This was a bug.
-    if should_tear_down:
-        wait.until_namespace_is_deleted(consts.SERVICE_GRAPH_NAMESPACE)
+    wait.until_namespace_is_deleted(consts.SERVICE_GRAPH_NAMESPACE)
 
 
 def _run_load_test(result_output_path: str, test_target_url: str,

@@ -31,8 +31,7 @@ def main() -> None:
                 env_name, entrypoint_service_name,
                 consts.SERVICE_GRAPH_NAMESPACE, config)
             pipeline.run(
-                topology_path, mesh_environment, config.should_tear_down,
-                config.should_tear_down_on_error, config.cluster_project_id,
+                topology_path, mesh_environment, config.cluster_project_id,
                 config.cluster_name, config.cluster_zone, config.server_image,
                 config.client_image, config.istio_hub, config.istio_tag,
                 config.should_build_istio, config.client_qps,
