@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 import requests
 import yaml
 
-from . import md5, kubectl, resources, sh, wait
+from . import consts, md5, kubectl, resources, sh, wait
 
 _STACK_DRIVER_PROMETHEUS_IMAGE = (
     'gcr.io/stackdriver-prometheus/stackdriver-prometheus:release-0.4.2')
@@ -27,13 +27,14 @@ def apply(cluster_project_id: str,
         ],
         check=True)
 
-    wait.until_deployments_are_ready('stackdriver')
+    wait.until_deployments_are_ready(consts.STACKDRIVER_NAMESPACE)
     _reload_config()
 
 
 def _reload_config() -> None:
     with kubectl.port_forward(
-            'prometheus', 9090, namespace='stackdriver') as local_port:
+            'prometheus', 9090,
+            namespace=consts.STACKDRIVER_NAMESPACE) as local_port:
         requests.post('http://localhost:{}/-/reload'.format(local_port))
 
 
@@ -103,7 +104,7 @@ def _get_resource_dicts(cluster_project_id: str, cluster_name: str,
         'kind': 'ServiceAccount',
         'metadata': {
             'name': 'prometheus',
-            'namespace': 'stackdriver',
+            'namespace': consts.STACKDRIVER_NAMESPACE,
         },
     }
     cluster_role_binding_dict = {
@@ -122,7 +123,7 @@ def _get_resource_dicts(cluster_project_id: str, cluster_name: str,
         'subjects': [{
             'kind': 'ServiceAccount',
             'name': 'prometheus',
-            'namespace': 'stackdriver',
+            'namespace': consts.STACKDRIVER_NAMESPACE,
         }],
     }
     service_dict = {
@@ -133,7 +134,7 @@ def _get_resource_dicts(cluster_project_id: str, cluster_name: str,
                 'name': 'prometheus',
             },
             'name': 'prometheus',
-            'namespace': 'stackdriver',
+            'namespace': consts.STACKDRIVER_NAMESPACE,
         },
         'spec': {
             'ports': [{
@@ -152,7 +153,7 @@ def _get_resource_dicts(cluster_project_id: str, cluster_name: str,
         'kind': 'Deployment',
         'metadata': {
             'name': 'prometheus',
-            'namespace': 'stackdriver',
+            'namespace': consts.STACKDRIVER_NAMESPACE,
         },
         'spec': {
             'replicas': 1,
@@ -170,7 +171,7 @@ def _get_resource_dicts(cluster_project_id: str, cluster_name: str,
                         'app': 'prometheus',
                     },
                     'name': 'prometheus',
-                    'namespace': 'stackdriver',
+                    'namespace': consts.STACKDRIVER_NAMESPACE,
                 },
                 'spec': {
                     'containers': [{
@@ -384,7 +385,7 @@ def _get_config_map(cluster_project_id: str, cluster_name: str,
         'kind': 'ConfigMap',
         'metadata': {
             'name': 'prometheus',
-            'namespace': 'stackdriver',
+            'namespace': consts.STACKDRIVER_NAMESPACE,
         },
         'data': {
             'prometheus.yaml': config_yaml,

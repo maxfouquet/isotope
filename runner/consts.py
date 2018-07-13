@@ -1,5 +1,5 @@
 DEFAULT_NAMESPACE = 'default'
-MONITORING_NAMESPACE = 'monitoring'
+STACKDRIVER_NAMESPACE = 'stackdriver'
 ISTIO_NAMESPACE = 'istio-system'
 SERVICE_GRAPH_NAMESPACE = 'service-graph'
 
