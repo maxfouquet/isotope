@@ -7,7 +7,7 @@ from typing import Any, Dict, Generator
 
 import yaml
 
-from . import consts, resources, sh, wait
+from . import consts, kubectl, resources, sh, wait
 
 
 def set_up(entrypoint_service_name: str, entrypoint_service_namespace: str,
@@ -96,7 +96,7 @@ def _install(chart_path: str,
         check=True).stdout
     with open(resources.ISTIO_GEN_YAML_PATH, 'w') as f:
         f.write(istio_yaml)
-    sh.run_kubectl(['create', '-f', resources.ISTIO_GEN_YAML_PATH], check=True)
+    kubectl.apply_file(resources.ISTIO_GEN_YAML_PATH)
 
 
 @contextlib.contextmanager
@@ -117,7 +117,7 @@ def _create_ingress_rules(entrypoint_service_name: str,
     path = resources.ISTIO_INGRESS_YAML_PATH
     with open(path, 'w') as f:
         f.write(ingress_yaml)
-    sh.run_kubectl(['create', '-f', path])
+    kubectl.apply_file(path)
 
 
 def _get_ingress_yaml(entrypoint_service_name: str,

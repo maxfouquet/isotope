@@ -19,19 +19,13 @@ def apply(cluster_project_id: str,
 
     _write_yaml(cluster_project_id, cluster_name, cluster_zone, labels)
 
-    sh.run_kubectl(
-        [
-            'apply',
-            '-f',
-            resources.STACKDRIVER_PROMETHEUS_GEN_YAML_PATH,
-        ],
-        check=True)
+    kubectl.apply_file(resources.STACKDRIVER_PROMETHEUS_GEN_YAML_PATH)
 
     wait.until_deployments_are_ready(consts.STACKDRIVER_NAMESPACE)
     # TODO: This is a hotfix to the reloader not responding for a short time
     # after Prometheus is created.
     if should_reload_config:
-    _reload_config()
+        _reload_config()
 
 
 def _reload_config() -> None:
@@ -186,7 +180,7 @@ def _get_resource_dicts(cluster_project_id: str, cluster_name: str,
                         'Always',
                         'args': [
                             # Uncomment for verbose logging.
-                            # '--log.level=debug',
+                            '--log.level=debug',
                             # Needed for reloading Prometheus configuration
                             # between tests.
                             '--web.enable-lifecycle',
@@ -260,7 +254,7 @@ def _get_config_map(cluster_project_id: str, cluster_name: str,
             'kubernetes-nodes',
             'kubernetes_sd_configs': [{
                 'role': 'node',
-        }],
+            }],
             'scheme':
             'https',
             'relabel_configs': [{
@@ -274,7 +268,7 @@ def _get_config_map(cluster_project_id: str, cluster_name: str,
                 '(.+)',
                 'target_label':
                 '__metrics_path__',
-                }],
+            }],
             'bearer_token_file':
             '/var/run/secrets/kubernetes.io/serviceaccount/token',
             'tls_config': {
@@ -287,81 +281,81 @@ def _get_config_map(cluster_project_id: str, cluster_name: str,
             'kubernetes_sd_configs': [{
                 'role': 'pod',
             }],
-                'relabel_configs': [{
-                    'source_labels':
-                    ['__meta_kubernetes_pod_annotation_prometheus_io_scrape'],
-                    'regex':
-                    True,
-                    'action':
-                    'keep',
-                }, {
-                    'source_labels':
-                    ['__meta_kubernetes_pod_annotation_prometheus_io_path'],
-                    'regex':
-                    '(.+)',
-                    'target_label':
-                    '__metrics_path__',
+            'relabel_configs': [{
+                'source_labels':
+                ['__meta_kubernetes_pod_annotation_prometheus_io_scrape'],
+                'regex':
+                True,
+                'action':
+                'keep',
+            }, {
+                'source_labels':
+                ['__meta_kubernetes_pod_annotation_prometheus_io_path'],
+                'regex':
+                '(.+)',
+                'target_label':
+                '__metrics_path__',
                 'action':
                 'replace',
-                }, {
+            }, {
                 'replacement':
                 '$1:$2',
-                    'source_labels': [
-                        '__address__',
-                        '__meta_kubernetes_pod_annotation_prometheus_io_port'
-                    ],
-                    'regex':
-                    '([^:]+)(?::\\d+)?;(\\d+)',
-                    'target_label':
+                'source_labels': [
                     '__address__',
+                    '__meta_kubernetes_pod_annotation_prometheus_io_port'
+                ],
+                'regex':
+                '([^:]+)(?::\\d+)?;(\\d+)',
+                'target_label':
+                '__address__',
                 'action':
                 'replace',
             }],
         }, {
             'job_name':
             'kubernetes-service-endpoints',
-                'kubernetes_sd_configs': [{
+            'kubernetes_sd_configs': [{
                 'role': 'endpoints',
-                }],
-                'relabel_configs': [{
+            }],
+            'relabel_configs': [{
                 'source_labels':
                 ['__meta_kubernetes_service_annotation_prometheus_io_scrape'],
-                    'regex':
-                    True,
-                    'action':
-                    'keep',
-                }, {
+                'regex':
+                True,
+                'action':
+                'keep',
+            }, {
                 'source_labels':
                 ['__meta_kubernetes_service_annotation_prometheus_io_scheme'],
                 'regex':
                 '(https?)',
-                    'target_label':
-                    '__scheme__',
-                    'action':
-                    'replace',
-                }, {
+                'target_label':
+                '__scheme__',
+                'action':
+                'replace',
+            }, {
                 'source_labels':
                 ['__meta_kubernetes_service_annotation_prometheus_io_path'],
                 'regex':
                 '(.+)',
-                    'target_label':
-                    '__metrics_path__',
-                    'action':
-                    'replace',
-                }, {
-                    'replacement':
-                    '$1:$2',
-                    'source_labels': [
-                        '__address__',
-                        '__meta_kubernetes_service_annotation_prometheus_io_port',
-                    ],
+                'target_label':
+                '__metrics_path__',
+                'action':
+                'replace',
+            }, {
+                'replacement':
+                '$1:$2',
+                'source_labels': [
+                    '__address__',
+                    '__meta_kubernetes_service_annotation_prometheus_io_port',
+                ],
                 'regex':
                 '([^:]+)(?::\\d+)?;(\\d+)',
                 'target_label':
                 '__address__',
-                    'action':
-                    'replace',
-                }],
+                'action':
+                'replace',
+            }],
         }],
         'remote_write': [{
             'queue_config': {
