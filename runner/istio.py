@@ -94,9 +94,8 @@ def _install(chart_path: str,
             '--namespace', namespace
         ],
         check=True).stdout
-    with open(resources.ISTIO_GEN_YAML_PATH, 'w') as f:
-        f.write(istio_yaml)
-    kubectl.apply_file(resources.ISTIO_GEN_YAML_PATH)
+    kubectl.apply_text(
+        istio_yaml, intermediate_file_path=resources.ISTIO_GEN_YAML_PATH)
 
 
 @contextlib.contextmanager
@@ -114,10 +113,8 @@ def _create_ingress_rules(entrypoint_service_name: str,
     logging.info('creating istio ingress rules')
     ingress_yaml = _get_ingress_yaml(entrypoint_service_name,
                                      entrypoint_service_namespace)
-    path = resources.ISTIO_INGRESS_YAML_PATH
-    with open(path, 'w') as f:
-        f.write(ingress_yaml)
-    kubectl.apply_file(path)
+    kubectl.apply_text(
+        ingress_yaml, intermediate_file_path=resources.ISTIO_INGRESS_YAML_PATH)
 
 
 def _get_ingress_yaml(entrypoint_service_name: str,

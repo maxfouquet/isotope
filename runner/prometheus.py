@@ -17,9 +17,11 @@ def apply(cluster_project_id: str,
           should_reload_config: bool = True) -> None:
     logging.info('applying Prometheus instance')
 
-    _write_yaml(cluster_project_id, cluster_name, cluster_zone, labels)
-
-    kubectl.apply_file(resources.STACKDRIVER_PROMETHEUS_GEN_YAML_PATH)
+    resource_dicts = _get_resource_dicts(cluster_project_id, cluster_name,
+                                         cluster_zone, labels)
+    kubectl.apply_dicts(
+        resource_dicts,
+        intermediate_file_path=resources.STACKDRIVER_PROMETHEUS_GEN_YAML_PATH)
 
     wait.until_deployments_are_ready(consts.STACKDRIVER_NAMESPACE)
     # TODO: This is a hotfix to the reloader not responding for a short time
@@ -33,26 +35,6 @@ def _reload_config() -> None:
             'prometheus', 9090,
             namespace=consts.STACKDRIVER_NAMESPACE) as local_port:
         requests.post('http://localhost:{}/-/reload'.format(local_port))
-
-
-def _write_yaml(cluster_project_id: str,
-                cluster_name: str,
-                cluster_zone: str,
-                labels: Dict[str, str] = {}) -> None:
-    yaml_str = _get_yaml(cluster_project_id, cluster_name, cluster_zone,
-                         labels)
-    with open(resources.STACKDRIVER_PROMETHEUS_GEN_YAML_PATH, 'w') as f:
-        f.write(yaml_str)
-
-
-def _get_yaml(cluster_project_id: str,
-              cluster_name: str,
-              cluster_zone: str,
-              labels: Dict[str, str] = {}) -> str:
-    """Returns the Kubernetes YAML manifests for stackdriver-prometheus."""
-    resource_dicts = _get_resource_dicts(cluster_project_id, cluster_name,
-                                         cluster_zone, labels)
-    return yaml.dump_all(resource_dicts, default_flow_style=False)
 
 
 def _get_resource_dicts(cluster_project_id: str, cluster_name: str,

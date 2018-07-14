@@ -2,8 +2,11 @@ import contextlib
 import logging
 import socket
 import subprocess
+import tempfile
 import time
-from typing import Generator
+from typing import Any, Dict, Generator, List
+
+import yaml
 
 from . import sh
 
@@ -26,6 +29,33 @@ def apply_file(path: str) -> None:
 def delete_file(path: str) -> None:
     logging.info('deleting from %s', path)
     sh.run_kubectl(['delete', '-f', path])
+
+
+def apply_dicts(dicts: List[Dict[str, Any]],
+                intermediate_file_path: str = None) -> None:
+    yaml_str = yaml.dump_all(dicts)
+    apply_text(yaml_str, intermediate_file_path=intermediate_file_path)
+
+
+def apply_text(json_or_yaml: str, intermediate_file_path: str = None) -> None:
+    """Creates/updates resources described in either JSON or YAML string.
+
+    Uses `kubectl apply -f FILE`.
+
+    Args:
+        json_or_yaml: contains either the JSON or YAML manifest of the
+                resource(s) to apply; applied through an intermediate file
+        intermediate_file_path: if set, defines the file to write to (useful
+                for debugging); otherwise, uses a temporary file
+    """
+    if intermediate_file_path is None:
+        opener = tempfile.NamedTemporaryFile()
+    else:
+        open(intermediate_file_path, 'w')
+
+    with opener as f:
+        f.write(json_or_yaml)
+        apply_file(f.name)
 
 
 @contextlib.contextmanager
