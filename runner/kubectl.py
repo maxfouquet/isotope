@@ -2,9 +2,13 @@ import contextlib
 import socket
 import subprocess
 import time
-from typing import Generator, List
+from typing import Generator
 
 from . import sh
+
+
+def apply_file(path: str) -> None:
+    sh.run_kubectl(['apply', '-f', path], check=True)
 
 
 @contextlib.contextmanager
