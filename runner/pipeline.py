@@ -6,8 +6,8 @@ from typing import Dict, Generator, Optional, Tuple
 
 import requests
 
-from . import cluster, consts, entrypoint, istio, md5, mesh, prometheus, \
-              resources, sh, wait
+from . import cluster, consts, entrypoint, istio, kubectl, md5, mesh, \
+              prometheus, resources, sh, wait
 
 _REPO_ROOT = os.path.join(os.getcwd(),
                           os.path.dirname(os.path.dirname(__file__)))
@@ -100,7 +100,7 @@ def _test_service_graph(yaml_path: str, test_result_output_path: str,
                         test_num_concurrent_connections: int) -> None:
     """Deploys the service graph at yaml_path and runs a load test on it."""
     # TODO: extract to env.context, with entrypoint hostname as the ingress URL
-    with resources.manifest(yaml_path):
+    with kubectl.manifest(yaml_path):
         wait.until_deployments_are_ready(consts.SERVICE_GRAPH_NAMESPACE)
         wait.until_service_graph_is_ready()
         # TODO: Why is this extra buffer necessary?
