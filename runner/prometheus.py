@@ -217,11 +217,16 @@ def _get_config_map(cluster_project_id: str, cluster_name: str,
                     labels: Dict[str, str]) -> Dict[str, Any]:
     """Returns a Kubernetes ConfigMap for stackdriver-prometheus.
 
-    `labels` is appended to all data ingested into stackdriver.
+    `labels` is appended to all relevant data ingested into stackdriver.
 
     Other configuration is copied from
     https://cloud.google.com/monitoring/kubernetes-engine/prometheus.
     """
+    append_label_configs = [{
+        'target_label': key,
+        'replacement': value,
+    } for key, value in labels.items()]
+
     config = {
         'global': {
             'scrape_interval':
@@ -230,7 +235,6 @@ def _get_config_map(cluster_project_id: str, cluster_name: str,
                 '_stackdriver_project_id': cluster_project_id,
                 '_kubernetes_cluster_name': cluster_name,
                 '_kubernetes_location': cluster_zone,
-                **labels,
             },
         },
         'scrape_configs': [{
@@ -252,7 +256,7 @@ def _get_config_map(cluster_project_id: str, cluster_name: str,
                 '(.+)',
                 'target_label':
                 '__metrics_path__',
-            }],
+            }, *append_label_configs],
             'bearer_token_file':
             '/var/run/secrets/kubernetes.io/serviceaccount/token',
             'tls_config': {
@@ -294,7 +298,7 @@ def _get_config_map(cluster_project_id: str, cluster_name: str,
                 '__address__',
                 'action':
                 'replace',
-            }],
+            }, *append_label_configs],
         }, {
             'job_name':
             'kubernetes-service-endpoints',
@@ -339,7 +343,7 @@ def _get_config_map(cluster_project_id: str, cluster_name: str,
                 '__address__',
                 'action':
                 'replace',
-            }],
+            }, *append_label_configs],
         }],
         'remote_write': [{
             'queue_config': {
