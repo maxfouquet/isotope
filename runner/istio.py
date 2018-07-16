@@ -29,7 +29,10 @@ def set_up(entrypoint_service_name: str, entrypoint_service_namespace: str,
 
         chart_path = os.path.join(extracted_istio_path, 'install',
                                   'kubernetes', 'helm', 'istio')
-        _install(chart_path, consts.ISTIO_NAMESPACE)
+        _install(
+            chart_path,
+            consts.ISTIO_NAMESPACE,
+            intermediate_file_path=resources.ISTIO_GEN_YAML_PATH)
 
         _create_ingress_rules(entrypoint_service_name,
                               entrypoint_service_namespace)
@@ -77,15 +80,16 @@ def _extract(archive_path: str, extracted_dir_path: str) -> str:
     return os.path.join(extracted_dir_path, extracted_items[0])
 
 
-def _install(chart_path: str,
-             namespace: str = consts.DEFAULT_NAMESPACE) -> None:
+def _install(chart_path: str, namespace: str,
+             intermediate_file_path: str) -> None:
     logging.info('installing Helm chart for Istio')
-    sh.run_kubectl(['create', 'namespace', consts.ISTIO_NAMESPACE])
+    sh.run_kubectl(['create', 'namespace', namespace])
     istio_yaml = sh.run(
         ['helm', 'template', chart_path, '--namespace', namespace],
         check=True).stdout
     kubectl.apply_text(
-        istio_yaml, intermediate_file_path=resources.ISTIO_GEN_YAML_PATH)
+        istio_yaml, intermediate_file_path=intermediate_file_path)
+    wait.until_deployments_are_ready(namespace)
 
 
 @contextlib.contextmanager
