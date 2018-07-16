@@ -242,6 +242,11 @@ def _get_config_map(cluster_project_id: str, cluster_name: str,
             'istio-telemetry',
             'kubernetes_sd_configs': [{
                 'role': 'pod',
+                'namespaces': {
+                    'names': [
+                        consts.ISTIO_NAMESPACE,
+                    ],
+                },
             }],
             'relabel_configs': [{
                 'source_labels': ['__meta_kubernetes_namespace'],
@@ -273,6 +278,12 @@ def _get_config_map(cluster_project_id: str, cluster_name: str,
             'kubernetes-nodes',
             'kubernetes_sd_configs': [{
                 'role': 'node',
+                'namespaces': {
+                    'names': [
+                        consts.DEFAULT_NAMESPACE,
+                        consts.SERVICE_GRAPH_NAMESPACE,
+                    ],
+                },
             }],
             'scheme':
             'https',
@@ -299,6 +310,12 @@ def _get_config_map(cluster_project_id: str, cluster_name: str,
             'kubernetes-pods-containers',
             'kubernetes_sd_configs': [{
                 'role': 'pod',
+                'namespaces': {
+                    'names': [
+                        consts.DEFAULT_NAMESPACE,
+                        consts.SERVICE_GRAPH_NAMESPACE,
+                    ],
+                },
             }],
             'relabel_configs': [{
                 'source_labels':
@@ -335,6 +352,12 @@ def _get_config_map(cluster_project_id: str, cluster_name: str,
             'kubernetes-service-endpoints',
             'kubernetes_sd_configs': [{
                 'role': 'endpoints',
+                'namespaces': {
+                    'names': [
+                        consts.DEFAULT_NAMESPACE,
+                        consts.SERVICE_GRAPH_NAMESPACE,
+                    ],
+                },
             }],
             'relabel_configs': [{
                 'source_labels':
