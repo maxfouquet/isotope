@@ -227,6 +227,34 @@ def _get_config_map(cluster_project_id: str, cluster_name: str,
         'replacement': value,
     } for key, value in labels.items()]
 
+    # TODO: Stop doing this once Stackdriver's >10 labels issue resolved.
+    droppable_istio_labels = [
+        'destination_app',
+        'destination_namespace',
+        'destination_principal',
+        'destination_service',
+        'destination_service_name',
+        'destination_service_namespace',
+        'destination_version',
+        'response_code',
+        'source_app',
+        'source_namespace',
+        'source_version',
+        'connection_mtls',
+        'destination_workload',
+        'destination_workload_namespace',
+        'request_protocol',
+        'source_principal',
+        'source_workload',
+        'source_workload_namespace',
+        'reporter',
+    ]
+
+    drop_istio_label_configs = [{
+        'regex': label_key,
+        'action': 'labeldrop',
+    } for label_key in droppable_istio_labels]
+
     config = {
         'global': {
             'scrape_interval':
@@ -273,6 +301,7 @@ def _get_config_map(cluster_project_id: str, cluster_name: str,
                 'action':
                 'replace',
             }, *append_label_configs],
+            'metric_relabel_configs': drop_istio_label_configs,
         }, {
             'job_name':
             'kubernetes-nodes',
