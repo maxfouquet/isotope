@@ -84,8 +84,14 @@ def _install(chart_path: str, namespace: str,
              intermediate_file_path: str) -> None:
     logging.info('installing Helm chart for Istio')
     sh.run_kubectl(['create', 'namespace', namespace])
+    # TODO: Why is it necessary to set the hub and tag when these are already
+    # in the chart?
     istio_yaml = sh.run(
-        ['helm', 'template', chart_path, '--namespace', namespace],
+        [
+            'helm', 'template', chart_path, '--namespace', namespace,
+            '--set=global.hub=docker.io/istionightly',
+            '--set=global.tag=nightly-master'
+        ],
         check=True).stdout
     kubectl.apply_text(
         istio_yaml, intermediate_file_path=intermediate_file_path)
