@@ -49,12 +49,13 @@ def apply_text(json_or_yaml: str, intermediate_file_path: str = None) -> None:
                 for debugging); otherwise, uses a temporary file
     """
     if intermediate_file_path is None:
-        opener = tempfile.NamedTemporaryFile()
+        opener = tempfile.NamedTemporaryFile(mode='w+')
     else:
-        open(intermediate_file_path, 'w')
+        opener = open(intermediate_file_path, 'w+')
 
     with opener as f:
         f.write(json_or_yaml)
+        f.flush()
         apply_file(f.name)
 
 
