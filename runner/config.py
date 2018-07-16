@@ -39,21 +39,21 @@ class RunnerConfig:
     def labels(self) -> Dict[str, str]:
         """Returns the static labels for Prometheus for this configuration."""
         return {
-            # Disabled until addressing Stackdriver's 10-label limit.
-            # 'istio_hub': self.istio_hub,
-            # 'istio_tag': self.istio_tag,
-            # 'cluster_version': self.cluster_version,
-            # 'cluster_zone': self.cluster_zone,
-            # 'server_machine_type': self.server_machine_type,
-            # 'server_disk_size_gb': str(self.server_disk_size_gb),
-            # 'server_num_nodes': str(self.server_num_nodes),
-            # 'server_image': self.server_image,
-            # 'client_machine_type': self.client_machine_type,
-            # 'client_disk_size_gb': str(self.client_disk_size_gb),
-            # 'client_image': self.client_image,
-            # 'client_qps': str(self.client_qps),
-            # 'client_duration': self.client_duration,
-            # 'client_num_concurrent_connections': str(self.client_num_conc_conns),
+            'istio_hub': self.istio_hub,
+            'istio_tag': self.istio_tag,
+            'cluster_version': self.cluster_version,
+            'cluster_zone': self.cluster_zone,
+            'server_machine_type': self.server_machine_type,
+            'server_disk_size_gb': str(self.server_disk_size_gb),
+            'server_num_nodes': str(self.server_num_nodes),
+            'server_image': self.server_image,
+            'client_machine_type': self.client_machine_type,
+            'client_disk_size_gb': str(self.client_disk_size_gb),
+            'client_image': self.client_image,
+            'client_qps': str(self.client_qps),
+            'client_duration': self.client_duration,
+            'client_num_concurrent_connections':
+            str(self.client_num_conc_conns),
         }
 
 

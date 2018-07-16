@@ -43,8 +43,10 @@ def run(topology_path: str, env: mesh.Environment, cluster_project_id: str,
     labels = {
         'environment': env.name,
         'topology_name': topology_name,
-        'topology_hash': md5.hex(topology_path),
-        **static_labels,
+
+        # TODO: Restore once resolving Stackdriver's 10-label limit.
+        # 'topology_hash': md5.hex(topology_path),
+        # **static_labels,
     }
     prometheus.apply(cluster_project_id, cluster_name, cluster_zone, labels)
 
