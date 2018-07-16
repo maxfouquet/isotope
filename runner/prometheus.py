@@ -265,169 +265,183 @@ def _get_config_map(cluster_project_id: str, cluster_name: str,
                 '_kubernetes_location': cluster_zone,
             },
         },
-        'scrape_configs': [{
-            'job_name':
-            'istio-telemetry',
-            'kubernetes_sd_configs': [{
-                'role': 'pod',
-                'namespaces': {
-                    'names': [
-                        consts.ISTIO_NAMESPACE,
-                    ],
-                },
-            }],
-            'relabel_configs': [{
-                'source_labels': ['__meta_kubernetes_namespace'],
-                'regex':
-                consts.ISTIO_NAMESPACE,
-                'action':
-                'keep',
-            }, {
-                'source_labels': ['__meta_kubernetes_pod_label_app'],
-                'regex':
-                'telemetry',
-                'action':
-                'keep',
-            }, {
-                'source_labels': [
-                    '__address__',
+        'scrape_configs': [
+            {
+                'job_name':
+                'istio-telemetry',
+                'kubernetes_sd_configs': [{
+                    'role': 'pod',
+                    'namespaces': {
+                        'names': [
+                            consts.ISTIO_NAMESPACE,
+                        ],
+                    },
+                }],
+                'relabel_configs': [
+                    {
+                        'source_labels': ['__meta_kubernetes_namespace'],
+                        'regex': consts.ISTIO_NAMESPACE,
+                        'action': 'keep',
+                    },
+                    {
+                        'source_labels': ['__meta_kubernetes_pod_label_app'],
+                        'regex': 'telemetry',
+                        'action': 'keep',
+                    },
+                    {
+                        'source_labels': [
+                            '__address__',
+                        ],
+                        # TODO: Streamline this regex.
+                        'regex':
+                        '([^:]+)(?::\\d+)?;(\\d+)',
+                        # Use port 42422 only for istio-telemetry.
+                        'replacement':
+                        '$1:{}'.format(consts.ISTIO_TELEMETRY_PORT),
+                        'target_label':
+                        '__address__',
+                        'action':
+                        'replace',
+                    },
+                    *append_label_configs,
                 ],
-                # TODO: Streamline this regex.
-                'regex': '([^:]+)(?::\\d+)?;(\\d+)',
-                # Use port 42422 only for istio-telemetry.
-                'replacement': '$1:{}'.format(consts.ISTIO_TELEMETRY_PORT),
-                'target_label':
-                '__address__',
-                'action':
-                'replace',
-            }, *append_label_configs],
-            'metric_relabel_configs': drop_istio_label_configs,
-        }, {
-            'job_name':
-            'kubernetes-nodes',
-            'kubernetes_sd_configs': [{
-                'role': 'node',
-                'namespaces': {
-                    'names': [
-                        consts.DEFAULT_NAMESPACE,
-                        consts.SERVICE_GRAPH_NAMESPACE,
-                    ],
-                },
-            }],
-            'scheme':
-            'https',
-            'relabel_configs': [{
-                'replacement': 'kubernetes.default.svc:443',
-                'target_label': '__address__',
-            }, {
-                'replacement':
-                '/api/v1/nodes/${1}/proxy/metrics',
-                'source_labels': ['__meta_kubernetes_node_name'],
-                'regex':
-                '(.+)',
-                'target_label':
-                '__metrics_path__',
-            }, *append_label_configs],
-            'bearer_token_file':
-            '/var/run/secrets/kubernetes.io/serviceaccount/token',
-            'tls_config': {
-                'ca_file':
-                '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
+                'metric_relabel_configs':
+                drop_istio_label_configs,
             },
-        }, {
-            'job_name':
-            'kubernetes-pods-containers',
-            'kubernetes_sd_configs': [{
-                'role': 'pod',
-                'namespaces': {
-                    'names': [
-                        consts.DEFAULT_NAMESPACE,
-                        consts.SERVICE_GRAPH_NAMESPACE,
-                    ],
-                },
-            }],
-            'relabel_configs': [{
-                'source_labels':
-                ['__meta_kubernetes_pod_annotation_prometheus_io_scrape'],
-                'regex':
-                True,
-                'action':
-                'keep',
-            }, {
-                'source_labels':
-                ['__meta_kubernetes_pod_annotation_prometheus_io_path'],
-                'regex':
-                '(.+)',
-                'target_label':
-                '__metrics_path__',
-                'action':
-                'replace',
-            }, {
-                'replacement':
-                '$1:$2',
-                'source_labels': [
+            {
+                'job_name':
+                'kubernetes-nodes',
+                'kubernetes_sd_configs': [{
+                    'role': 'node',
+                    'namespaces': {
+                        'names': [
+                            consts.DEFAULT_NAMESPACE,
+                            consts.SERVICE_GRAPH_NAMESPACE,
+                        ],
+                    },
+                }],
+                'scheme':
+                'https',
+                'relabel_configs': [{
+                    'replacement':
+                    'kubernetes.default.svc:443',
+                    'target_label':
                     '__address__',
-                    '__meta_kubernetes_pod_annotation_prometheus_io_port'
-                ],
-                'regex':
-                '([^:]+)(?::\\d+)?;(\\d+)',
-                'target_label':
-                '__address__',
-                'action':
-                'replace',
-            }, *append_label_configs],
-        }, {
-            'job_name':
-            'kubernetes-service-endpoints',
-            'kubernetes_sd_configs': [{
-                'role': 'endpoints',
-                'namespaces': {
-                    'names': [
-                        consts.DEFAULT_NAMESPACE,
-                        consts.SERVICE_GRAPH_NAMESPACE,
-                    ],
+                }, {
+                    'replacement':
+                    '/api/v1/nodes/${1}/proxy/metrics',
+                    'source_labels': ['__meta_kubernetes_node_name'],
+                    'regex':
+                    '(.+)',
+                    'target_label':
+                    '__metrics_path__',
+                }, *append_label_configs],
+                'bearer_token_file':
+                '/var/run/secrets/kubernetes.io/serviceaccount/token',
+                'tls_config': {
+                    'ca_file':
+                    '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
                 },
-            }],
-            'relabel_configs': [{
-                'source_labels':
-                ['__meta_kubernetes_service_annotation_prometheus_io_scrape'],
-                'regex':
-                True,
-                'action':
-                'keep',
-            }, {
-                'source_labels':
-                ['__meta_kubernetes_service_annotation_prometheus_io_scheme'],
-                'regex':
-                '(https?)',
-                'target_label':
-                '__scheme__',
-                'action':
-                'replace',
-            }, {
-                'source_labels':
-                ['__meta_kubernetes_service_annotation_prometheus_io_path'],
-                'regex':
-                '(.+)',
-                'target_label':
-                '__metrics_path__',
-                'action':
-                'replace',
-            }, {
-                'replacement':
-                '$1:$2',
-                'source_labels': [
+            },
+            {
+                'job_name':
+                'kubernetes-pods-containers',
+                'kubernetes_sd_configs': [{
+                    'role': 'pod',
+                    'namespaces': {
+                        'names': [
+                            consts.DEFAULT_NAMESPACE,
+                            consts.SERVICE_GRAPH_NAMESPACE,
+                        ],
+                    },
+                }],
+                'relabel_configs': [{
+                    'source_labels':
+                    ['__meta_kubernetes_pod_annotation_prometheus_io_scrape'],
+                    'regex':
+                    True,
+                    'action':
+                    'keep',
+                }, {
+                    'source_labels':
+                    ['__meta_kubernetes_pod_annotation_prometheus_io_path'],
+                    'regex':
+                    '(.+)',
+                    'target_label':
+                    '__metrics_path__',
+                    'action':
+                    'replace',
+                }, {
+                    'replacement':
+                    '$1:$2',
+                    'source_labels': [
+                        '__address__',
+                        '__meta_kubernetes_pod_annotation_prometheus_io_port'
+                    ],
+                    'regex':
+                    '([^:]+)(?::\\d+)?;(\\d+)',
+                    'target_label':
                     '__address__',
-                    '__meta_kubernetes_service_annotation_prometheus_io_port',
-                ],
-                'regex':
-                '([^:]+)(?::\\d+)?;(\\d+)',
-                'target_label':
-                '__address__',
-                'action':
-                'replace',
-            }, *append_label_configs],
-        }],
+                    'action':
+                    'replace',
+                }, *append_label_configs],
+            },
+            {
+                'job_name':
+                'kubernetes-service-endpoints',
+                'kubernetes_sd_configs': [{
+                    'role': 'endpoints',
+                    'namespaces': {
+                        'names': [
+                            consts.DEFAULT_NAMESPACE,
+                            consts.SERVICE_GRAPH_NAMESPACE,
+                        ],
+                    },
+                }],
+                'relabel_configs': [{
+                    'source_labels': [
+                        '__meta_kubernetes_service_annotation_prometheus_io_scrape',
+                    ],
+                    'regex':
+                    True,
+                    'action':
+                    'keep',
+                }, {
+                    'source_labels': [
+                        '__meta_kubernetes_service_annotation_prometheus_io_scheme',
+                    ],
+                    'regex':
+                    '(https?)',
+                    'target_label':
+                    '__scheme__',
+                    'action':
+                    'replace',
+                }, {
+                    'source_labels': [
+                        '__meta_kubernetes_service_annotation_prometheus_io_path',
+                    ],
+                    'regex':
+                    '(.+)',
+                    'target_label':
+                    '__metrics_path__',
+                    'action':
+                    'replace',
+                }, {
+                    'replacement':
+                    '$1:$2',
+                    'source_labels': [
+                        '__address__',
+                        '__meta_kubernetes_service_annotation_prometheus_io_port',
+                    ],
+                    'regex':
+                    '([^:]+)(?::\\d+)?;(\\d+)',
+                    'target_label':
+                    '__address__',
+                    'action':
+                    'replace',
+                }, *append_label_configs],
+            },
+        ],
         'remote_write': [{
             'queue_config': {
                 'capacity': 400,
