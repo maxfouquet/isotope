@@ -35,6 +35,7 @@ def apply(cluster_project_id: str,
 
 
 def _reload_config() -> None:
+    logging.debug('reloading Promethus config')
     with kubectl.port_forward(
             'prometheus', 9090,
             namespace=consts.STACKDRIVER_NAMESPACE) as local_port:
