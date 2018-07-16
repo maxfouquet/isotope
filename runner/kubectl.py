@@ -76,6 +76,12 @@ def port_forward(deployment_name: str, deployment_port: int,
     # TODO: Should wait for output from proc.stdout
     time.sleep(1)
 
+    if not proc.stdout:
+        info = ': {}'.format(str(proc.stderr)) if proc.stderr else ''
+        msg = 'could not port-forward to {}:{} on local port {}{}'.format(
+            deployment_name, deployment_port, local_port, info)
+        raise RuntimeError(msg)
+
     yield local_port
 
     proc.terminate()
