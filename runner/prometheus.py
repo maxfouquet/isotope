@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import Any, Dict, List
 
 import requests
@@ -27,6 +28,9 @@ def apply(cluster_project_id: str,
     # TODO: This is a hotfix to the reloader not responding for a short time
     # after Prometheus is created.
     if should_reload_config:
+        logging.debug('waiting 60 seconds for ConfigMap to propagate')
+        # TODO: How to tell that the updated ConfigMap has propagated?
+        time.sleep(60)
         _reload_config()
 
 
@@ -232,7 +236,7 @@ def _get_config_map(cluster_project_id: str, cluster_name: str,
         'destination_app',
         'destination_namespace',
         'destination_principal',
-        'destination_service',
+        # 'destination_service',
         'destination_service_name',
         'destination_service_namespace',
         'destination_version',
