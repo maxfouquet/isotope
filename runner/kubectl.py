@@ -22,12 +22,10 @@ def manifest(path: str) -> Generator[None, None, None]:
 
 
 def apply_file(path: str) -> None:
-    logging.info('applying from %s', path)
     sh.run_kubectl(['apply', '-f', path], check=True)
 
 
 def delete_file(path: str) -> None:
-    logging.info('deleting from %s', path)
     sh.run_kubectl(['delete', '-f', path])
 
 
