@@ -157,6 +157,8 @@ def _get_svc_ip(name: str) -> str:
 def _http_get_json(url: str) -> str:
     """Sends an HTTP GET request to url, returning its JSON response."""
     response = None
+    # TODO: This typically succeeds after 4 retries. Better way to know when
+    # the client is ready to receive requests?
     while response is None:
         try:
             response = requests.get(url)
