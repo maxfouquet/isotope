@@ -224,6 +224,8 @@ def _get_config_map(cluster_project_id: str, cluster_name: str,
     """
     config = {
         'global': {
+            'scrape_interval':
+            '{}s'.format(consts.PROMETHEUS_SCRAPE_INTERVAL.seconds),
             'external_labels': {
                 '_stackdriver_project_id': cluster_project_id,
                 '_kubernetes_cluster_name': cluster_name,

@@ -7,7 +7,6 @@ from typing import Callable, List
 
 from . import consts, sh
 
-PROMETHEUS_SCRAPE_INTERVAL = datetime.timedelta(seconds=60)
 RETRY_INTERVAL = datetime.timedelta(seconds=5)
 
 
@@ -71,7 +70,7 @@ def until_stateful_sets_are_ready(
 
 def until_prometheus_has_scraped() -> None:
     logging.info('allowing Prometheus time to scrape final metrics')
-    time.sleep(PROMETHEUS_SCRAPE_INTERVAL.seconds)
+    time.sleep(consts.PROMETHEUS_SCRAPE_INTERVAL.seconds)
 
 
 def until_namespace_is_deleted(

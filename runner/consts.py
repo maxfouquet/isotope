@@ -1,3 +1,5 @@
+import datetime
+
 DEFAULT_NAMESPACE = 'default'
 STACKDRIVER_NAMESPACE = 'stackdriver'
 ISTIO_NAMESPACE = 'istio-system'
@@ -11,3 +13,5 @@ CLIENT_PORT = 8080
 SERVICE_GRAPH_SERVICE_SELECTOR = 'role=service'
 SERVICE_PORT = 8080
 ISTIO_INGRESS_GATEWAY_PORT = 80
+
+PROMETHEUS_SCRAPE_INTERVAL = datetime.timedelta(seconds=15)
