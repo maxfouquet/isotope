@@ -7,19 +7,17 @@ class RunnerConfig:
     """Represents the intermediary between a config file"""
 
     def __init__(self, topology_paths: List[str], environments: List[str],
-                 istio_hub: str, istio_tag: str, istio_build: bool,
-                 cluster_project_id: str, cluster_name: str, cluster_zone: str,
-                 cluster_version: str, cluster_create: bool,
-                 server_machine_type: str, server_disk_size_gb: int,
-                 server_num_nodes: int, server_image: str,
-                 client_machine_type: str, client_disk_size_gb: int,
-                 client_image: str, client_qps: Optional[int],
-                 client_duration: str, client_num_conc_conns: int) -> None:
+                 istio_archive_url: str, cluster_project_id: str,
+                 cluster_name: str, cluster_zone: str, cluster_version: str,
+                 cluster_create: bool, server_machine_type: str,
+                 server_disk_size_gb: int, server_num_nodes: int,
+                 server_image: str, client_machine_type: str,
+                 client_disk_size_gb: int, client_image: str,
+                 client_qps: Optional[int], client_duration: str,
+                 client_num_conc_conns: int) -> None:
         self.topology_paths = topology_paths
         self.environments = environments
-        self.istio_hub = istio_hub
-        self.istio_tag = istio_tag
-        self.should_build_istio = istio_build
+        self.istio_archive_url = istio_archive_url
         self.cluster_project_id = cluster_project_id
         self.cluster_name = cluster_name
         self.cluster_zone = cluster_zone
@@ -39,8 +37,7 @@ class RunnerConfig:
     def labels(self) -> Dict[str, str]:
         """Returns the static labels for Prometheus for this configuration."""
         return {
-            'istio_hub': self.istio_hub,
-            'istio_tag': self.istio_tag,
+            'istio_archive_url': self.istio_archive_url,
             'cluster_version': self.cluster_version,
             'cluster_zone': self.cluster_zone,
             'server_machine_type': self.server_machine_type,
@@ -62,9 +59,7 @@ def from_dict(d: Dict[str, Any]) -> RunnerConfig:
     environments = d.get('environments', [])
 
     istio = d['istio']
-    istio_hub = istio['hub']
-    istio_tag = istio['tag']
-    istio_build = istio['build']
+    istio_archive_url = istio['archive_url']
 
     cluster = d['cluster']
     cluster_project_id = cluster['project_id']
@@ -95,9 +90,7 @@ def from_dict(d: Dict[str, Any]) -> RunnerConfig:
     return RunnerConfig(
         topology_paths=topology_paths,
         environments=environments,
-        istio_hub=istio_hub,
-        istio_tag=istio_tag,
-        istio_build=istio_build,
+        istio_archive_url=istio_archive_url,
         cluster_project_id=cluster_project_id,
         cluster_name=cluster_name,
         cluster_zone=cluster_zone,

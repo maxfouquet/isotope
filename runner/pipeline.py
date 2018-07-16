@@ -16,9 +16,8 @@ _MAIN_GO_PATH = os.path.join(_REPO_ROOT, 'convert', 'main.go')
 
 def run(topology_path: str, env: mesh.Environment, cluster_project_id: str,
         cluster_name: str, cluster_zone: str, service_image: str,
-        client_image: str, hub: str, tag: str, should_build_istio: bool,
-        test_qps: Optional[int], test_duration: str,
-        test_num_concurrent_connections: int,
+        client_image: str, istio_archive_url: str, test_qps: Optional[int],
+        test_duration: str, test_num_concurrent_connections: int,
         static_labels: Dict[str, str]) -> None:
     """Runs a load test on the topology in topology_path with the environment.
 
@@ -27,9 +26,8 @@ def run(topology_path: str, env: mesh.Environment, cluster_project_id: str,
         env: the pre-existing mesh environment for the topology (i.e. Istio)
         service_image: the Docker image to represent each node in the topology
         client_image: the Docker image which can run a load test (i.e. Fortio)
-        hub: the Docker hub for Istio images
-        tag: the image tag for Istio images
-        should_build_istio: if True, builds and pushes Istio images from master
+        istio_archive_url: URL to access a released tar.gz archive via an
+                HTTP GET request
         test_qps: the target QPS for the client; None = max
         test_duration: the duration for the client to run
         test_num_concurrent_connections: the number of simultaneous connections

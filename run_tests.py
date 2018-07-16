@@ -30,13 +30,12 @@ def main() -> None:
             mesh_environment = mesh.for_state(
                 env_name, entrypoint_service_name,
                 consts.SERVICE_GRAPH_NAMESPACE, config)
-            pipeline.run(
-                topology_path, mesh_environment, config.cluster_project_id,
-                config.cluster_name, config.cluster_zone, config.server_image,
-                config.client_image, config.istio_hub, config.istio_tag,
-                config.should_build_istio, config.client_qps,
-                config.client_duration, config.client_num_conc_conns,
-                config.labels())
+            pipeline.run(topology_path, mesh_environment,
+                         config.cluster_project_id, config.cluster_name,
+                         config.cluster_zone, config.server_image,
+                         config.client_image, config.istio_archive_url,
+                         config.client_qps, config.client_duration,
+                         config.client_num_conc_conns, config.labels())
 
 
 def parse_args() -> argparse.Namespace:
