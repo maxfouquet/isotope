@@ -255,6 +255,18 @@ def _get_config_map(cluster_project_id: str, cluster_name: str,
                 'telemetry',
                 'action':
                 'keep',
+            }, {
+                'source_labels': [
+                    '__address__',
+                ],
+                # TODO: Streamline this regex.
+                'regex': '([^:]+)(?::\\d+)?;(\\d+)',
+                # Use port 42422 only for istio-telemetry.
+                'replacement': '$1:{}'.format(consts.ISTIO_TELEMETRY_PORT),
+                'target_label':
+                '__address__',
+                'action':
+                'replace',
             }, *append_label_configs],
         }, {
             'job_name':
