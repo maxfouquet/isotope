@@ -9,12 +9,11 @@ class RunnerConfig:
     def __init__(self, topology_paths: List[str], environments: List[str],
                  istio_archive_url: str, cluster_project_id: str,
                  cluster_name: str, cluster_zone: str, cluster_version: str,
-                 cluster_create: bool, server_machine_type: str,
-                 server_disk_size_gb: int, server_num_nodes: int,
-                 server_image: str, client_machine_type: str,
-                 client_disk_size_gb: int, client_image: str,
-                 client_qps: Optional[int], client_duration: str,
-                 client_num_conc_conns: int) -> None:
+                 server_machine_type: str, server_disk_size_gb: int,
+                 server_num_nodes: int, server_image: str,
+                 client_machine_type: str, client_disk_size_gb: int,
+                 client_image: str, client_qps: Optional[int],
+                 client_duration: str, client_num_conc_conns: int) -> None:
         self.topology_paths = topology_paths
         self.environments = environments
         self.istio_archive_url = istio_archive_url
@@ -22,7 +21,6 @@ class RunnerConfig:
         self.cluster_name = cluster_name
         self.cluster_zone = cluster_zone
         self.cluster_version = cluster_version
-        self.should_create_cluster = cluster_create
         self.server_machine_type = server_machine_type
         self.server_disk_size_gb = server_disk_size_gb
         self.server_num_nodes = server_num_nodes
@@ -66,7 +64,6 @@ def from_dict(d: Dict[str, Any]) -> RunnerConfig:
     cluster_name = cluster['name']
     cluster_zone = cluster['zone']
     cluster_version = cluster['version']
-    cluster_create = cluster['create']
 
     server = d['server']
     server_machine_type = server['machine_type']
@@ -95,7 +92,6 @@ def from_dict(d: Dict[str, Any]) -> RunnerConfig:
         cluster_name=cluster_name,
         cluster_zone=cluster_zone,
         cluster_version=cluster_version,
-        cluster_create=cluster_create,
         server_machine_type=server_machine_type,
         server_disk_size_gb=server_disk_size_gb,
         server_image=server_image,

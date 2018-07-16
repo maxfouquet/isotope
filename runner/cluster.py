@@ -4,10 +4,33 @@ import os
 from . import consts, prometheus, resources, sh, wait
 
 
-def setup(project_id: str, name: str, zone: str, version: str,
-          service_graph_machine_type: str, service_graph_disk_size_gb: int,
-          service_graph_num_nodes: int, client_machine_type: str,
-          client_disk_size_gb: int) -> None:
+def set_up_if_not_exists(
+        project_id: str, name: str, zone: str, version: str,
+        service_graph_machine_type: str, service_graph_disk_size_gb: int,
+        service_graph_num_nodes: int, client_machine_type: str,
+        client_disk_size_gb: int) -> None:
+    sh.run_gcloud(['config', 'set', 'project', project_id], check=True)
+
+    # TODO: This is the default tabular output. Filter the input to just the
+    # names of the existing clusters.
+    output = sh.run_gcloud(
+        ['container', 'clusters', 'list', '--zone', zone], check=True).stdout
+    if name in output:
+        # TODO: Determine if the existing cluster is normal or is being
+        # deleted. If it is currently being deleted so it not okay to simply
+        # continue as if the cluster already exists.
+        logging.debug('%s already exists; bypassing creation', name)
+    else:
+        logging.debug('%s does not exist yet; creating...', name)
+        set_up(project_id, name, zone, version, service_graph_machine_type,
+               service_graph_disk_size_gb, service_graph_num_nodes,
+               client_machine_type, client_disk_size_gb)
+
+
+def set_up(project_id: str, name: str, zone: str, version: str,
+           service_graph_machine_type: str, service_graph_disk_size_gb: int,
+           service_graph_num_nodes: int, client_machine_type: str,
+           client_disk_size_gb: int) -> None:
     """Creates and sets up a GKE cluster.
 
     Args:

@@ -12,7 +12,6 @@ project_id = "istio-200620"
 # Cluster will be created with one n1-standard-1 node in the default node-pool
 # running Prometheus. In total, the cluster will have 1 Prometheus node, 1
 # client node, and N service-graph nodes (total of N + 2 nodes).
-create = false
 name = "isotope-cluster-1"
 zone = "us-central1-a"
 # Must be >=1.10.2 for Stackdriver support.
