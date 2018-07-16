@@ -239,6 +239,25 @@ def _get_config_map(cluster_project_id: str, cluster_name: str,
         },
         'scrape_configs': [{
             'job_name':
+            'istio-telemetry',
+            'kubernetes_sd_configs': [{
+                'role': 'pod',
+            }],
+            'relabel_configs': [{
+                'source_labels': ['__meta_kubernetes_namespace'],
+                'regex':
+                consts.ISTIO_NAMESPACE,
+                'action':
+                'keep',
+            }, {
+                'source_labels': ['__meta_kubernetes_pod_label_app'],
+                'regex':
+                'telemetry',
+                'action':
+                'keep',
+            }, *append_label_configs],
+        }, {
+            'job_name':
             'kubernetes-nodes',
             'kubernetes_sd_configs': [{
                 'role': 'node',
