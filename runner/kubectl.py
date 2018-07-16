@@ -73,14 +73,20 @@ def port_forward(deployment_name: str, deployment_port: int,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE)
 
-    # TODO: Should wait for output from proc.stdout
-    time.sleep(1)
+    try:
+        # proc.communicate waits until the process terminates or timeout.
+        _, stderr_bytes = proc.communicate(timeout=1)
 
-    if not proc.stdout:
-        info = ': {}'.format(str(proc.stderr)) if proc.stderr else ''
+        # If proc terminates after 1 second, assume that an error occured.
+        stderr = stderr_bytes.decode('utf-8') if stderr_bytes else ''
+        info = ': {}'.format(stderr) if stderr else ''
         msg = 'could not port-forward to {}:{} on local port {}{}'.format(
             deployment_name, deployment_port, local_port, info)
         raise RuntimeError(msg)
+    except subprocess.TimeoutExpired:
+        # If proc is still running after 1 second, assume that proc will
+        # continue port forwarding until termination, as expected.
+        pass
 
     yield local_port
 
