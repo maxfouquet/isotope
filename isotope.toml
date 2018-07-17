@@ -1,5 +1,5 @@
 topology_paths = [
-  "example-topologies/2-single-node.yaml",
+  "example-topologies/0-0-canonical.yaml",
 ]
 
 environments = [
@@ -23,13 +23,13 @@ archive_url = "https://storage.googleapis.com/istio-prerelease/daily-build/relea
 [server]
 machine_type = "n1-standard-1"
 disk_size_gb = 16
-num_nodes = 1
+num_nodes = 4
 image = "tahler/mock-service:latest"
 
 [client]
-machine_type = "n1-highcpu-32"
+machine_type = "n1-standard-16"
 disk_size_gb = 16
 image = "tahler/fortio:prometheus"
 qps = "max"
-duration = "1m"
+duration = "5m"
 num_concurrent_connections = 64
