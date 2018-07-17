@@ -70,7 +70,8 @@ def until_stateful_sets_are_ready(
 
 def until_prometheus_has_scraped() -> None:
     logging.info('allowing Prometheus time to scrape final metrics')
-    time.sleep(consts.PROMETHEUS_SCRAPE_INTERVAL.seconds)
+    # Add 5 seconds for more confidence that responses to "/metrics" complete.
+    time.sleep(consts.PROMETHEUS_SCRAPE_INTERVAL.seconds + 5)
 
 
 def until_namespace_is_deleted(
