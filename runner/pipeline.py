@@ -133,25 +133,15 @@ def _run_load_test(result_output_path: str, test_target_url: str,
                 for the client to make
     """
     logging.info('starting load test')
-    svc_addr = _get_svc_ip(consts.CLIENT_NAME)
-    qps = -1 if test_qps is None else test_qps  # -1 indicates max QPS.
-    url = ('http://{}:{}/fortio?json=on&qps={}&t={}&c={}&load=Start&url={}'
-           ).format(svc_addr, consts.CLIENT_PORT, qps, test_duration,
-                    test_num_concurrent_connections, test_target_url)
-    result = _http_get_json(url)
+    with kubectl.port_forward(consts.CLIENT_NAME, consts.CLIENT_PORT,
+                              consts.DEFAULT_NAMESPACE) as local_port:
+        qps = -1 if test_qps is None else test_qps  # -1 indicates max QPS.
+        url = ('http://localhost:{}/fortio'
+               '?json=on&qps={}&t={}&c={}&load=Start&url={}').format(
+                   local_port, qps, test_duration,
+                   test_num_concurrent_connections, test_target_url)
+        result = _http_get_json(url)
     _write_to_file(result_output_path, result)
-
-
-def _get_svc_ip(name: str) -> str:
-    """Blocks until a public IP address for name is created, and returns it."""
-    logging.debug('waiting for service/%s to obtain an external IP address',
-                  name)
-    ip = wait.until_output([
-        'kubectl', 'get', 'service', name, '-o',
-        'jsonpath={.status.loadBalancer.ingress[0].ip}'
-    ])
-    logging.debug('service/%s IP is %s', name, ip)
-    return ip
 
 
 def _http_get_json(url: str) -> str:
