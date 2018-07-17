@@ -6,7 +6,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 var fortioClientLabels = map[string]string{"app": "client"}
@@ -58,16 +57,7 @@ func makeFortioService() (service apiv1.Service) {
 	service.ObjectMeta.Labels = fortioClientLabels
 	service.ObjectMeta.Annotations = prometheusScrapeAnnotations
 	timestamp(&service.ObjectMeta)
-	service.Spec = apiv1.ServiceSpec{
-		Selector: fortioClientLabels,
-		Type:     "LoadBalancer",
-		ExternalTrafficPolicy: "Cluster",
-		Ports: []apiv1.ServicePort{
-			{
-				Port:       consts.ServicePort,
-				TargetPort: intstr.FromInt(consts.ServicePort),
-			},
-		},
-	}
+	service.Spec.Ports = []apiv1.ServicePort{{Port: consts.ServicePort}}
+	service.Spec.Selector = fortioClientLabels
 	return
 }
