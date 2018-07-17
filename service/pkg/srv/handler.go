@@ -33,7 +33,7 @@ func (h Handler) ServeHTTP(
 	h.Metrics.RecordRequestReceived()
 
 	respond := func(status int, paths []string, isLocalErr bool) {
-		stampHeader(h.Service.Name, writer.Header(), paths, isLocalErr)
+		// stampHeader(h.Service.Name, writer.Header(), paths, isLocalErr)
 
 		stopTime := time.Now()
 		duration := stopTime.Sub(startTime)
