@@ -1,7 +1,7 @@
 import logging
 import os
 
-from . import consts, prometheus, resources, sh, wait
+from . import consts, resources, sh, wait
 
 
 def set_up_if_not_exists(
@@ -49,7 +49,10 @@ def set_up(project_id: str, name: str, zone: str, version: str,
     _create_cluster(name, zone, version, 'n1-standard-1', 16, 1)
     _create_cluster_role_binding()
 
-    _create_stackdriver_prometheus(project_id, name, zone)
+    _create_persistent_volume()
+    _initialize_helm()
+    _helm_add_prometheus_operator()
+    _helm_add_prometheus()
 
     _create_service_graph_node_pool(service_graph_num_nodes,
                                     service_graph_machine_type,
@@ -63,8 +66,8 @@ def _create_cluster(name: str, zone: str, version: str, machine_type: str,
     sh.run_gcloud(
         [
             'container', 'clusters', 'create', name, '--zone', zone,
-            '--cluster-version', version, '--enable-stackdriver-kubernetes',
-            '--machine-type', machine_type, '--disk-size',
+            '--cluster-version', version, '--machine-type', machine_type,
+            '--disk-size',
             str(disk_size_gb), '--num-nodes',
             str(num_nodes)
         ],
@@ -111,10 +114,43 @@ def _create_cluster_role_binding() -> None:
         check=True)
 
 
-def _create_stackdriver_prometheus(cluster_project_id: str, cluster_name: str,
-                                   cluster_zone: str) -> None:
-    prometheus.apply(
-        cluster_project_id,
-        cluster_name,
-        cluster_zone,
-        should_reload_config=False)
+def _create_persistent_volume() -> None:
+    logging.info('creating persistent volume')
+    sh.run_kubectl(
+        ['apply', '-f', resources.PERSISTENT_VOLUME_YAML_PATH], check=True)
+
+
+def _initialize_helm() -> None:
+    logging.info('initializing Helm')
+    sh.run_kubectl(
+        ['create', '-f', resources.HELM_SERVICE_ACCOUNT_YAML_PATH], check=True)
+    sh.run(
+        ['helm', 'init', '--service-account', 'tiller', '--wait'], check=True)
+    sh.run(
+        [
+            'helm', 'repo', 'add', 'coreos',
+            'https://s3-eu-west-1.amazonaws.com/coreos-charts/stable'
+        ],
+        check=True)
+
+
+def _helm_add_prometheus_operator() -> None:
+    logging.info('installing coreos/prometheus-operator')
+    sh.run(
+        [
+            'helm', 'install', 'coreos/prometheus-operator', '--name',
+            'prometheus-operator', '--namespace', consts.MONITORING_NAMESPACE
+        ],
+        check=True)
+
+
+def _helm_add_prometheus() -> None:
+    logging.info('installing coreos/prometheus')
+    sh.run(
+        [
+            'helm', 'install', 'coreos/prometheus', '--name', 'prometheus',
+            '--namespace', consts.MONITORING_NAMESPACE, '--values',
+            resources.PROMETHEUS_STORAGE_VALUES_YAML_PATH
+        ],
+        check=True)
+    wait.until_stateful_sets_are_ready(consts.MONITORING_NAMESPACE)

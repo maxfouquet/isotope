@@ -32,7 +32,7 @@ def run(topology_path: str, env: mesh.Environment, cluster_project_id: str,
         test_duration: the duration for the client to run
         test_num_concurrent_connections: the number of simultaneous connections
                 for the client to make
-        static_labels: labels to add to each Prometheus metric
+        static_labels: labels to add to each Prometheus monitor
     """
 
     manifest_path = _gen_yaml(topology_path, service_image, client_image)
@@ -41,12 +41,10 @@ def run(topology_path: str, env: mesh.Environment, cluster_project_id: str,
     labels = {
         'environment': env.name,
         'topology_name': topology_name,
-
-        # TODO: Restore once resolving Stackdriver's 10-label limit.
-        # 'topology_hash': md5.hex(topology_path),
-        # **static_labels,
+        'topology_hash': md5.hex(topology_path),
+        **static_labels,
     }
-    prometheus.apply(cluster_project_id, cluster_name, cluster_zone, labels)
+    _update_prometheus_configuration(labels)
 
     with env.context() as ingress_url:
         logging.info('starting test with environment "%s"', env.name)
@@ -55,6 +53,24 @@ def run(topology_path: str, env: mesh.Environment, cluster_project_id: str,
         _test_service_graph(manifest_path, result_output_path, ingress_url,
                             test_qps, test_duration,
                             test_num_concurrent_connections)
+
+
+def _update_prometheus_configuration(static_labels: Dict[str, str]) -> None:
+    _write_prometheus_values(static_labels)
+
+    logging.info('updating Prometheus configuration')
+    sh.run(
+        [
+            'helm', 'upgrade', 'prometheus', 'coreos/prometheus', '--values',
+            resources.PROMETHEUS_VALUES_GEN_YAML_PATH
+        ],
+        check=True)
+
+
+def _write_prometheus_values(labels: Dict[str, str]) -> None:
+    values_yaml = prometheus.values_yaml(labels)
+    with open(resources.PROMETHEUS_VALUES_GEN_YAML_PATH, 'w') as f:
+        f.write(values_yaml)
 
 
 def _get_basename_no_ext(path: str) -> str:

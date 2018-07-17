@@ -1,13 +1,11 @@
 import contextlib
 import logging
 import subprocess
-from typing import Dict, Generator, List, Union
+from typing import Dict, List, Union
 
 
 def run_gcloud(args: List[str], check=False) -> subprocess.CompletedProcess:
-    # 'beta' argument is required until Stackdriver monitoring is stable.
-    # https://cloud.google.com/monitoring/kubernetes-engine/installing
-    return run(['gcloud', 'beta', *args], check=check)
+    return run(['gcloud', *args], check=check)
 
 
 def run_kubectl(args: List[str], check=False) -> subprocess.CompletedProcess:

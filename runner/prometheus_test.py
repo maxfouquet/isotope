@@ -1,11 +1,13 @@
-import logging
+import collections
 import textwrap
-from typing import Dict, Iterable, Tuple
 
-import jinja2
+import yaml
 
-TEMPLATE = jinja2.Template(
-    textwrap.dedent("""\
+from . import prometheus
+
+
+def test_values_should_return_correct_yaml():
+    expected_yaml = textwrap.dedent("""\
         serviceMonitors:
         - name: service-graph-monitor
           selector:
@@ -17,10 +19,10 @@ TEMPLATE = jinja2.Template(
           endpoints:
           - targetPort: 8080
             metricRelabelings:
-            {%- for key, value in labels.items() %}
-            - targetLabel: "{{ key }}"
-              replacement: "{{ value }}"
-            {%- endfor %}
+            - targetLabel: "user"
+              replacement: "tjberry"
+            - targetLabel: "custom"
+              replacement: "stuff"
         - name: client-monitor
           selector:
             matchLabels:
@@ -31,10 +33,10 @@ TEMPLATE = jinja2.Template(
           endpoints:
           - targetPort: 42422
             metricRelabelings:
-            {%- for key, value in labels.items() %}
-            - targetLabel: "{{ key }}"
-              replacement: "{{ value }}"
-            {%- endfor %}
+            - targetLabel: "user"
+              replacement: "tjberry"
+            - targetLabel: "custom"
+              replacement: "stuff"
         - name: istio-mixer-monitor
           selector:
             matchLabels:
@@ -45,10 +47,10 @@ TEMPLATE = jinja2.Template(
           endpoints:
           - targetPort: 42422
             metricRelabelings:
-            {%- for key, value in labels.items() %}
-            - targetLabel: "{{ key }}"
-              replacement: "{{ value }}"
-            {%- endfor %}
+            - targetLabel: "user"
+              replacement: "tjberry"
+            - targetLabel: "custom"
+              replacement: "stuff"
         storageSpec:
           volumeClaimTemplate:
             spec:
@@ -62,10 +64,16 @@ TEMPLATE = jinja2.Template(
               resources:
                 requests:
                   storage: 10G
-    """))
+    """)
+    expected = yaml.load(expected_yaml)
 
+    # Use an OrderedDict to prevent flakiness from iterating dictionaries.
+    labels = collections.OrderedDict([
+        ('user', 'tjberry'),
+        ('custom', 'stuff'),
+    ])
 
-def values_yaml(labels: Dict[str, str]) -> str:
-    """Returns Prometheus Helm values with relabellings to include labels."""
-    logging.info('generating Prometheus configuration')
-    return TEMPLATE.render(labels=labels)
+    actual_yaml = prometheus.values_yaml(labels)
+    actual = yaml.load(actual_yaml)
+
+    assert expected == actual
