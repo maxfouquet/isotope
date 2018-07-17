@@ -315,41 +315,6 @@ def _get_config_map(cluster_project_id: str, cluster_name: str,
             },
             {
                 'job_name':
-                'kubernetes-nodes',
-                'kubernetes_sd_configs': [{
-                    'role': 'node',
-                    'namespaces': {
-                        'names': [
-                            consts.DEFAULT_NAMESPACE,
-                            consts.SERVICE_GRAPH_NAMESPACE,
-                        ],
-                    },
-                }],
-                'scheme':
-                'https',
-                'relabel_configs': [{
-                    'replacement':
-                    'kubernetes.default.svc:443',
-                    'target_label':
-                    '__address__',
-                }, {
-                    'replacement':
-                    '/api/v1/nodes/${1}/proxy/metrics',
-                    'source_labels': ['__meta_kubernetes_node_name'],
-                    'regex':
-                    '(.+)',
-                    'target_label':
-                    '__metrics_path__',
-                }, *append_label_configs],
-                'bearer_token_file':
-                '/var/run/secrets/kubernetes.io/serviceaccount/token',
-                'tls_config': {
-                    'ca_file':
-                    '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
-                },
-            },
-            {
-                'job_name':
                 'kubernetes-pods-containers',
                 'kubernetes_sd_configs': [{
                     'role': 'pod',
