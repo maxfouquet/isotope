@@ -21,7 +21,7 @@ func sendRequest(
 	if err != nil {
 		return nil, err
 	}
-	log.Infof("sending request to %s (%s)", destName, url)
+	log.Debugf("sending request to %s (%s)", destName, url)
 	return http.DefaultClient.Do(request)
 }
 

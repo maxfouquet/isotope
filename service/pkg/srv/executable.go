@@ -58,7 +58,11 @@ func executeRequestCommand(
 	}
 	metrics.RecordRequestSent(destName, uint64(cmd.Size))
 	paths = response.Header[pathTracesHeaderKey]
-	log.Debugf("%s responded with %s", destName, response.Status)
+	if response.StatusCode == 200 {
+		log.Debugf("%s responded with %s", destName, response.Status)
+	} else {
+		log.Errf("%s responded with %s", destName, response.Status)
+	}
 	if response.StatusCode == http.StatusInternalServerError {
 		err = fmt.Errorf("service %s responded with %s", destName, response.Status)
 	}

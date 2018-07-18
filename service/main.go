@@ -22,7 +22,7 @@ var (
 )
 
 func main() {
-	log.SetLogLevel(log.Debug)
+	log.SetLogLevel(log.Info)
 
 	serviceName, ok := os.LookupEnv(consts.ServiceNameEnvKey)
 	if !ok {

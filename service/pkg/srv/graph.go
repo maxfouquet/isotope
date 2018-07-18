@@ -56,7 +56,7 @@ func serviceGraphFromYAMLFile(
 	if err != nil {
 		return
 	}
-	log.Infof("unmarshalling\n%s", graphYAML)
+	log.Debugf("unmarshalling\n%s", graphYAML)
 	err = yaml.Unmarshal(graphYAML, &serviceGraph)
 	if err != nil {
 		return
