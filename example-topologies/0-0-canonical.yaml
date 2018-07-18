@@ -3,8 +3,6 @@ defaults:
   responseSize: 1 KB
 services:
 - name: a
-  script:
-  - sleep: 100ms
 - name: b
 - name: c
   script:
@@ -15,5 +13,4 @@ services:
   script:
   - - call: a
     - call: c
-  - sleep: 10ms
   - call: b
