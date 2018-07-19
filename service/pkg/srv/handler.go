@@ -47,11 +47,6 @@ func (h Handler) ServeHTTP(
 		}
 	}
 
-	if err := h.errorChance(); err != nil {
-		respond(http.StatusInternalServerError, nil, true)
-		return
-	}
-
 	allPaths := make([]string, 0, len(h.Service.Script))
 	for _, step := range h.Service.Script {
 		forwardableHeader := extractForwardableHeader(request.Header)
@@ -94,14 +89,3 @@ func stampPaths(paths []string, stamp string) []string {
 	return stampedPaths
 }
 
-// errorChance randomly returns an error h.Service.ErrorRate percent of the
-// time.
-func (h Handler) errorChance() (err error) {
-	// TODO: Restore once Fortio can ignore errors.
-	return nil
-	// random := rand.Float64()
-	// if random < float64(h.Service.ErrorRate) {
-	// 	err = fmt.Errorf("server randomly failed with a chance of %v", h.Service.ErrorRate)
-	// }
-	// return
-}
