@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 #
-# Creates a complete tree of services (every level, except perhaps the last, is
-# filled).
+# Creates a complete tree of services (every level is filled).
 
 import collections
 from typing import Any, Dict, List
@@ -12,10 +11,11 @@ REQUEST_SIZE = 128
 RESPONSE_SIZE = 128
 NUM_REPLICAS = 1
 
-# Total number of services.
-NUM_SERVICES = 111
-# Maximum amount of dependent or child services each service has.
-NUM_BRANCHES = 10
+# Depth of the tree.
+NUM_LEVELS = 3
+# Amount of dependent or child services each service has.
+NUM_BRANCHES = 3
+NUM_SERVICES = sum([NUM_BRANCHES**i for i in range(NUM_LEVELS)])
 
 Service = Dict[str, Any]
 
