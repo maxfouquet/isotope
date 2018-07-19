@@ -1,10 +1,8 @@
 package srv
 
 import (
-	"fmt"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/Tahler/isotope/convert/pkg/graph/svc"
@@ -32,9 +30,7 @@ func (h Handler) ServeHTTP(
 
 	h.Metrics.RecordRequestReceived()
 
-	respond := func(status int, paths []string, isLocalErr bool) {
-		// stampHeader(h.Service.Name, writer.Header(), paths, isLocalErr)
-
+	respond := func(status int) {
 		stopTime := time.Now()
 		duration := stopTime.Sub(startTime)
 		// TODO: Record size of response payload.
@@ -47,45 +43,16 @@ func (h Handler) ServeHTTP(
 		}
 	}
 
-	allPaths := make([]string, 0, len(h.Service.Script))
 	for _, step := range h.Service.Script {
 		forwardableHeader := extractForwardableHeader(request.Header)
-		paths, err := execute(step, forwardableHeader, h.ServiceTypes, h.Metrics)
-		allPaths = append(allPaths, paths...)
+		err := execute(step, forwardableHeader, h.ServiceTypes, h.Metrics)
 		if err != nil {
 			log.Errf("%s", err)
-			respond(http.StatusInternalServerError, allPaths, false)
+			respond(http.StatusInternalServerError)
 			return
 		}
 	}
 
-	respond(http.StatusOK, allPaths, false)
-}
-
-func stampHeader(
-	serviceName string, header http.Header, paths []string, isLocalErr bool) {
-	stamp := fmt.Sprintf("%s (%s)", serviceName, hostname)
-	if isLocalErr {
-		stamp += " (ERROR)"
-	}
-
-	var stampedPaths []string
-	if len(paths) == 0 {
-		stampedPaths = []string{stamp}
-	} else {
-		stampedPaths = stampPaths(paths, stamp)
-	}
-	log.Debugf("stamped headers:\n%s", strings.Join(stampedPaths, "\n"))
-
-	header[pathTracesHeaderKey] = stampedPaths
-}
-
-func stampPaths(paths []string, stamp string) []string {
-	stampedPaths := make([]string, 0, len(paths))
-	for _, path := range paths {
-		stampedPath := fmt.Sprintf("%s %s", stamp, path)
-		stampedPaths = append(stampedPaths, stampedPath)
-	}
-	return stampedPaths
+	respond(http.StatusOK)
 }
 

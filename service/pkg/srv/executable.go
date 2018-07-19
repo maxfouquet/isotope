@@ -19,15 +19,15 @@ func execute(
 	step interface{},
 	forwardableHeader http.Header,
 	serviceTypes map[string]svctype.ServiceType,
-	metrics prometheus.Metrics) (paths []string, err error) {
+	metrics prometheus.Metrics) (err error) {
 	switch cmd := step.(type) {
 	case script.SleepCommand:
 		executeSleepCommand(cmd)
 	case script.RequestCommand:
-		paths, err = executeRequestCommand(
+		err = executeRequestCommand(
 			cmd, forwardableHeader, serviceTypes, metrics)
 	case script.ConcurrentCommand:
-		paths, err = executeConcurrentCommand(
+		err = executeConcurrentCommand(
 			cmd, forwardableHeader, serviceTypes, metrics)
 	default:
 		log.Fatalf("unknown command type in script: %T", cmd)
@@ -45,7 +45,7 @@ func executeRequestCommand(
 	cmd script.RequestCommand,
 	forwardableHeader http.Header,
 	serviceTypes map[string]svctype.ServiceType,
-	metrics prometheus.Metrics) (paths []string, err error) {
+	metrics prometheus.Metrics) (err error) {
 	destName := cmd.ServiceName
 	destType, ok := serviceTypes[destName]
 	if !ok {
@@ -57,7 +57,6 @@ func executeRequestCommand(
 		return
 	}
 	metrics.RecordRequestSent(destName, uint64(cmd.Size))
-	paths = response.Header[pathTracesHeaderKey]
 	if response.StatusCode == 200 {
 		log.Debugf("%s responded with %s", destName, response.Status)
 	} else {
@@ -85,27 +84,20 @@ func executeConcurrentCommand(
 	cmd script.ConcurrentCommand,
 	forwardableHeader http.Header,
 	serviceTypes map[string]svctype.ServiceType,
-	metrics prometheus.Metrics) (paths []string, errs error) {
+	metrics prometheus.Metrics) (errs error) {
 	numSubCmds := len(cmd)
 	wg := sync.WaitGroup{}
 	wg.Add(numSubCmds)
-	pathsChan := make(chan []string, numSubCmds)
 	for _, subCmd := range cmd {
 		go func(step interface{}) {
 			defer wg.Done()
 
-			// TODO: Differentiate between actual error and errorRate-caused error.
-			stepPaths, err := execute(step, forwardableHeader, serviceTypes, metrics)
-			pathsChan <- stepPaths
+			err := execute(step, forwardableHeader, serviceTypes, metrics)
 			if err != nil {
 				errs = multierror.Append(errs, err)
 			}
 		}(subCmd)
 	}
 	wg.Wait()
-	close(pathsChan)
-	for returnedPaths := range pathsChan {
-		paths = append(paths, returnedPaths...)
-	}
 	return
 }
