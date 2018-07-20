@@ -2,6 +2,7 @@
 package kubernetes
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -40,6 +41,7 @@ func ServiceGraphToKubernetesManifests(
 	serviceGraph graph.ServiceGraph,
 	serviceNodeSelector map[string]string,
 	serviceImage string,
+	serviceMaxIdleConnectionsPerHost int,
 	clientNodeSelector map[string]string,
 	clientImage string) (yamlDoc []byte, err error) {
 	numServices := len(serviceGraph.Services)
@@ -72,7 +74,8 @@ func ServiceGraphToKubernetesManifests(
 
 	for _, service := range serviceGraph.Services {
 		k8sDeployment, innerErr := makeDeployment(
-			service, serviceNodeSelector, serviceImage)
+			service, serviceNodeSelector, serviceImage,
+			serviceMaxIdleConnectionsPerHost)
 		if innerErr != nil {
 			return nil, innerErr
 		}
@@ -160,9 +163,9 @@ func makeService(service svc.Service) (k8sService apiv1.Service, err error) {
 }
 
 func makeDeployment(
-	service svc.Service,
-	nodeSelector map[string]string,
-	serviceImage string) (k8sDeployment appsv1.Deployment, err error) {
+	service svc.Service, nodeSelector map[string]string,
+	serviceImage string, serviceMaxIdleConnectionsPerHost int) (
+	k8sDeployment appsv1.Deployment, err error) {
 	k8sDeployment.APIVersion = "apps/v1"
 	k8sDeployment.Kind = "Deployment"
 	k8sDeployment.ObjectMeta.Name = service.Name
@@ -191,6 +194,11 @@ func makeDeployment(
 					{
 						Name:  consts.ServiceContainerName,
 						Image: serviceImage,
+						Args: []string{
+							fmt.Sprintf(
+								"--max-idle-connections-per-host=%v",
+								serviceMaxIdleConnectionsPerHost),
+						},
 						Env: []apiv1.EnvVar{
 							{Name: consts.ServiceNameEnvKey, Value: service.Name},
 						},

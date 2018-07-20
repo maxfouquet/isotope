@@ -32,6 +32,10 @@ var kubernetesCmd = &cobra.Command{
 		serviceImage, err := cmd.PersistentFlags().GetString("service-image")
 		exitIfError(err)
 
+		serviceMaxIdleConnectionsPerHost, err :=
+			cmd.PersistentFlags().GetInt("service-max-idle-connections-per-host")
+		exitIfError(err)
+
 		clientImage, err := cmd.PersistentFlags().GetString("client-image")
 		exitIfError(err)
 
@@ -43,7 +47,7 @@ var kubernetesCmd = &cobra.Command{
 
 		manifests, err := kubernetes.ServiceGraphToKubernetesManifests(
 			serviceGraph, serviceNodeSelector, serviceImage,
-			clientNodeSelector, clientImage)
+			serviceMaxIdleConnectionsPerHost, clientNodeSelector, clientImage)
 		exitIfError(err)
 
 		exitIfError(writeManifest(outPath, manifests))
@@ -54,6 +58,9 @@ func init() {
 	rootCmd.AddCommand(kubernetesCmd)
 	kubernetesCmd.PersistentFlags().String(
 		"service-image", "", "the image to deploy for all services in the graph")
+	kubernetesCmd.PersistentFlags().Int(
+		"service-max-idle-connections-per-host", 0,
+		"maximum number of connections to keep open per host on each service")
 	kubernetesCmd.PersistentFlags().String(
 		"client-image", "", "the image to use for the load testing client job")
 }
