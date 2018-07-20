@@ -90,7 +90,9 @@ def _install(chart_path: str, namespace: str,
         [
             'helm', 'template', chart_path, '--namespace', namespace,
             '--set=global.hub=docker.io/istionightly',
-            '--set=global.tag=nightly-master'
+            '--set=global.tag=nightly-master',
+            '--set=global.proxy.resources.requests.cpu=100m',
+            '--set=global.defaultResources.requests.cpu=1000m'
         ],
         check=True).stdout
     kubectl.apply_text(
