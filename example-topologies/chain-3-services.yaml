@@ -1,6 +1,3 @@
-defaults:
-  requestSize: 1 KB
-  responseSize: 1 KB
 services:
 - isEntrypoint: true
   name: a
@@ -10,6 +7,3 @@ services:
   script:
   - call: c
 - name: c
-  script:
-  - call: d
-- name: d
