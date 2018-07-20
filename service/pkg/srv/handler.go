@@ -31,16 +31,16 @@ func (h Handler) ServeHTTP(
 	h.Metrics.RecordRequestReceived()
 
 	respond := func(status int) {
-		stopTime := time.Now()
-		duration := stopTime.Sub(startTime)
-		// TODO: Record size of response payload.
-		h.Metrics.RecordResponseSent(duration, 0, status)
-
 		writer.WriteHeader(status)
 		err := request.Write(writer)
 		if err != nil {
 			log.Errf("%s", err)
 		}
+
+		stopTime := time.Now()
+		duration := stopTime.Sub(startTime)
+		// TODO: Record size of response payload.
+		h.Metrics.RecordResponseSent(duration, 0, status)
 	}
 
 	for _, step := range h.Service.Script {
@@ -55,4 +55,3 @@ func (h Handler) ServeHTTP(
 
 	respond(http.StatusOK)
 }
-
