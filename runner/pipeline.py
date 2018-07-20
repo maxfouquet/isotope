@@ -35,7 +35,8 @@ def run(topology_path: str, env: mesh.Environment, cluster_project_id: str,
         static_labels: labels to add to each Prometheus monitor
     """
 
-    manifest_path = _gen_yaml(topology_path, service_image, client_image)
+    manifest_path = _gen_yaml(topology_path, service_image,
+                              test_num_concurrent_connections, client_image)
 
     topology_name = _get_basename_no_ext(topology_path)
     labels = {
@@ -81,7 +82,7 @@ def _get_basename_no_ext(path: str) -> str:
 
 
 def _gen_yaml(topology_path: str, service_image: str,
-              client_image: str) -> str:
+              max_idle_connections_per_host: int, client_image: str) -> str:
     """Converts topology_path to Kubernetes manifests.
 
     The neighboring Go command in convert/ handles this operation.
@@ -100,9 +101,10 @@ def _gen_yaml(topology_path: str, service_image: str,
     sh.run(
         [
             'go', 'run', _MAIN_GO_PATH, 'kubernetes', '--service-image',
-            service_image, '--client-image', client_image, topology_path,
-            resources.SERVICE_GRAPH_GEN_YAML_PATH, service_graph_node_selector,
-            client_node_selector
+            service_image, '--service-max-idle-connections-per-host',
+            str(max_idle_connections_per_host), '--client-image', client_image,
+            topology_path, resources.SERVICE_GRAPH_GEN_YAML_PATH,
+            service_graph_node_selector, client_node_selector
         ],
         check=True)
     return resources.SERVICE_GRAPH_GEN_YAML_PATH
