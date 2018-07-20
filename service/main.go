@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"runtime"
 
 	"github.com/Tahler/isotope/convert/pkg/consts"
 	"github.com/Tahler/isotope/service/pkg/srv"
@@ -24,6 +25,7 @@ var (
 func main() {
 	log.SetLogLevel(log.Info)
 
+	setMaxProcs()
 	setMaxIdleConnectionsPerHost(100)
 
 	serviceName, ok := os.LookupEnv(consts.ServiceNameEnvKey)
@@ -61,6 +63,15 @@ func serveWithPrometheus(defaultHandler srv.Handler) (err error) {
 		return
 	}
 	return
+}
+
+func setMaxProcs() {
+	numCPU := runtime.NumCPU()
+	maxProcs := runtime.GOMAXPROCS(0)
+	if maxProcs < numCPU {
+		log.Infof("setting GOMAXPROCS to %v (previously %v)", numCPU, maxProcs)
+		runtime.GOMAXPROCS(numCPU)
+	}
 }
 
 func setMaxIdleConnectionsPerHost(n int) {
