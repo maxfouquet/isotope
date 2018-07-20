@@ -24,6 +24,8 @@ var (
 func main() {
 	log.SetLogLevel(log.Info)
 
+	setMaxIdleConnectionsPerHost(100)
+
 	serviceName, ok := os.LookupEnv(consts.ServiceNameEnvKey)
 	if !ok {
 		log.Fatalf(`env var "%s" is not set`, consts.ServiceNameEnvKey)
@@ -59,4 +61,8 @@ func serveWithPrometheus(defaultHandler srv.Handler) (err error) {
 		return
 	}
 	return
+}
+
+func setMaxIdleConnectionsPerHost(n int) {
+	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = n
 }
