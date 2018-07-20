@@ -65,6 +65,8 @@ def _update_prometheus_configuration(static_labels: Dict[str, str]) -> None:
             resources.PROMETHEUS_VALUES_GEN_YAML_PATH
         ],
         check=True)
+    # TODO: Should actually wait until Prometheus is updated.
+    time.sleep(5 * 60)
 
 
 def _write_prometheus_values(labels: Dict[str, str]) -> None:
