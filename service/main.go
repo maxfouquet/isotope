@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -20,13 +21,19 @@ const (
 var (
 	serviceGraphYAMLFilePath = path.Join(
 		consts.ConfigPath, consts.ServiceGraphYAMLFileName)
+
+	maxIdleConnectionsPerHostFlag = flag.Int(
+		"max-idle-connections-per-host", 0,
+		"maximum number of connections to keep open per host")
 )
 
 func main() {
+	flag.Parse()
+
 	log.SetLogLevel(log.Info)
 
 	setMaxProcs()
-	setMaxIdleConnectionsPerHost(100)
+	setMaxIdleConnectionsPerHost(*maxIdleConnectionsPerHostFlag)
 
 	serviceName, ok := os.LookupEnv(consts.ServiceNameEnvKey)
 	if !ok {
