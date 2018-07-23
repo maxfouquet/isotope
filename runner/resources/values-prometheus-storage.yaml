@@ -1,3 +1,13 @@
+deployExporterNode: false
+deployGrafana: false
+deployKubelets: false
+deployKubeScheduler: false
+deployKubeControllerManager: false
+deployKubeState: false
+deployAlertManager: false
+deployKubeDNS: false
+deployKubeEtcd: false
+
 prometheus:
   storageSpec:
     volumeClaimTemplate:

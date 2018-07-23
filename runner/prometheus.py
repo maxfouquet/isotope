@@ -6,6 +6,15 @@ import jinja2
 
 TEMPLATE = jinja2.Template(
     textwrap.dedent("""\
+        deployExporterNode: false
+        deployGrafana: false
+        deployKubelets: false
+        deployKubeScheduler: false
+        deployKubeControllerManager: false
+        deployKubeState: false
+        deployAlertManager: false
+        deployKubeDNS: false
+        deployKubeEtcd: false
         prometheus:
           serviceMonitors:
           - name: service-graph-monitor
