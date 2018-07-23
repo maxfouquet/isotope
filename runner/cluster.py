@@ -66,7 +66,7 @@ def _create_cluster(name: str, zone: str, version: str, machine_type: str,
     sh.run_gcloud(
         [
             'container', 'clusters', 'create', name, '--zone', zone,
-            '--cluster-version', version, '--machine-type', machine_type,
+            '--cluster-version', version, '--machine-type', 'n1-standard-4',
             '--disk-size',
             str(disk_size_gb), '--num-nodes',
             str(num_nodes)
@@ -148,9 +148,9 @@ def _helm_add_prometheus() -> None:
     logging.info('installing coreos/prometheus')
     sh.run(
         [
-            'helm', 'install', 'coreos/prometheus', '--name', 'prometheus',
-            '--namespace', consts.MONITORING_NAMESPACE, '--values',
-            resources.PROMETHEUS_STORAGE_VALUES_YAML_PATH
+            'helm', 'install', 'coreos/kube-prometheus', '--name',
+            'kube-prometheus', '--namespace', consts.MONITORING_NAMESPACE,
+            '--values', resources.PROMETHEUS_STORAGE_VALUES_YAML_PATH
         ],
         check=True)
     wait.until_stateful_sets_are_ready(consts.MONITORING_NAMESPACE)

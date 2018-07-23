@@ -62,8 +62,8 @@ def _update_prometheus_configuration(static_labels: Dict[str, str]) -> None:
     logging.info('updating Prometheus configuration')
     sh.run(
         [
-            'helm', 'upgrade', 'prometheus', 'coreos/prometheus', '--values',
-            resources.PROMETHEUS_VALUES_GEN_YAML_PATH
+            'helm', 'upgrade', 'kube-prometheus', 'coreos/kube-prometheus',
+            '--values', resources.PROMETHEUS_VALUES_GEN_YAML_PATH
         ],
         check=True)
     # TODO: Should actually wait until Prometheus is updated.
