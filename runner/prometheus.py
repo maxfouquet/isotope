@@ -1,81 +1,91 @@
 import logging
 import textwrap
-from typing import Dict, Iterable, Tuple
+from typing import Any, Dict, List
 
-import jinja2
+import yaml
 
-TEMPLATE = jinja2.Template(
-    textwrap.dedent("""\
-        deployExporterNode: false
-        deployGrafana: false
-        deployKubelets: false
-        deployKubeScheduler: false
-        deployKubeControllerManager: false
-        deployKubeState: false
-        deployAlertManager: false
-        deployKubeDNS: false
-        deployKubeEtcd: false
-        prometheus:
-          serviceMonitors:
-          - name: service-graph-monitor
-            selector:
-              matchLabels:
-                app: service-graph
-            namespaceSelector:
-              matchNames:
-              - service-graph
-            endpoints:
-            - targetPort: 8080
-              metricRelabelings:
-              {%- for key, value in labels.items() %}
-              - targetLabel: "{{ key }}"
-                replacement: "{{ value }}"
-              {%- endfor %}
-          - name: client-monitor
-            selector:
-              matchLabels:
-                app: client
-            namespaceSelector:
-              matchNames:
-              - default
-            endpoints:
-            - targetPort: 42422
-              metricRelabelings:
-              {%- for key, value in labels.items() %}
-              - targetLabel: "{{ key }}"
-                replacement: "{{ value }}"
-              {%- endfor %}
-          - name: istio-mixer-monitor
-            selector:
-              matchLabels:
-                istio: mixer
-            namespaceSelector:
-              matchNames:
-              - istio-system
-            endpoints:
-            - targetPort: 42422
-              metricRelabelings:
-              {%- for key, value in labels.items() %}
-              - targetLabel: "{{ key }}"
-                replacement: "{{ value }}"
-              {%- endfor %}
-          storageSpec:
-            volumeClaimTemplate:
-              spec:
-                # It's necessary to specify "" as the storageClassName
-                # so that the default storage class won't be used, see
-                # https://kubernetes.io/docs/concepts/storage/persistent-volumes/#class-1
-                storageClassName: ""
-                volumeName: prometheus-persistent-volume
-                accessModes:
-                - ReadWriteOnce
-                resources:
-                  requests:
-                    storage: 10G
-      """))
+from . import consts
 
 
 def values_yaml(labels: Dict[str, str]) -> str:
-    """Returns Prometheus Helm values with relabellings to include labels."""
+    """Returns Prometheus Helm values with relabelings to include labels."""
     logging.info('generating Prometheus configuration')
-    return TEMPLATE.render(labels=labels)
+    config = _get_config(labels)
+    return yaml.dump(config, default_flow_style=False)
+
+
+def _get_config(labels: Dict[str, str]) -> Dict[str, Any]:
+    return {
+        'deployAlertManager': False,
+        'deployExporterNode': False,
+        'deployGrafana': False,
+        'deployKubeControllerManager': False,
+        'deployKubeDNS': False,
+        'deployKubeEtcd': False,
+        'deployKubelets': False,
+        'deployKubeScheduler': False,
+        'deployKubeState': False,
+        'prometheus': _get_prometheus_config(labels)
+    }
+
+
+def _get_prometheus_config(labels: Dict[str, str]) -> Dict[str, Any]:
+    metric_relabelings = _get_metric_relabelings(labels)
+    return {
+        'serviceMonitors': [
+            _get_service_monitor('service-graph-monitor', 8080,
+                                 consts.SERVICE_GRAPH_NAMESPACE,
+                                 {'app': 'service-graph'}, metric_relabelings),
+            _get_service_monitor('client-monitor', 42422,
+                                 consts.DEFAULT_NAMESPACE, {'app': 'client'},
+                                 metric_relabelings),
+            _get_service_monitor('istio-mixer-monitor', 42422,
+                                 consts.ISTIO_NAMESPACE, {'istio': 'mixer'},
+                                 metric_relabelings),
+        ],
+        'storageSpec':
+        _get_storage_spec(),
+    }
+
+
+def _get_service_monitor(
+        name: str, port: int, namespace: str, match_labels: Dict[str, str],
+        metric_relabelings: List[Dict[str, Any]]) -> Dict[str, Any]:
+    return {
+        'name':
+        name,
+        'endpoints': [{
+            'targetPort': port,
+            'metricRelabelings': metric_relabelings,
+        }],
+        'namespaceSelector': {
+            'matchNames': [namespace],
+        },
+        'selector': {
+            'matchLabels': match_labels,
+        },
+    }
+
+
+def _get_metric_relabelings(labels: Dict[str, str]) -> List[Dict[str, Any]]:
+    return [{
+        'targetLabel': key,
+        'replacement': value,
+    } for key, value in labels.items()]
+
+
+def _get_storage_spec() -> Dict[str, Any]:
+    return {
+        'volumeClaimTemplate': {
+            'spec': {
+                'accessModes': ['ReadWriteOnce'],
+                'resources': {
+                    'requests': {
+                        'storage': '10G',
+                    },
+                },
+                'volumeName': 'prometheus-persistent-volume',
+                'storageClassName': '',
+            },
+        },
+    }
