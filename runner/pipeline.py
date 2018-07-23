@@ -45,7 +45,9 @@ def run(topology_path: str, env: mesh.Environment, cluster_project_id: str,
         'topology_hash': md5.hex(topology_path),
         **static_labels,
     }
-    _update_prometheus_configuration(labels)
+    prometheus.apply(
+        labels,
+        intermediate_file_path=resources.PROMETHEUS_VALUES_GEN_YAML_PATH)
 
     with env.context() as ingress_url:
         logging.info('starting test with environment "%s"', env.name)
@@ -54,26 +56,6 @@ def run(topology_path: str, env: mesh.Environment, cluster_project_id: str,
         _test_service_graph(manifest_path, result_output_path, ingress_url,
                             test_qps, test_duration,
                             test_num_concurrent_connections)
-
-
-def _update_prometheus_configuration(static_labels: Dict[str, str]) -> None:
-    _write_prometheus_values(static_labels)
-
-    logging.info('updating Prometheus configuration')
-    sh.run(
-        [
-            'helm', 'upgrade', 'kube-prometheus', 'coreos/kube-prometheus',
-            '--values', resources.PROMETHEUS_VALUES_GEN_YAML_PATH
-        ],
-        check=True)
-    # TODO: Should actually wait until Prometheus is updated.
-    time.sleep(5 * 60)
-
-
-def _write_prometheus_values(labels: Dict[str, str]) -> None:
-    values_yaml = prometheus.values_yaml(labels)
-    with open(resources.PROMETHEUS_VALUES_GEN_YAML_PATH, 'w') as f:
-        f.write(values_yaml)
 
 
 def _get_basename_no_ext(path: str) -> str:

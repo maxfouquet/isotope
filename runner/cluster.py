@@ -1,7 +1,7 @@
 import logging
 import os
 
-from . import consts, resources, sh, wait
+from . import consts, prometheus, resources, sh, wait
 
 
 def set_up_if_not_exists(
@@ -46,13 +46,14 @@ def set_up(project_id: str, name: str, zone: str, version: str,
     """
     sh.run_gcloud(['config', 'set', 'project', project_id], check=True)
 
-    _create_cluster(name, zone, version, 'n1-standard-1', 16, 1)
+    _create_cluster(name, zone, version, 'n1-standard-4', 16, 1)
     _create_cluster_role_binding()
 
     _create_persistent_volume()
     _initialize_helm()
     _helm_add_prometheus_operator()
-    _helm_add_prometheus()
+    prometheus.apply(
+        intermediate_file_path=resources.PROMETHEUS_VALUES_GEN_YAML_PATH)
 
     _create_service_graph_node_pool(service_graph_num_nodes,
                                     service_graph_machine_type,
@@ -66,7 +67,7 @@ def _create_cluster(name: str, zone: str, version: str, machine_type: str,
     sh.run_gcloud(
         [
             'container', 'clusters', 'create', name, '--zone', zone,
-            '--cluster-version', version, '--machine-type', 'n1-standard-4',
+            '--cluster-version', version, '--machine-type', machine_type,
             '--disk-size',
             str(disk_size_gb), '--num-nodes',
             str(num_nodes)
@@ -142,15 +143,3 @@ def _helm_add_prometheus_operator() -> None:
             'prometheus-operator', '--namespace', consts.MONITORING_NAMESPACE
         ],
         check=True)
-
-
-def _helm_add_prometheus() -> None:
-    logging.info('installing coreos/prometheus')
-    sh.run(
-        [
-            'helm', 'install', 'coreos/kube-prometheus', '--name',
-            'kube-prometheus', '--namespace', consts.MONITORING_NAMESPACE,
-            '--values', resources.PROMETHEUS_STORAGE_VALUES_YAML_PATH
-        ],
-        check=True)
-    wait.until_stateful_sets_are_ready(consts.MONITORING_NAMESPACE)
