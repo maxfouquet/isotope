@@ -7,7 +7,6 @@ import (
 	"github.com/Tahler/isotope/convert/pkg/graph"
 	"github.com/Tahler/isotope/convert/pkg/graph/svc"
 	"github.com/Tahler/isotope/convert/pkg/graph/svctype"
-	"github.com/Tahler/isotope/service/pkg/srv/prometheus"
 	"github.com/ghodss/yaml"
 	"istio.io/fortio/log"
 )
@@ -33,7 +32,6 @@ func HandlerFromServiceGraphYAML(
 	handler = Handler{
 		Service:      service,
 		ServiceTypes: serviceTypes,
-		Metrics:      prometheus.NewMetrics(),
 	}
 	return
 }

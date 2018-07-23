@@ -18,17 +18,16 @@ import (
 func execute(
 	step interface{},
 	forwardableHeader http.Header,
-	serviceTypes map[string]svctype.ServiceType,
-	metrics prometheus.Metrics) (err error) {
+	serviceTypes map[string]svctype.ServiceType) (err error) {
 	switch cmd := step.(type) {
 	case script.SleepCommand:
 		executeSleepCommand(cmd)
 	case script.RequestCommand:
 		err = executeRequestCommand(
-			cmd, forwardableHeader, serviceTypes, metrics)
+			cmd, forwardableHeader, serviceTypes)
 	case script.ConcurrentCommand:
 		err = executeConcurrentCommand(
-			cmd, forwardableHeader, serviceTypes, metrics)
+			cmd, forwardableHeader, serviceTypes)
 	default:
 		log.Fatalf("unknown command type in script: %T", cmd)
 	}
@@ -44,8 +43,7 @@ func executeSleepCommand(cmd script.SleepCommand) {
 func executeRequestCommand(
 	cmd script.RequestCommand,
 	forwardableHeader http.Header,
-	serviceTypes map[string]svctype.ServiceType,
-	metrics prometheus.Metrics) (err error) {
+	serviceTypes map[string]svctype.ServiceType) (err error) {
 	destName := cmd.ServiceName
 	destType, ok := serviceTypes[destName]
 	if !ok {
@@ -56,7 +54,7 @@ func executeRequestCommand(
 	if err != nil {
 		return
 	}
-	metrics.RecordRequestSent(destName, uint64(cmd.Size))
+	prometheus.RecordRequestSent(destName, uint64(cmd.Size))
 	if response.StatusCode == 200 {
 		log.Debugf("%s responded with %s", destName, response.Status)
 	} else {
@@ -83,8 +81,7 @@ func readAllAndClose(r io.ReadCloser) {
 func executeConcurrentCommand(
 	cmd script.ConcurrentCommand,
 	forwardableHeader http.Header,
-	serviceTypes map[string]svctype.ServiceType,
-	metrics prometheus.Metrics) (errs error) {
+	serviceTypes map[string]svctype.ServiceType) (errs error) {
 	numSubCmds := len(cmd)
 	wg := sync.WaitGroup{}
 	wg.Add(numSubCmds)
@@ -92,7 +89,7 @@ func executeConcurrentCommand(
 		go func(step interface{}) {
 			defer wg.Done()
 
-			err := execute(step, forwardableHeader, serviceTypes, metrics)
+			err := execute(step, forwardableHeader, serviceTypes)
 			if err != nil {
 				errs = multierror.Append(errs, err)
 			}

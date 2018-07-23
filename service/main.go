@@ -10,6 +10,7 @@ import (
 
 	"github.com/Tahler/isotope/convert/pkg/consts"
 	"github.com/Tahler/isotope/service/pkg/srv"
+	"github.com/Tahler/isotope/service/pkg/srv/prometheus"
 	"istio.io/fortio/log"
 )
 
@@ -52,13 +53,9 @@ func main() {
 	}
 }
 
-func serveWithPrometheus(defaultHandler srv.Handler) (err error) {
+func serveWithPrometheus(defaultHandler http.Handler) (err error) {
 	log.Infof(`exposing Prometheus endpoint "%s"`, promEndpoint)
-	promHandler, err := defaultHandler.Metrics.Handler()
-	if err != nil {
-		return
-	}
-	http.Handle(promEndpoint, promHandler)
+	http.Handle(promEndpoint, prometheus.Handler())
 
 	log.Infof(`exposing default endpoint "%s"`, defaultEndpoint)
 	http.Handle(defaultEndpoint, defaultHandler)
