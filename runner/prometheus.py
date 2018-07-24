@@ -75,7 +75,7 @@ def _get_values(labels: Dict[str, str]) -> Dict[str, Any]:
     return {
         'deployAlertManager': False,
         'deployExporterNode': False,
-        'deployGrafana': False,
+        'deployGrafana': True,
         'deployKubeControllerManager': False,
         'deployKubeDNS': False,
         'deployKubeEtcd': False,
