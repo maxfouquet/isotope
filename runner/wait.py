@@ -1,3 +1,5 @@
+"""Functions which block until certain conditions."""
+
 import collections
 import datetime
 import logging

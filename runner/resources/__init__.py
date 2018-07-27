@@ -1,3 +1,5 @@
+"""Defines constant paths for static and generated YAML."""
+
 import os
 
 _RESOURCES_DIR = os.path.realpath(

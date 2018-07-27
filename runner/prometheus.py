@@ -1,3 +1,5 @@
+"""Functions for creating and updating the Prometheus configuration."""
+
 import logging
 import time
 import tempfile

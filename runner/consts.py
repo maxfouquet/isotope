@@ -1,3 +1,5 @@
+"""Common constants used throughout the runner module."""
+
 import datetime
 
 DEFAULT_NAMESPACE = 'default'

@@ -1,3 +1,5 @@
+"""Abstractions for common calls to kubectl."""
+
 import contextlib
 import logging
 import socket

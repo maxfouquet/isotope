@@ -1,3 +1,15 @@
+"""Definitions for abstracting a mesh environment underlying a topology.
+
+Any new environments should add an entry to the if-else chain in `for_state`
+and define three functions:
+
+1. set_up: creates the necessary Kubernetes resources
+2. get_ingress_url: returns the URL to access the ingress or entrypoint
+3. tear_down: deletes the previously created resources
+
+These three functions make it simple for use in a with-statement.
+"""
+
 import contextlib
 from typing import Callable, Generator
 

@@ -1,3 +1,5 @@
+"""Read runner configuration from a dict or TOML."""
+
 from typing import Any, Dict, List, Optional
 
 import toml

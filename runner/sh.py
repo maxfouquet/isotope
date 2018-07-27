@@ -1,3 +1,5 @@
+"""Abstractions for common shell calls."""
+
 import contextlib
 import logging
 import subprocess

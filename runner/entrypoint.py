@@ -1,3 +1,5 @@
+"""Read topology YAML and extract information about the entrypoint service."""
+
 import yaml
 
 from . import consts

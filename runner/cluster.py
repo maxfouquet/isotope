@@ -1,3 +1,5 @@
+"""Set up for GKE clusters and Prometheus monitoring."""
+
 import logging
 import os
 
