@@ -12,10 +12,11 @@ from . import consts, sh
 RETRY_INTERVAL = datetime.timedelta(seconds=5)
 
 
-def until(predicate: Callable[[], bool]) -> None:
+def until(predicate: Callable[[], bool],
+          retry_interval_seconds: int = RETRY_INTERVAL.seconds) -> None:
     """Calls predicate every RETRY_INTERVAL until it returns True."""
     while not predicate():
-        time.sleep(RETRY_INTERVAL.seconds)
+        time.sleep(retry_interval_seconds)
 
 
 def until_output(args: List[str]) -> str:
