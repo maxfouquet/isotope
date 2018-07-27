@@ -14,6 +14,17 @@ various service graph topologies.
 | [runner/](runner/README.md)   | Python module used by `run_tests.py`              |
 | create_tree_topology.py       | Python script to create a hierarchical topology   |
 
+## Prometheus Metrics
+
+The system deploys a Prometheus instance to collect and label metrics
+throughout the tests. The current implementation connects it to a [Persistent
+Volume](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) to
+write to a [Persistent Disk](https://cloud.google.com/compute/docs/disks/).
+This ensures the data is not lost when the Prometheus instance is deleted.
+
+However, so long as you adhere to calling the "/metrics" HTTP endpoints,
+metrics could be collected by other means.
+
 ## service-graph.yaml
 
 Describes a service graph to be tested which mocks a real world service-oriented
