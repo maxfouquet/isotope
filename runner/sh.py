@@ -5,13 +5,37 @@ import logging
 import subprocess
 from typing import Dict, List, Union
 
+from . import wait
+
 
 def run_gcloud(args: List[str], check=False) -> subprocess.CompletedProcess:
     return run(['gcloud', *args], check=check)
 
 
 def run_kubectl(args: List[str], check=False) -> subprocess.CompletedProcess:
-    return run(['kubectl', *args], check=check)
+    return run_with_k8s_api(['kubectl', *args], check=check)
+
+
+def run_with_k8s_api(args: List[str],
+                     check=False) -> subprocess.CompletedProcess:
+    """Ensures the command succeeds against a responsive Kubernetes API."""
+    proc = run(args)
+
+    # Retry while the error is because of connection refusal.
+    while 'getsockopt: connection refused' in proc.stderr:
+        logging.debug('Kubernetes connection refused; retrying...')
+        # Wait until `kubectl version` completes, indicating the
+        # Kubernetes API is responsive.
+        wait.until(
+            lambda: run_kubectl(['version']).returncode == 0,
+            retry_interval_seconds=5)
+        proc = run(args)
+
+    if check and proc.returncode != 0:
+        raise subprocess.CalledProcessError(
+            proc.returncode, proc.args, output=proc.stdout, stderr=proc.stderr)
+
+    return proc
 
 
 def run(args: List[str], check=False,
@@ -37,7 +61,8 @@ def run(args: List[str], check=False,
             stderr=subprocess.PIPE)
     except subprocess.CalledProcessError as e:
         _decode(e)
-        logging.error('%s\n%s\n%s', e, e.stdout, e.stderr)
+        if check:
+            logging.error('%s\n%s\n%s', e, e.stdout, e.stderr)
         raise e
 
     _decode(proc)

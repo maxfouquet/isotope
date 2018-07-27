@@ -41,7 +41,7 @@ def apply(labels: Dict[str, str] = {},
 
 
 def _apply_prometheus_values(path: str) -> None:
-    proc = sh.run(['helm', 'get', _HELM_RELEASE_NAME])
+    proc = sh.run_with_k8s_api(['helm', 'get', _HELM_RELEASE_NAME])
     already_exists = proc.returncode == 0
     if already_exists:
         _update_prometheus(path)
@@ -51,7 +51,7 @@ def _apply_prometheus_values(path: str) -> None:
 
 def _update_prometheus(values_path: str) -> None:
     logging.debug('updating coreos/kube-prometheus')
-    sh.run(
+    sh.run_with_k8s_api(
         [
             'helm', 'upgrade', _HELM_RELEASE_NAME, 'coreos/kube-prometheus',
             '--values', values_path
@@ -63,7 +63,7 @@ def _update_prometheus(values_path: str) -> None:
 
 def _install_prometheus(values_path: str) -> None:
     logging.debug('installing coreos/kube-prometheus')
-    sh.run(
+    sh.run_with_k8s_api(
         [
             'helm', 'install', 'coreos/kube-prometheus', '--name',
             _HELM_RELEASE_NAME, '--namespace', consts.MONITORING_NAMESPACE,

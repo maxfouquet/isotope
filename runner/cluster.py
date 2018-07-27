@@ -127,9 +127,9 @@ def _initialize_helm() -> None:
     logging.info('initializing Helm')
     sh.run_kubectl(
         ['create', '-f', resources.HELM_SERVICE_ACCOUNT_YAML_PATH], check=True)
-    sh.run(
+    sh.run_with_k8s_api(
         ['helm', 'init', '--service-account', 'tiller', '--wait'], check=True)
-    sh.run(
+    sh.run_with_k8s_api(
         [
             'helm', 'repo', 'add', 'coreos',
             'https://s3-eu-west-1.amazonaws.com/coreos-charts/stable'
@@ -139,7 +139,7 @@ def _initialize_helm() -> None:
 
 def _helm_add_prometheus_operator() -> None:
     logging.info('installing coreos/prometheus-operator')
-    sh.run(
+    sh.run_with_k8s_api(
         [
             'helm', 'install', 'coreos/prometheus-operator', '--name',
             'prometheus-operator', '--namespace', consts.MONITORING_NAMESPACE
