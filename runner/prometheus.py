@@ -84,6 +84,10 @@ def _get_values(labels: Dict[str, str]) -> Dict[str, Any]:
         'deployKubelets': True,
         'deployKubeScheduler': True,
         'deployKubeState': True,
+        'exporter-kubelets': {
+            # Must be false for GKE.
+            'https': False,
+        },
         'prometheus': _get_prometheus_config(labels)
     }
 
