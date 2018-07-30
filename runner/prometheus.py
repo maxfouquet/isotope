@@ -76,14 +76,14 @@ def _install_prometheus(values_path: str) -> None:
 def _get_values(labels: Dict[str, str]) -> Dict[str, Any]:
     return {
         'deployAlertManager': False,
-        'deployExporterNode': False,
+        'deployExporterNode': True,
         'deployGrafana': True,
-        'deployKubeControllerManager': False,
-        'deployKubeDNS': False,
-        'deployKubeEtcd': False,
-        'deployKubelets': False,
-        'deployKubeScheduler': False,
-        'deployKubeState': False,
+        'deployKubeControllerManager': True,
+        'deployKubeDNS': True,
+        'deployKubeEtcd': True,
+        'deployKubelets': True,
+        'deployKubeScheduler': True,
+        'deployKubeState': True,
         'prometheus': _get_prometheus_config(labels)
     }
 
