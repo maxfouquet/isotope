@@ -32,6 +32,7 @@ def run_with_k8s_api(args: List[str],
         proc = run(args)
 
     if check and proc.returncode != 0:
+        logging.error('%s\n%s\n%s', proc, proc.stdout, proc.stderr)
         raise subprocess.CalledProcessError(
             proc.returncode, proc.args, output=proc.stdout, stderr=proc.stderr)
 
