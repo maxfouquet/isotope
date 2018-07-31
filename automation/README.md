@@ -1,7 +1,7 @@
 # Runner
 
-This subdirectory contains the Python3 _module_ for automating topology
-tests. The executable "main" for this is at "../run_tests.py".
+This subdirectory contains the Python3 module and scripts for automating
+topology tests. The executable "main" for this is at "../run_tests.py".
 
 ## Pseudocode
 
