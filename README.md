@@ -5,13 +5,12 @@ various service graph topologies.
 
 ## Repository Structure
 
-| Item                                | Role                                              |
-|-------------------------------------|---------------------------------------------------|
-| [convert/](convert/README.md)       | Go command to convert topologies to other formats |
-| [service/](service/README.md)       | Go command to run as a node in the service graph  |
-| [automation/](automation/README.md) | Python code which runs tests against topologies   |
-| example-topologies/                 | Examples of topology configurations               |
-| create_tree_topology.py             | Python script to create a hierarchical topology   |
+| Item                                | Role                                             |
+|-------------------------------------|--------------------------------------------------|
+| [automation/](automation/README.md) | Code to automate tests against topologies        |
+| [service/](service/README.md)       | Go command to run as a node in the service graph |
+| example-topologies/                 | Examples of topology configurations              |
+| create_tree_topology.py             | Python script to create a hierarchical topology  |
 
 ## Prometheus Metrics
 
