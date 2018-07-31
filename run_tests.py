@@ -3,10 +3,7 @@
 import argparse
 import logging
 
-from runner import cluster, config as cfg, consts, entrypoint, mesh, \
-                   resources, pipeline
-
-CLUSTER_NAME = 'isotope-cluster'
+from runner import cluster, config as cfg, consts, entrypoint, mesh, pipeline
 
 
 def main() -> None:
