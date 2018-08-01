@@ -51,11 +51,7 @@ def set_up(project_id: str, name: str, zone: str, version: str,
     _create_cluster(name, zone, version, 'n1-standard-4', 16, 1)
     _create_cluster_role_binding()
 
-    _create_persistent_volume()
-    _initialize_helm()
-    _helm_add_prometheus_operator()
-    prometheus.apply(
-        intermediate_file_path=resources.PROMETHEUS_VALUES_GEN_YAML_PATH)
+    prometheus.install()
 
     _create_service_graph_node_pool(service_graph_num_nodes,
                                     service_graph_machine_type,
@@ -113,35 +109,5 @@ def _create_cluster_role_binding() -> None:
         [
             'create', 'clusterrolebinding', 'cluster-admin-binding',
             '--clusterrole', 'cluster-admin', '--user', account
-        ],
-        check=True)
-
-
-def _create_persistent_volume() -> None:
-    logging.info('creating persistent volume')
-    sh.run_kubectl(
-        ['apply', '-f', resources.PERSISTENT_VOLUME_YAML_PATH], check=True)
-
-
-def _initialize_helm() -> None:
-    logging.info('initializing Helm')
-    sh.run_kubectl(
-        ['create', '-f', resources.HELM_SERVICE_ACCOUNT_YAML_PATH], check=True)
-    sh.run_with_k8s_api(
-        ['helm', 'init', '--service-account', 'tiller', '--wait'], check=True)
-    sh.run_with_k8s_api(
-        [
-            'helm', 'repo', 'add', 'coreos',
-            'https://s3-eu-west-1.amazonaws.com/coreos-charts/stable'
-        ],
-        check=True)
-
-
-def _helm_add_prometheus_operator() -> None:
-    logging.info('installing coreos/prometheus-operator')
-    sh.run_with_k8s_api(
-        [
-            'helm', 'install', 'coreos/prometheus-operator', '--name',
-            'prometheus-operator', '--namespace', consts.MONITORING_NAMESPACE
         ],
         check=True)

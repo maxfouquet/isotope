@@ -8,9 +8,47 @@ from typing import Any, Dict, List
 
 import yaml
 
-from . import consts, sh, wait
+from . import consts, resources, sh, wait
 
 _HELM_RELEASE_NAME = 'kube-prometheus'
+
+
+def install() -> None:
+    """Installs Helm and Prometheus linked to a persistent volume."""
+    _create_persistent_volume()
+    _initialize_helm()
+    _helm_add_prometheus_operator()
+    apply(intermediate_file_path=resources.PROMETHEUS_VALUES_GEN_YAML_PATH)
+
+
+def _create_persistent_volume() -> None:
+    logging.info('creating persistent volume')
+    sh.run_kubectl(
+        ['apply', '-f', resources.PERSISTENT_VOLUME_YAML_PATH], check=True)
+
+
+def _initialize_helm() -> None:
+    logging.info('initializing Helm')
+    sh.run_kubectl(
+        ['create', '-f', resources.HELM_SERVICE_ACCOUNT_YAML_PATH], check=True)
+    sh.run_with_k8s_api(
+        ['helm', 'init', '--service-account', 'tiller', '--wait'], check=True)
+    sh.run_with_k8s_api(
+        [
+            'helm', 'repo', 'add', 'coreos',
+            'https://s3-eu-west-1.amazonaws.com/coreos-charts/stable'
+        ],
+        check=True)
+
+
+def _helm_add_prometheus_operator() -> None:
+    logging.info('installing coreos/prometheus-operator')
+    sh.run_with_k8s_api(
+        [
+            'helm', 'install', 'coreos/prometheus-operator', '--name',
+            'prometheus-operator', '--namespace', consts.MONITORING_NAMESPACE
+        ],
+        check=True)
 
 
 def apply(labels: Dict[str, str] = {},
