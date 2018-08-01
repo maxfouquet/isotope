@@ -4,20 +4,19 @@ import contextlib
 import logging
 import os
 import time
-from typing import Dict, Generator, Optional, Tuple
+from typing import Dict, Generator, Optional
 
 import requests
 
-from . import cluster, consts, entrypoint, istio, kubectl, md5, mesh, \
-              prometheus, resources, sh, wait
+from . import consts, entrypoint, istio, kubectl, md5, mesh, prometheus, \
+              resources, sh, wait
 
 _REPO_ROOT = os.path.join(os.getcwd(),
                           os.path.dirname(os.path.dirname(__file__)))
 _MAIN_GO_PATH = os.path.join(_REPO_ROOT, 'convert', 'main.go')
 
 
-def run(topology_path: str, env: mesh.Environment, cluster_project_id: str,
-        cluster_name: str, cluster_zone: str, service_image: str,
+def run(topology_path: str, env: mesh.Environment, service_image: str,
         client_image: str, istio_archive_url: str, test_qps: Optional[int],
         test_duration: str, test_num_concurrent_connections: int,
         static_labels: Dict[str, str]) -> None:
