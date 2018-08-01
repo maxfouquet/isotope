@@ -31,12 +31,6 @@ def delete_file(path: str) -> None:
     sh.run_kubectl(['delete', '-f', path])
 
 
-def apply_dicts(dicts: List[Dict[str, Any]],
-                intermediate_file_path: str = None) -> None:
-    yaml_str = yaml.dump_all(dicts)
-    apply_text(yaml_str, intermediate_file_path=intermediate_file_path)
-
-
 def apply_text(json_or_yaml: str, intermediate_file_path: str = None) -> None:
     """Creates/updates resources described in either JSON or YAML string.
 

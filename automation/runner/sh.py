@@ -8,10 +8,6 @@ from typing import Dict, List, Union
 from . import wait
 
 
-def run_gcloud(args: List[str], check=False) -> subprocess.CompletedProcess:
-    return run(['gcloud', *args], check=check)
-
-
 def run_kubectl(args: List[str], check=False) -> subprocess.CompletedProcess:
     return run_with_k8s_api(['kubectl', *args], check=check)
 

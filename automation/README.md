@@ -9,7 +9,6 @@ This subdirectory contains the code for automating topology tests.
 
   ```txt
   read configuration
-  create cluster
   add prometheus
   for each topology:
     convert topology to Kubernetes YAML

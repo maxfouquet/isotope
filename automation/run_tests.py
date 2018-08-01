@@ -3,7 +3,8 @@
 import argparse
 import logging
 
-from runner import cluster, config as cfg, consts, entrypoint, mesh, pipeline
+from runner import config as cfg, consts, entrypoint, mesh, pipeline, \
+                   prometheus
 
 
 def main() -> None:
@@ -14,11 +15,7 @@ def main() -> None:
 
     config = cfg.from_toml_file(args.config_path)
 
-    cluster.set_up_if_not_exists(
-        config.cluster_project_id, config.cluster_name, config.cluster_zone,
-        config.cluster_version, config.server_machine_type,
-        config.server_disk_size_gb, config.server_num_nodes,
-        config.client_machine_type, config.client_disk_size_gb)
+    prometheus.install()
 
     for topology_path in config.topology_paths:
         for env_name in config.environments:

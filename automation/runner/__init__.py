@@ -4,7 +4,6 @@ The pseudo-code for the intended calls for this is:
 
 ```
 read configuration
-create cluster
 add prometheus
 for each topology:
   convert topology to Kubernetes YAML
