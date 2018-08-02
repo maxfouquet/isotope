@@ -58,7 +58,7 @@ def _update_prometheus(values_path: str) -> None:
         ],
         check=True)
     # TODO: Should actually wait until Prometheus is updated.
-    time.sleep(5 * 60)
+    # time.sleep(1 * 60)
 
 
 def _install_prometheus(values_path: str) -> None:

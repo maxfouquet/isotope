@@ -90,15 +90,21 @@ def _install(chart_path: str, namespace: str,
     # in the chart?
     istio_yaml = sh.run(
         [
-            'helm', 'template', chart_path, '--namespace', namespace,
-            '--set=global.hub=docker.io/istionightly',
-            '--set=global.tag=nightly-master',
-            '--set=global.proxy.resources.requests.cpu=1000m',
-            '--set=global.proxy.resources.limits.cpu=1000m',
-            '--set=global.proxy.resources.requests.memory=256Mi',
-            '--set=global.proxy.resources.limits.memory=256Mi',
-            '--set=global.defaultResources.requests.cpu=1000m',
-            '--set=global.defaultResources.limits.cpu=1000m'
+            'helm',
+            'template',
+            chart_path,
+            '--namespace',
+            namespace,
+            '--set=grafana.enabled=true',
+            '--set=global.proxy.resources.requests.cpu=100m',
+            # '--set=global.proxy.resources.limits.cpu=100m',
+            # '--set=global.proxy.resources.requests.memory=3.75G',
+            # '--set=global.proxy.resources.limits.memory=3.75G',
+            '--set=global.defaultResources.requests.cpu=7000m',
+            # '--set=global.defaultResources.limits.cpu=7000m',
+            '--set=global.defaultResources.requests.memory=26.25G',
+            # '--set=global.defaultResources.limits.memory=26.25G',
+            '--set=pilot.replicaCount=1',
         ],
         check=True).stdout
     kubectl.apply_text(

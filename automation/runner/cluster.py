@@ -48,7 +48,7 @@ def set_up(project_id: str, name: str, zone: str, version: str,
     """
     sh.run_gcloud(['config', 'set', 'project', project_id], check=True)
 
-    _create_cluster(name, zone, version, 'n1-standard-4', 16, 1)
+    _create_cluster(name, zone, version, 'n1-standard-16', 16, 1)
     _create_cluster_role_binding()
 
     _create_persistent_volume()

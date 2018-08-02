@@ -7,15 +7,16 @@ from typing import Any, Dict, List
 
 import yaml
 
-REQUEST_SIZE = 128
-RESPONSE_SIZE = 128
+REQUEST_SIZE = 0
+RESPONSE_SIZE = 0
 NUM_REPLICAS = 1
 
 # Depth of the tree.
 NUM_LEVELS = 3
 # Amount of dependent or child services each service has.
-NUM_BRANCHES = 3
-NUM_SERVICES = sum([NUM_BRANCHES**i for i in range(NUM_LEVELS)])
+NUM_BRANCHES = 10
+# NUM_SERVICES = sum([NUM_BRANCHES**i for i in range(NUM_LEVELS)])
+NUM_SERVICES = 600
 
 Service = Dict[str, Any]
 
