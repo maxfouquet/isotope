@@ -1,5 +1,5 @@
 topology_paths = [
-  "../example-topologies/10-svc_100-end.yaml",
+  "500-svc_1000-end.yaml",
 ]
 
 environments = [

@@ -104,7 +104,7 @@ def _install(chart_path: str, namespace: str,
             # '--set=global.defaultResources.limits.cpu=7000m',
             '--set=global.defaultResources.requests.memory=26.25G',
             # '--set=global.defaultResources.limits.memory=26.25G',
-            '--set=pilot.replicaCount=1',
+            '--set=pilot.replicaCount=4',
         ],
         check=True).stdout
     kubectl.apply_text(
