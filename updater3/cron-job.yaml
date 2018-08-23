@@ -1,0 +1,24 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: istio-updater-cron-job
+  namespace: istio-system
+spec:
+  # If last job is still updating, do not run.
+  concurrencyPolicy: Forbid
+  # Daily at 21:00 UTC (14:00 PST)
+  # schedule: 00 21 * * *
+  schedule: 38 21 * * *
+  jobTemplate:
+    metadata:
+      name: istio-updater-job
+    spec:
+      template:
+        metadata:
+          name: istio-updater-pod
+        spec:
+          containers:
+          - name: istio-updater
+            image: tahler/istio-updater:1
+            imagePullPolicy: Always
+          restartPolicy: Never
