@@ -169,7 +169,6 @@ func makeDeployment(
 	k8sDeployment.ObjectMeta.Name = service.Name
 	k8sDeployment.ObjectMeta.Namespace = ServiceGraphNamespace
 	k8sDeployment.ObjectMeta.Labels = serviceGraphAppLabels
-	k8sDeployment.ObjectMeta.Annotations = sidecarInjectionAnnotations
 	timestamp(&k8sDeployment.ObjectMeta)
 	k8sDeployment.Spec = appsv1.DeploymentSpec{
 		Replicas: &service.NumReplicas,
@@ -185,6 +184,7 @@ func makeDeployment(
 					map[string]string{
 						"name": service.Name,
 					}),
+				Annotations: sidecarInjectionAnnotations
 			},
 			Spec: apiv1.PodSpec{
 				NodeSelector: nodeSelector,
