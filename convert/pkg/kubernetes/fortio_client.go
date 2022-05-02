@@ -55,7 +55,6 @@ func makeFortioService() (service apiv1.Service) {
 	service.Kind = "Service"
 	service.ObjectMeta.Name = "client"
 	service.ObjectMeta.Labels = fortioClientLabels
-	service.ObjectMeta.Annotations = prometheusScrapeAnnotations
 	timestamp(&service.ObjectMeta)
 	service.Spec.Ports = []apiv1.ServicePort{{Port: consts.ServicePort}}
 	service.Spec.Selector = fortioClientLabels
