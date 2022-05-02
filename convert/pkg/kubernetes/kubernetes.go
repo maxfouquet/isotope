@@ -31,7 +31,7 @@ var (
 	serviceGraphAppLabels       = map[string]string{"app": "service-graph"}
 	serviceGraphNodeLabels      = map[string]string{"role": "service"}
 	prometheusScrapeAnnotations = map[string]string{
-		"prometheus.io/scrape": "true"}
+		"sidecar.istio.io/inject": "true"}
 )
 
 // ServiceGraphToKubernetesManifests converts a ServiceGraph to Kubernetes
@@ -170,7 +170,7 @@ func makeDeployment(
 	k8sDeployment.ObjectMeta.Name = service.Name
 	k8sDeployment.ObjectMeta.Namespace = ServiceGraphNamespace
 	k8sDeployment.ObjectMeta.Labels = serviceGraphAppLabels
-	k8sDeployment.ObjectMeta.Annotations = prometheusScrapeAnnotations
+	k8sDeployment.ObjectMeta.Annotations = sidecarInjectionAnnotations
 	timestamp(&k8sDeployment.ObjectMeta)
 	k8sDeployment.Spec = appsv1.DeploymentSpec{
 		Replicas: &service.NumReplicas,
