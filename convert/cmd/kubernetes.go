@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/Tahler/isotope/convert/pkg/graph"
-	"github.com/Tahler/isotope/convert/pkg/kubernetes"
+	"github.com/maxfouquet/isotope/convert/pkg/graph"
+	"github.com/maxfouquet/isotope/convert/pkg/kubernetes"
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 )
