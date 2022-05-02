@@ -151,7 +151,7 @@ func makeConfigMap(
 func makeService(service svc.Service) (k8sService apiv1.Service, err error) {
 	k8sService.APIVersion = "v1"
 	k8sService.Kind = "Service"
-	k8sService.ObjectMeta.Name = service.Name
+	k8sService.ObjectMeta.Name = "http-" + service.Name
 	k8sService.ObjectMeta.Namespace = ServiceGraphNamespace
 	k8sService.ObjectMeta.Labels = serviceGraphAppLabels
 	timestamp(&k8sService.ObjectMeta)
