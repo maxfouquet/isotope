@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/Tahler/isotope/convert/pkg/graph/svctype"
+	"github.com/maxfouquet/isotope/convert/pkg/graph/svctype"
 )
 
 var (

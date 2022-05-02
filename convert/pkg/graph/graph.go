@@ -1,6 +1,6 @@
 package graph
 
-import "github.com/Tahler/isotope/convert/pkg/graph/svc"
+import "github.com/maxfouquet/isotope/convert/pkg/graph/svc"
 
 // ServiceGraph describes a set of services which mock a service-oriented
 // architecture.

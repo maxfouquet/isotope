@@ -1,10 +1,10 @@
 package svc
 
 import (
-	"github.com/Tahler/isotope/convert/pkg/graph/pct"
-	"github.com/Tahler/isotope/convert/pkg/graph/script"
-	"github.com/Tahler/isotope/convert/pkg/graph/size"
-	"github.com/Tahler/isotope/convert/pkg/graph/svctype"
+	"github.com/maxfouquet/isotope/convert/pkg/graph/pct"
+	"github.com/maxfouquet/isotope/convert/pkg/graph/script"
+	"github.com/maxfouquet/isotope/convert/pkg/graph/size"
+	"github.com/maxfouquet/isotope/convert/pkg/graph/svctype"
 )
 
 // Service describes a service in the service graph.
