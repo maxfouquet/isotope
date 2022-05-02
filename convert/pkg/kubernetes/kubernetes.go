@@ -154,7 +154,6 @@ func makeService(service svc.Service) (k8sService apiv1.Service, err error) {
 	k8sService.ObjectMeta.Name = service.Name
 	k8sService.ObjectMeta.Namespace = ServiceGraphNamespace
 	k8sService.ObjectMeta.Labels = serviceGraphAppLabels
-	k8sService.ObjectMeta.Annotations = prometheusScrapeAnnotations
 	timestamp(&k8sService.ObjectMeta)
 	k8sService.Spec.Ports = []apiv1.ServicePort{{Port: consts.ServicePort}}
 	k8sService.Spec.Selector = map[string]string{"name": service.Name}
