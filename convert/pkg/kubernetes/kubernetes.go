@@ -179,12 +179,12 @@ func makeDeployment(
 		},
 		Template: apiv1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
+				Annotations: sidecarInjectionAnnotations,
 				Labels: combineLabels(
 					serviceGraphNodeLabels,
 					map[string]string{
 						"name": service.Name,
 					}),
-				Annotations: sidecarInjectionAnnotations
 			},
 			Spec: apiv1.PodSpec{
 				NodeSelector: nodeSelector,
