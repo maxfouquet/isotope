@@ -1,6 +1,6 @@
 package main
 
-import "github.com/Tahler/maxfouquet/convert/cmd"
+import "github.com/maxfouquet/isotope/convert/cmd"
 
 func main() {
 	cmd.Execute()
