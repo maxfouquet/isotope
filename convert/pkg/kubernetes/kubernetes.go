@@ -30,7 +30,7 @@ const (
 var (
 	serviceGraphAppLabels       = map[string]string{"app": "service-graph"}
 	serviceGraphNodeLabels      = map[string]string{"role": "service"}
-	prometheusScrapeAnnotations = map[string]string{
+	sidecarInjectionAnnotations = map[string]string{
 		"sidecar.istio.io/inject": "true"}
 )
 
