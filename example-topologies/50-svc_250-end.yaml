@@ -1,0 +1,106 @@
+defaults:
+  numReplicas: 5
+services:
+- isEntrypoint: true
+  name: svc0
+  script:
+  - - call: svc00
+    - call: svc01
+    - call: svc02
+    - call: svc03
+    - call: svc04
+    - call: svc05
+    - call: svc06
+    - call: svc07
+    - call: svc08
+    - call: svc09
+    - call: svc10
+    - call: svc11
+    - call: svc12
+    - call: svc13
+    - call: svc14
+    - call: svc15
+    - call: svc16
+    - call: svc17
+    - call: svc18
+    - call: svc19
+    - call: svc20
+    - call: svc21
+    - call: svc22
+    - call: svc23
+    - call: svc24
+    - call: svc25
+    - call: svc26
+    - call: svc27
+    - call: svc28
+    - call: svc29
+    - call: svc30
+    - call: svc31
+    - call: svc32
+    - call: svc33
+    - call: svc34
+    - call: svc35
+    - call: svc36
+    - call: svc37
+    - call: svc38
+    - call: svc39
+    - call: svc40
+    - call: svc41
+    - call: svc42
+    - call: svc43
+    - call: svc44
+    - call: svc45
+    - call: svc46
+    - call: svc47
+    - call: svc48
+    - call: svc49
+- name: svc00
+- name: svc01
+- name: svc02
+- name: svc03
+- name: svc04
+- name: svc05
+- name: svc06
+- name: svc07
+- name: svc08
+- name: svc09
+- name: svc10
+- name: svc11
+- name: svc12
+- name: svc13
+- name: svc14
+- name: svc15
+- name: svc16
+- name: svc17
+- name: svc18
+- name: svc19
+- name: svc20
+- name: svc21
+- name: svc22
+- name: svc23
+- name: svc24
+- name: svc25
+- name: svc26
+- name: svc27
+- name: svc28
+- name: svc29
+- name: svc30
+- name: svc31
+- name: svc32
+- name: svc33
+- name: svc34
+- name: svc35
+- name: svc36
+- name: svc37
+- name: svc38
+- name: svc39
+- name: svc40
+- name: svc41
+- name: svc42
+- name: svc43
+- name: svc44
+- name: svc45
+- name: svc46
+- name: svc47
+- name: svc48
+- name: svc49
